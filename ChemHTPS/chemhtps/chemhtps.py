@@ -2,19 +2,35 @@
 
 PROGRAM_NAME = "ChemHTPS"
 PROGRAM_VERSION = "v0.0.1"
-REVISION_DATE = "2015-06-02"
+REVISION_DATE = "2015-06-24"
 AUTHORS = "Johannes Hachmann (hachmann@buffalo.edu) and William Evangelista (wevangel@buffalo.edu)"
-CONTRIBUTORS = """ """
+CONTRIBUTORS = """Mohammad Atif Faiz Afzal (library generation)"""
 DESCRIPTION = "ChemHTPS is a virtual high-throughput screening program suite for the chemical and materials sciences."
 
 # Version history timeline (move to CHANGES periodically):
-# v0.0.1 (2015-06-02): complete refactoring of original ChemHTPS code in new package format
+# v0.0.1 (2015-06-24): complete refactoring of original ChemHTPS code in new package format
 
 
 ###################################################################################################
 # TASKS OF THIS MODULE:
 # -main function
 ###################################################################################################
+
+
+###################################################################################################
+# Desired workflow (corresponding to modules, that can be called from this main module):
+# 1) set up file/dir structure for a new project
+# 2) create a library of structures
+# 3) read in the library of structure into database
+# 4) create geometries
+# 5) connect geometries to the library
+# 6) create jobs
+# 7) put jobs into pool
+# 8) run jobs
+# 9) parse jobs
+# 10) ...
+###################################################################################################
+
 
 ###################################################################################################
 #TODO:
