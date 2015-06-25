@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-_MODUE_NAME = "job_generator"
-_MODUE_VERSION = "v1.0.0"
+_MODULE_NAME = "job_generator"
+_MODULE_VERSION = "v1.0.0"
 _REVISION_DATE = "2015-06-24"
 _AUTHORS = "Johannes Hachmann (hachmann@buffalo.edu) and William Evangelista (wevangel@buffalo.edu)"
 _DESCRIPTION = "This module generates the computational chemistry jobs."

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-_MODUE_NAME = "library_generator"
-_MODUE_VERSION = "v0.0.1"
+_MODULE_NAME = "library_generator"
+_MODULE_VERSION = "v0.0.1"
 _REVISION_DATE = "2015-06-24"
 _AUTHORS = "Johannes Hachmann (hachmann@buffalo.edu) and Mohammad Atif Faiz Afzal (m27@buffalo.edu)"
 _DESCRIPTION = "This module generates the high-throughput screening libraries."
