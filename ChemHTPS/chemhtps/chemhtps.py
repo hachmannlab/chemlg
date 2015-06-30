@@ -61,8 +61,33 @@ from job_generator import (generate_jobs,
                            prioritize_pool)
 
 ###################################################################################################
+# Necessary Functions:
 
-def main(args,commline_list):
+
+def config_read(config):
+    """(config_read):
+        Reads options from the config file
+        Based on options following the format
+        Option_name = The option
+    """
+
+    config_opts = {}
+    with open(config, 'r') as config:
+        while 1:
+            line = config.readline()
+            if not line: break
+            words = line.split(' = ')
+            if len(words) > 2:
+                sys.exit('Bad option in config file')
+            config_opts[words[0]] = words[1]
+        config.close()
+
+    return config_opts
+
+
+###################################################################################################
+
+def main(args, commline_list):
     """(main):
         Driver of ChemHTPS.
     """
@@ -75,12 +100,20 @@ def main(args,commline_list):
         print line
         logfile.write(line + '\n')
 
-# TODO: implement read function for local config file which populates additional opts
 
     fopts_list = format_invoked_opts(args,commline_list)
     for line in fopts_list:
         print line
         logfile.write(line + '\n')
+    # TODO this seems a less than elegant solution, but it should work for now
+    # This part reads options from a .config file if your in the project directory
+    cwd = os.getcwd()
+    if cwd[-len(args.project_name):] == args.project_name:
+        config_opts = config_read(args.project_name + '.config')
+        for key, value in config_opts.items():
+            line = "   " + key + ": " + str(value)
+            print line
+            logfile.write(line + '\n')
 
     tmp_str = "------------------------------------------------------------------------------ "
     print tmp_str
