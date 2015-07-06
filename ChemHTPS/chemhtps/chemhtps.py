@@ -79,7 +79,7 @@ def config_read(config):
             words = line.split(' = ')
             if len(words) > 2:
                 sys.exit('Bad option in config file')
-            config_opts[words[0]] = words[1]
+            config_opts[words[0]] = words[1].rstrip('\n')
         config.close()
 
     return config_opts
@@ -110,6 +110,8 @@ def main(args, commline_list):
     cwd = os.getcwd()
     if cwd[-len(args.project_name):] == args.project_name:
         config_opts = config_read(args.project_name + '.config')
+        print "config options"
+        logfile.write("config options\n")
         for key, value in config_opts.items():
             line = "   " + key + ": " + str(value)
             print line
@@ -162,56 +164,73 @@ if __name__=="__main__":
     version_str = "%(prog)s " + PROGRAM_VERSION
     parser = argparse.ArgumentParser(usage=usage_str)
 
-# TODO: we should implement a way of automatically recognizing that chemhtps is launched from within a project folder (e.g., by hte presence of a config file), so that all this doesn't have to be specified every time
-# TODO: see additional comments about use of a chemhtps.config file above
+    defaults = {'project_name':None, 'setup':False, 'generatelib':False, 'generatejobs':False, 'prioritize':False,
+                'log':'ChemHTPS.log', 'err':'ChemHTPS.err', 'print':2}
+
+    # tests for a config file
+    cwd = os.getcwd()
+    dirlist = os.listdir(cwd)
+    for entry in dirlist:
+        if '.config' in entry:
+            config = entry
+    try:
+        config_opts = config_read(config)
+    except NameError:
+        tmp_str = "\nNo config file"
+        print tmp_str
+    else:
+        if 'project_name' in config_opts:
+            defaults['project_name'] = config_opts['project_name']
+    # TODO there is still more to be done here
+
     parser.add_argument('--version',
                         action='version',
                         version=version_str)
 
     parser.add_argument('--project_name',
                         dest='project_name',
-                        default='new_project',
+                        default=defaults['project_name'],
                         help='name of the current project [default: %(default)s]')
 
     parser.add_argument('--setup_project',
                         dest='setup_project',
                         action='store_true',
-                        default=False,
+                        default=defaults['setup'],
                         help='sets up the infrastructure for a new project [default: %(default)s]')
 
     parser.add_argument('--generatelib',
                         dest='generatelib',
                         action='store_true',
-                        default=False,
+                        default=defaults['generatelib'],
                         help='generates a new screening library [default: %(default)s]')
 
     parser.add_argument('--generatejobs',
                         dest='generatejobs',
                         action='store_true',
-                        default=False,
+                        default=defaults['generatejobs'],
                         help='generates computational chemistry jobs [default: %(default)s]')
 
     parser.add_argument('--prioritizepool',
                         dest='prioritizepool',
                         action='store_true',
-                        default=False,
+                        default=defaults['prioritize'],
                         help='prioritizes the jobs pool [default: %(default)s]')
 
 
     # specify log files 
     parser.add_argument('--logfile',
                         dest='logfile',
-                        default='ChemHTPS.log',
+                        default=defaults['log'],
                         help='specifies the name of the log-file [default: %(default)s]')
 
     parser.add_argument('--errorfile',
                         dest='error_file',
-                        default='ChemHTPS.err',
+                        default=defaults['err'],
                         help='specifies the name of the error-file [default: %(default)s]')
 
     parser.add_argument('--print_level',
                         dest='print_level',
-                        default=2,
+                        default=defaults['print'],
                         help='specifies the print level for on screen and the logfile [default: %(default)s]')
 
 
