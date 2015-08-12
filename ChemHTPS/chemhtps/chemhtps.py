@@ -59,6 +59,7 @@ from library_generator import (generate_structurelib,
 from db_feeder import populate_db
 from job_generator import (generate_jobs,
                            prioritize_pool)
+from job_feeder import feed_jobs
 
 ###################################################################################################
 # Necessary Functions:
@@ -140,6 +141,9 @@ def main(args, commline_list):
     if args.prioritizepool:
         prioritize_pool()
 
+    if args.feedjobs:
+        feed_jobs(args.project_name)
+
 # TODO: add parser function
 
     tmp_str = "------------------------------------------------------------------------------ "
@@ -165,7 +169,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(usage=usage_str)
 
     defaults = {'project_name':None, 'setup':False, 'generatelib':False, 'generatejobs':False, 'prioritize':False,
-                'log':'ChemHTPS.log', 'err':'ChemHTPS.err', 'print':2}
+                'run':False, 'log':'ChemHTPS.log', 'err':'ChemHTPS.err', 'print':2}
 
     # tests for a config file
     cwd = os.getcwd()
@@ -214,6 +218,12 @@ if __name__=="__main__":
                         dest='prioritizepool',
                         action='store_true',
                         default=defaults['prioritize'],
+                        help='prioritizes the jobs pool [default: %(default)s]')
+
+    parser.add_argument('--feedjobs',
+                        dest='feedjobs',
+                        action='store_true',
+                        default=defaults['run'],
                         help='prioritizes the jobs pool [default: %(default)s]')
 
 
