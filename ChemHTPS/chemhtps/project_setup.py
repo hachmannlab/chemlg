@@ -27,7 +27,7 @@ def setup_project(project_name):
     """(setup_project):
         This function sets up the project, including the file and directory structure.
     """
-    dir_list = ['/archive', '/db', '/jobpool', 'job_templates', '/lost+found', '/screeninglib/geometrylib',
+    dir_list = ['/archive', '/db', '/jobpool', '/job_templates', '/lost+found', '/screeninglib/geometrylib',
                 '/screeninglib/structurelib']
     cwd = os.getcwd()  # just in case we need this
 
