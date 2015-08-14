@@ -34,7 +34,7 @@ def setup_project(project_name):
     for dir in dir_list:
         os.makedirs(project_name + dir, 0755)
 
-    with open(project_name + '/chemhtps.config', 'w') as config:
+    with open(project_name + '/' + project_name + '.config', 'w') as config:
         config.write('project_name = ' + project_name)
 
     with open(project_name + '/screeninglib/buildingblocks.dat', 'w') as build:

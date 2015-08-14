@@ -180,9 +180,9 @@ if __name__=="__main__":
     try:
         config_opts = config_read(config)
     except NameError:
-        tmp_str = "\nNo config file"
-        print tmp_str
+        no_config = True
     else:
+        no_config = False
         if 'project_name' in config_opts:
             defaults['project_name'] = config_opts['project_name']
     # TODO there is still more to be done here
@@ -245,8 +245,12 @@ if __name__=="__main__":
 
 
     args = parser.parse_args(sys.argv[1:])
-    if len(sys.argv) < 2:
-        sys.exit("You tried to run ChemHTPS without options.")
+    if cwd[-len(args.project_name):] != args.project_name and args.setup_project == False:
+        sys.exit("ChemHTPS must be run from inside the project directory, or with the setup_project flag.")
+    elif args.setup_project == True and args.project_name == None:
+        sys.exit("Need to give the project_name flag to setup a project.")
+    elif cwd[-len(args.project_name):] == args.project_name and no_config == True:
+        sys.exit("There is no config file in the project directory.")
     main(args, sys.argv)   #numbering of sys.argv is only meaningful if it is launched as main
     
 else:

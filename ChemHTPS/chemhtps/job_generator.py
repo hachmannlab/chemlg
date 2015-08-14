@@ -47,7 +47,7 @@ def generate_jobs():
         chk_mkdir(job_dir)
         os.rename(job_file, job_dir + '/' + geo)  # maybe should use shutil.move in case multiple file systems
         job_template.append('* xyz 0 1 ' + geo)
-        with open(job_dir + geo.split('.')[0] + '.inp') as tmp:
+        with open(job_dir + '/' + geo.split('.')[0] + '.inp', 'w+') as tmp:
             tmp.writelines(job_template)
 
 
