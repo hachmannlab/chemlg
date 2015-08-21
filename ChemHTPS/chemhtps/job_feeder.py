@@ -54,8 +54,8 @@ def feed_jobs(project_name):
     slurm_path= cwd + '/job_templates'
     job_pool_path = cwd + '/jobpool'
     scratch_path = '/gpfs/scratch/' + project_name
-    result_path = '/archive'
-    problem_path = '/lost+found'
+    result_path = cwd + '/archive'
+    problem_path = cwd + '/lost+found'
     queue_file_path = cwd + '/queue_list.dat'
 
     chk_mkdir(scratch_path) #Do this for result and problem paths as well if they aren't default folders

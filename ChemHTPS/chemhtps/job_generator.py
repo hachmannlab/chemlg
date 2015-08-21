@@ -22,6 +22,7 @@ _DESCRIPTION = "This module generates the computational chemistry jobs."
 
 import sys
 import os
+import shutil
 
 from misc import (chk_mkdir)
 
@@ -45,8 +46,8 @@ def generate_jobs():
         job_file = cwd + '/screeninglib/geometrylib/' + geo
         job_dir = cwd + '/jobpool/' + geo.split('.')[0]
         chk_mkdir(job_dir)
-        os.rename(job_file, job_dir + '/' + geo)  # maybe should use shutil.move in case multiple file systems
-        job_template.append('* xyz 0 1 ' + geo)
+        shutil.copy(job_file, job_dir + '/' + geo)
+        job_template.append('* xyzfile 0 1 ' + geo)
         with open(job_dir + '/' + geo.split('.')[0] + '.inp', 'w+') as tmp:
             tmp.writelines(job_template)
 

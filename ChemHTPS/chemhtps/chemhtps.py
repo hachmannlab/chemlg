@@ -106,6 +106,7 @@ def main(args, commline_list):
     for line in fopts_list:
         print line
         logfile.write(line + '\n')
+
     # TODO this seems a less than elegant solution, but it should work for now
     # This part reads options from a .config file if your in the project directory
     cwd = os.getcwd()
