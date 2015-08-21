@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.8"
-_REVISION_DATE = "8/15/2015"
+_SCRIPT_VERSION = "v0.1.9"
+_REVISION_DATE = "8/18/2015"
 _AUTHOR = "M. Atif Afzal (m27@buffalo.edu)"
 _DESCRIPTION = "This is the a library generating molecular libraries."
 
@@ -15,6 +15,7 @@ _DESCRIPTION = "This is the a library generating molecular libraries."
 # v0.1.6 (8/08/2015): Get only those reactions specified by the user
 # v0.1.7 (8/11/2015): Implementing parallel algorithm
 # v0.1.8 (8/15/2015): Including generation rules
+# v0.1.9 (8/18/2015): Further reducing the computation time (efficient parallel code)
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -52,6 +53,15 @@ from mpi4py import MPI
 import os
 #import threading
 from lib_modules import my_classes
+from itertools import islice
+
+# def chunks(data, SIZE):
+#     it = iter(data)
+#     start=int(i*(len(data))/mpisize)
+#     end=int((i+1)*(len(data))/mpisize)-1
+#     for i in xrange(mpisize):
+#     for i in xrange(0, len(data), SIZE):
+#         yield {k:data[k] for k in islice(it, SIZE)}
 
 class OutputGrabber(object):
     """
@@ -84,7 +94,7 @@ class OutputGrabber(object):
         """
         # Flush the stream to make sure all our data goes in before
         # the escape character.
-        self.origstream.flush()
+        #self.origstream.flush()
         os.dup2(self.streamfd, self.origstreamfd)
         os.close(self.pipe_out)
         pass
@@ -151,14 +161,15 @@ def create_gen_lev(smiles_list_gen,ini_list):
     # Creating a dictionary of molecules. This is a faster way to prevent duplicates
     
     smiles_dict = defaultdict(list) 
+    #ini_smiles_dict= defaultdict(list) 
     for smiles in smiles_list_gen+ini_list:
         mol_combi= pybel.readstring("smi",smiles)
         mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
-        can_mol_combi = mol_combi.write("can")
+        #can_mol_combi = mol_combi.write("can")
                 
-        if can_mol_combi in smiles_dict[mol_wt]:
-            continue
-        smiles_dict[mol_wt].append(can_mol_combi)
+        #if can_mol_combi in smiles_dict[mol_wt]:
+        #    continue
+        smiles_dict[mol_wt].append(str(mol_combi))
         
         # if can_mol_combi in library_can:
         #     continue
@@ -205,16 +216,58 @@ def create_gen_lev(smiles_list_gen,ini_list):
                 mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
                 can_mol_combi = mol_combi.write("can")
                     
-                if can_mol_combi in smiles_dict[mol_wt]:
-                    continue
+                # if can_mol_combi in smiles_dict[mol_wt]:
+                #     continue
                 smiles_dict[mol_wt].append(can_mol_combi)
 
+    # if rank ==0:
+    #     return smiles_dict
+    # else:
+    #     return
+    
+    if rank ==0:
+        smiles_dict_scatter=[]
+        items=smiles_dict.items()
+        for i in xrange(mpisize):
+            start=int(i*(len(smiles_dict))/mpisize)
+            end=int((i+1)*(len(smiles_dict))/mpisize)-1
+            smiles_dict_scatter.append(dict(item for item in items[start:end+1]))
+        # dict(item for item in items[start:end])
+        # print 'mpisize',mpisize
+        # smiles_dict_chunks=chunks(smiles_dict)
+        # for chunk in smiles_dict_chunks:
+        #     smiles_dict_scatter.append(chunk)
+        #print len(smiles_dict_scatter), 'for_scatter_list'
+    else:
+        smiles_dict_scatter=[]
+    
+    smiles_dict_indi=comm.scatter(smiles_dict_scatter,root=0)
+    #print smiles_dict_indi,'rank',rank
+    
+    for mol_wt in smiles_dict_indi:
+        
+        #print len(smiles_dict[mol_wt]),'length before'
+        
+        smiles_dict_indi[mol_wt]=list(set(smiles_dict_indi[mol_wt]))
+        #print len(smiles_dict[mol_wt]),'length after'
+        # for items in ini_smiles_dict[mol_wt]:
+        #     if items in smiles_dict_indi[mol_wt]:
+        #         #print 'removing items'
+        #         smiles_dict_indi[mol_wt].remove(items)
+    
                 # if can_mol_combi in library_can:
                 #     continue
                 # library_can.append(can_mol_combi)
                 
-                library.append(str(mol_combi)[:-2])
-
+                #library.append(str(mol_combi)[:-2])
+    smiles_dict_g=comm.gather(smiles_dict_indi,root=0)
+    #print smiles_dict,'final_smiles_dict'
+    if rank==0:
+        for dict_indi in smiles_dict_g:
+            for mol_wt in dict_indi:
+                for smiles_indi in dict_indi[mol_wt]:
+                    #print type(smiles_indi)
+                    library.append(smiles_indi[:-2])
         return library
     else:
         return []       
@@ -283,6 +336,13 @@ def generation_test():
     lib_smiles_list=[]
     lib_can=[]
     
+    # ini_dict = defaultdict(list) 
+    # for smiles in smiles_list:
+    #     mol_combi= pybel.readstring("smi",smiles)
+    #     mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
+    #     can_mol_combi = mol_combi.write("can")
+    #     ini_dict[mol_wt].append(can_mol_combi)
+
     for smiles in smiles_list:
         mol_combi= pybel.readstring("smi",smiles)
         mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
@@ -290,21 +350,28 @@ def generation_test():
         if can_mol_combi in lib_can:
             continue
         lib_can.append(can_mol_combi)
-        lib_smiles_list.append(smiles)
+        #lib_smiles_list.append(smiles)
    
-    for i in xrange(len(lib_smiles_list)):
-        lib_smiles_list[i]=reverse_mol(lib_smiles_list[i])
+    for i in xrange(len(lib_can)):
+        lib_smiles_list.append(reverse_mol(lib_can[i]))
     ini_list=lib_smiles_list
-    #print lib_smiles_list
+    if rank ==0:
+        print lib_smiles_list
+        
     for gen in xrange(gen_len):
-        lib_smiles_list=lib_smiles_list+create_gen_lev(lib_smiles_list,ini_list)
-        print len(lib_smiles_list)
+        # gen_dict=create_gen_lev(lib_smiles_list,ini_list)
+        # smiles_dict = ini_dict.copy()
+        # smiles_dict.update(gen_dict)
+        lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list)
+        if rank==0:
+            print len(lib_smiles_list), 'generation_number', gen
     
     if rank ==0:
         print len(lib_smiles_list)
     #test to see if there are any duplicates
     library_can=[]
     pos=0
+    
     for smiles in lib_smiles_list:
         mol_combi= pybel.readstring("smi",smiles)
         atoms=list(mol_combi.atoms)
@@ -324,7 +391,8 @@ def generation_test():
         library_can.append(can_mol_combi)
     
     if rank==0:
-        print len(library_can)
+        print len(library_can),'after checking for duplicates'
+
     return lib_smiles_list
     
     
@@ -353,7 +421,7 @@ if __name__ == "__main__":
 
     smiles1="c1(C)ccccc1" 
     smiles2="c1occc1"
-    gen_len=1
+    gen_len=5
     myMg=pybel.readstring('smi',"[Mg]")
     Mgatom=myMg.OBMol.GetAtom(1)
     myHe=pybel.readstring('smi',"[He]")
@@ -424,15 +492,15 @@ if __name__ == "__main__":
     if rank==0:    
         print 'time_taken',wt2-wt1
     
-    print final_list
+    # print final_list
     
-    file = open("Final_smiles_output.dat", "w")
-    k=1
-    file.write('Sl.No,Molecule_Smiles\n')
+    # file = open("Final_smiles_output.dat", "w")
+    # k=1
+    # file.write('Sl.No,Molecule_Smiles\n')
 
-    for smiles in final_list:
-        file.write(str(k)+','+smiles+'\n')
-        k=k+1
+    # for smiles in final_list:
+    #     file.write(str(k)+','+smiles+'\n')
+    #     k=k+1
                 
     
     sys.stderr.close()
