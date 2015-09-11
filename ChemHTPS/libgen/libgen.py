@@ -2,8 +2,8 @@
 
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.11"
-_REVISION_DATE = "8/28/2015"
+_SCRIPT_VERSION = "v0.1.12"
+_REVISION_DATE = "9/11/2015"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is the a library generating molecular libraries."
 
@@ -19,6 +19,7 @@ _DESCRIPTION = "This is the a library generating molecular libraries."
 # v0.1.9 (8/21/2015): Further reducing the computation time (efficient parallel code)
 # v0.1.10(8/24/2015): Include fusion 
 # v0.1.11(8/28/2015): Debugging fusion. Removing duplicates in an effective manner
+# v0.1.12(9/11/2015): Added detailed comments
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
