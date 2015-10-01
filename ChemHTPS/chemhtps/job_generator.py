@@ -42,14 +42,16 @@ def generate_jobs():
     template = 'PBE0_def2svp.inp'
     with open(cwd + '/job_templates/' + template, 'r', 0) as jt:
         job_template = jt.readlines()
+    job_template = tuple(job_template)
     for geo in geom:
+        temp = list(job_template)
         job_file = cwd + '/screeninglib/geometrylib/' + geo
-        job_dir = cwd + '/jobpool/' + geo.split('.')[0]
+        job_dir = cwd + '/jobpool/short/' + geo.split('.')[0]
         chk_mkdir(job_dir)
         shutil.copy(job_file, job_dir + '/' + geo)
-        job_template.append('* xyzfile 0 1 ' + geo)
-        with open(job_dir + '/' + geo.split('.')[0] + '.inp', 'w+') as tmp:
-            tmp.writelines(job_template)
+        temp.append('* xyzfile 0 1 ' + geo + '\n')
+        with open(job_dir + '/' + geo.split('.')[0] + '.inp', 'w') as tmp:
+            tmp.writelines(temp)
 
 
 def prioritize_pool():

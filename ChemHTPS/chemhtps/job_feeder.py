@@ -46,8 +46,6 @@ def feed_jobs(project_name):
     error_file = open('job_feeder.err', 'a', 0)
     check_file = open('job_feeder.chk', 'a', 0)  # this contains a list of files where the node was out of space
 
-    banner(logfile, _MODULE_NAME, _MODULE_VERSION, _REVISION_DATE, _AUTHORS, _DESCRIPTION)
-
     cwd = os.getcwd()
 
     #TODO think about way to handle non default folders and paths (possibly argparser)
@@ -63,14 +61,19 @@ def feed_jobs(project_name):
     # Makes sure all necessary components are present
     if not os.path.isdir(slurm_path):
         sys.exit('Missing dir: ' + slurm_path)
+        error_file.write('no slurm path')
     if not os.path.isdir(job_pool_path):
         sys.exit('Missing dir: ' + job_pool_path)
+        error_file.write('no jobpool path')
     if not os.path.isdir(result_path):
         sys.exit('Missing dir: ' + result_path)
+        error_file.write('no result path')
     if not os.path.isdir(problem_path):
         sys.exit('Missing dir: ' + problem_path)
+        error_file.write('no problem path')
     if not os.path.isfile(queue_file_path):
         sys.exit('Missing dir: ' + queue_file_path)
+        error_file.write('no queue path')
 
 
     # Keeps track of the run dir
@@ -110,7 +113,7 @@ def feed_jobs(project_name):
                 if queue[2] == 'long':
                     job_pool_type_list = ('priority', 'long', 'short')
                 elif queue[2] == 'short':
-                    job_pool_type_list = ('short')
+                    job_pool_type_list = ('short',)
                 else:
                     sys.exit('Unknown queue type')
 
@@ -141,10 +144,10 @@ def feed_jobs(project_name):
 
                     # Move slurm script into job folder
                     # TODO possibly rethink this maybe do in job_generator module, also options for different slurm scripts
-                    tmp_str = 'cp ' + slurm_path + '/' + slurm_script + ' ' + job_target_path + '/.'
+                    tmp_str = 'cp ' + slurm_path + '/' + slurm_script + ' ' + job_target_path + '/' + job_source_path.split('/')[-1]
                     os.system(tmp_str)
 
-                    os.chdir(job_target_path)
+                    os.chdir(job_target_path + '/' + job_source_path.split('/')[-1])
 
                     # Submit job to the queue
                     tmp_str = 'sbatch ' + slurm_script

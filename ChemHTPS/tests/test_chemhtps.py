@@ -55,8 +55,8 @@ def test_generate_jobs():
     os.chdir(cwd + '/testing')
     generate_jobs()
     os.chdir('..')
-    assert True == os.path.isfile('testing/jobpool/testing/testing.xyz')
-    assert True == os.path.isfile('testing/jobpool/testing/testing.inp')
+    assert True == os.path.isfile('testing/jobpool/short/testing/testing.xyz')
+    assert True == os.path.isfile('testing/jobpool/short/testing/testing.inp')
     assert True == os.path.isfile('testing/screeninglib/geometrylib/testing.xyz')
 
 
