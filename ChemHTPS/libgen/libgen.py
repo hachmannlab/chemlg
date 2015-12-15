@@ -2,8 +2,8 @@
 
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.12"
-_REVISION_DATE = "9/11/2015"
+_SCRIPT_VERSION = "v0.1.14"
+_REVISION_DATE = "12/14/2015"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is the a library generating molecular libraries."
 
@@ -20,6 +20,8 @@ _DESCRIPTION = "This is the a library generating molecular libraries."
 # v0.1.10(8/24/2015): Include fusion 
 # v0.1.11(8/28/2015): Debugging fusion. Removing duplicates in an effective manner
 # v0.1.12(9/11/2015): Added detailed comments
+# v0.1.13(11/13/2015): Saving molecules in different formats 
+# v0.1.14(12/14/2015): Specifying maximum files per folder 
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -38,6 +40,7 @@ _DESCRIPTION = "This is the a library generating molecular libraries."
 # -Capture the stderr from C program ie. openbabel. -Done (this took a very long time to debug)
 # -Increase scalability of parallel - Done
 # -Detailed comments- Partially done
+# -Include He removals in an efficient manner- Done
 
 ###################################################################################################
 
@@ -71,7 +74,7 @@ def remove_stereochemistry(smiles):
 This function creates a new generation with the building blocks provided
 and the current of molecules
 '''
-def create_gen_lev(smiles_list_gen,ini_list,combi_type):
+def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
 
     library_can=[]
     library_full=[]
@@ -80,7 +83,9 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type):
     # Creating a dictionary of molecules. This is a faster way to prevent duplicates
     
     smiles_dict = defaultdict(list) 
+
     ## Adding all previous generation molecules to dictionary 
+    ini_lib_full=[]
     for smiles in smiles_list_gen+ini_list:
         
         mol_combi= pybel.readstring("smi",smiles)
@@ -94,10 +99,13 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type):
 
         mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
         
-        smiles_dict[mol_wt].append(str(mol_combi))
+        #smiles_dict[mol_wt].append(str(mol_combi))
+        
+        can_mol_combi = mol_combi.write("can")
+        ini_lib_full.append([str(can_mol_combi),mol_wt])
         
                         
-    ## If it better to initialize a list to be divided amonf processors in the master 
+    ## It is better to initialize a list to be divided among processors in the master 
     ## processor. Also, put the list as empty in other processors.
     
     if rank!=0:
@@ -135,10 +143,50 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type):
             if combi_type=='fusion':
                 library_full=library_full+my_classes.get_fused(smiles1,smiles2)
     
+
+    ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
+    ## This can be easily done parallely as the jobs are independet of each other
+    ## Making the list ready to scatter between processors
+
+    if gen==gen_len-1:
+
+        library_full=ini_lib_full+library_full
+        for pos,smiles in enumerate(library_full):
+            mol_combi= pybel.readstring("smi",smiles[0])
+            atoms=list(mol_combi.atoms)
+            del_idx=[]
+            ## iterating over all atoms of the molecule
+            for atom in atoms:
+                ## Removing Helium atoms
+                if atom.OBAtom.GetAtomicNum()==2:
+                    ## it is easy to convert Helium atom to hydrogen than deleting the atom
+                    atom.OBAtom.SetAtomicNum(1)
+                
+                ## Removing Magnesium atoms
+                if atom.OBAtom.GetAtomicNum()==12:
+                    atom.OBAtom.SetAtomicNum(1)
+            ## After removing Mg atoms, Fusion molecules list might contain duplicates.
+            ## So convert all the SMILES to canonical tso that it can be deleted later
+            if combi_type=='fusion':
+                can_mol_combi = mol_combi.write("can")
+                library_full[pos][0]=str(can_mol_combi)
+                library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
+            ## If linked type, then there are no duplicates so no need for canonical
+            if combi_type=='link':       
+                library_full[pos][0]=str(mol_combi)
+                library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
     ## once the new generation is ready in processor, collect all the lists into the master
     ## processor
-    library_gather=comm.gather(library_full,root=0)
     
+    library_gather=comm.gather(library_full,root=0)
+
+    # ## As there can be duplicates in fused molecules we have to remove the duplicates
+    # if combi_type=='fusion':
+    #     lib_smiles_list=list(set(lib_smiles_list))
+    
+    #print gen
+    #print library_gather
+
     ## concatinating the gathered list into SMILES dictionary based on Mol Wt
     if rank ==0:
         for l1 in library_gather:
@@ -194,6 +242,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type):
                     library.append(smiles_indi[:-2])
     
     ## Return the list with all molecules until this generation number
+    #print library
     if rank==0:
         return library
     else:
@@ -299,7 +348,7 @@ def generation_test(combi_type):
     for gen in xrange(gen_len):
         
         ## lib_smiles_list includes all the molecules list up until the current generation 
-        lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list,combi_type)
+        lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list,combi_type,gen)
         
         if rank==0:
             print len(lib_smiles_list), 'generation_number', gen
@@ -312,60 +361,60 @@ def generation_test(combi_type):
     if rank ==0:
         print len(lib_smiles_list)
     
-    ## Now we have delete the He atoms for linked atoms and Mg atoms for Fused atoms
-    ## This can be easily done parallely as the jobs are independet of each other
-    ## Making the list ready to scatter between processors
+    # ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
+    # ## This can be easily done parallely as the jobs are independet of each other
+    # ## Making the list ready to scatter between processors
 
-    if rank ==0:
-        smiles_to_scatter=[]
-        for i in xrange(mpisize):
-            start=int(i*(len(lib_smiles_list))/mpisize)
-            end=int((i+1)*(len(lib_smiles_list))/mpisize)-1
-            smiles_to_scatter.append(lib_smiles_list[start:end+1])
-    else:
-        smiles_to_scatter=[]
+    # if rank ==0:
+    #     smiles_to_scatter=[]
+    #     for i in xrange(mpisize):
+    #         start=int(i*(len(lib_smiles_list))/mpisize)
+    #         end=int((i+1)*(len(lib_smiles_list))/mpisize)-1
+    #         smiles_to_scatter.append(lib_smiles_list[start:end+1])
+    # else:
+    #     smiles_to_scatter=[]
     
-    lib_smiles_list=comm.scatter(smiles_to_scatter,root=0)
+    # lib_smiles_list=comm.scatter(smiles_to_scatter,root=0)
     
-    for pos,smiles in enumerate(lib_smiles_list):
+    # for pos,smiles in enumerate(lib_smiles_list):
         
-        mol_combi= pybel.readstring("smi",smiles)
-        atoms=list(mol_combi.atoms)
-        del_idx=[]
-        ## iterating over all atoms of the molecule
-        for atom in atoms:
-            ## Removing Helium atoms
-            if atom.OBAtom.GetAtomicNum()==2:
-                ## it is easy to convert Helium atom to hydrogen than deleting the atom
-                atom.OBAtom.SetAtomicNum(1)
+    #     mol_combi= pybel.readstring("smi",smiles)
+    #     atoms=list(mol_combi.atoms)
+    #     del_idx=[]
+    #     ## iterating over all atoms of the molecule
+    #     for atom in atoms:
+    #         ## Removing Helium atoms
+    #         if atom.OBAtom.GetAtomicNum()==2:
+    #             ## it is easy to convert Helium atom to hydrogen than deleting the atom
+    #             atom.OBAtom.SetAtomicNum(1)
                 
-            ## Removing Magnesium atoms
-            if atom.OBAtom.GetAtomicNum()==12:
-                atom.OBAtom.SetAtomicNum(1)
-        ## After removing Mg atoms, Fusion molecules list might contain duplicates.
-        ## So convert all the SMILES to canonical tso that it can be deleted later
-        if combi_type=='fusion':
-            can_mol_combi = mol_combi.write("can")
-            lib_smiles_list[pos]=str(can_mol_combi)[:-2]
-        ## If linked type, then there are no duplicates so no need for canonical
-        if combi_type=='link':       
-            lib_smiles_list[pos]=str(mol_combi)[:-2]
+    #         ## Removing Magnesium atoms
+    #         if atom.OBAtom.GetAtomicNum()==12:
+    #             atom.OBAtom.SetAtomicNum(1)
+    #     ## After removing Mg atoms, Fusion molecules list might contain duplicates.
+    #     ## So convert all the SMILES to canonical tso that it can be deleted later
+    #     if combi_type=='fusion':
+    #         can_mol_combi = mol_combi.write("can")
+    #         lib_smiles_list[pos]=str(can_mol_combi)[:-2]
+    #     ## If linked type, then there are no duplicates so no need for canonical
+    #     if combi_type=='link':       
+    #         lib_smiles_list[pos]=str(mol_combi)[:-2]
     
-    ## Gather the list from all processors. Note that this is list of lists
-    library_gather=comm.gather(lib_smiles_list,root=0)
+    # ## Gather the list from all processors. Note that this is list of lists
+    # library_gather=comm.gather(lib_smiles_list,root=0)
 
-    ## Re initiate the list
-    lib_smiles_list=[]
+    # ## Re initiate the list
+    # lib_smiles_list=[]
     
-    ## Convert gathered list of one smiles list
-    if rank==0:
-        for list_s in library_gather:
-            lib_smiles_list=lib_smiles_list+list_s
-        print len(lib_smiles_list)
+    # ## Convert gathered list of one smiles list
+    # if rank==0:
+    #     for list_s in library_gather:
+    #         lib_smiles_list=lib_smiles_list+list_s
+    #     print len(lib_smiles_list)
         
-        ## As there can be duplicates in fused molecules we have to remove the duplicates
-        if combi_type=='fusion':
-            lib_smiles_list=list(set(lib_smiles_list))
+    #     ## As there can be duplicates in fused molecules we have to remove the duplicates
+    #     if combi_type=='fusion':
+    #         lib_smiles_list=list(set(lib_smiles_list))
     
     ## priniting out the time after getting the final list of molecules
     wt2 = MPI.Wtime()
@@ -440,14 +489,30 @@ if __name__ == "__main__":
     parser.add_argument('-c',"--combination_type", action='store', dest='combi_type', default='Link', help="Mention the combination type in this section. Link for linking and Fusion for fusing the molecules")
 
     parser.add_argument('-g',"--generation_levels", action='store', dest='gen_len', default='1', help="Give the number of maximum combinations required in each molecule")
+
+    parser.add_argument('-output',"--output_type", action='store', dest='oft', default='smi', help="Give the type of molecule format for the generated library. Default is SMILES format.")
+
+    parser.add_argument('-max_fpf',"--max_files_per_folder", action='store', dest='max_fpf', default=1000, help="Maximu number of files that are in a single folder. Having a large number of files in a single folder may hinder performace.")
     
+
     ## defining arguments
     args = parser.parse_args()
     mol_type=args.mol_type.lower()
     combi_type=args.combi_type.lower()
+    max_fpf=args.max_fpf
     gen_len=int(args.gen_len)
+
     smiles_list=[]
     
+    
+    ## Reading the building rules from generation_rules.dat
+    rulesFile=open('generation_rules.dat')
+    # rules list Molwt, no of rings, no of atoms in order 
+    rules_l=[]
+    for lines in rulesFile:
+        words=lines.split('=')
+        rules_l.append(int(words[1]))
+
     ## Reading the building blocks from the input file
     infile=open(args.file_name)
     
@@ -484,13 +549,62 @@ if __name__ == "__main__":
         
     ## generation_test funtion generates combinatorial molecules
     final_list=generation_test(combi_type)
-
+    
+    final_list_len=len(final_list)
     wt2 = MPI.Wtime()
     
     if rank==0:    
         print 'Total time_taken',wt2-wt1    
-        print final_list
+        #print final_list
+    
+    oft=args.oft.lower()    
+    if oft!='smi':
+        if not os.path.exists(oft+"files"):
+            os.makedirs(oft+"files")
+        smiles_to_scatter=[]
+        if rank ==0:
+            smiles_to_scatter=[]
+            for i in xrange(mpisize):
+                start=int(i*(final_list_len)/mpisize)
+                end=int((i+1)*(final_list_len)/mpisize)-1
+                list_to_add=final_list[start:end+1]
+                list_to_add=list_to_add+[final_list_len,start,end]
+                smiles_to_scatter.append(list_to_add)
+        else:
+            smiles_to_scatter=[]
+    
+        ## Dividing the list into processors
+        smiles_list=comm.scatter(smiles_to_scatter,root=0)
         
+        final_list_len=smiles_list[-3]
+        start=smiles_list[-2]
+        end=smiles_list[-1]
+        smiles_list=smiles_list[0:-3]
+        
+        ratio_s=int(start/max_fpf)
+        ratio_e=int(end/max_fpf)
+        
+        if end+1==final_list_len:
+            ratio_e=ratio_e+1
+        
+        for i in xrange(ratio_s,ratio_e):
+            
+            if not os.path.exists(oft+"files/"+str(i+1)+"_"+str(max_fpf)):
+                os.makedirs(oft+"files/"+str(i+1)+"_"+str(max_fpf))
+
+        folder_no=ratio_s+1
+        for i,val in enumerate(xrange(start,end+1)):
+            
+            mymol= pybel.readstring("smi",smiles_list[i])
+            mymol.make3D(forcefield='mmff94', steps=50)
+            mymol.write(oft, oft+"files/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
+
+            if (val+1)%max_fpf==0:
+                folder_no=folder_no+1
+            
+            
+
+
     file = open("Final_smiles_output.dat", "w")
     file.write('Sl.No,Molecule_Smiles\n')
 
