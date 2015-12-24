@@ -6,54 +6,79 @@
 #([Mg])C([Mg])
 #([Mg])S([Mg])
 # ([Mg])O([Mg])
-# ([Mg])c1ccc(cc1)([Mg])
-# ([Mg])C1SCC(SC1)([Mg])
-# ([Mg])c1ccc(s1)([Mg])
-# ([Mg])c1nnc(s1)([Mg])
-# ([Mg])OC(=O)([Mg])
-# ([Mg])S(=O)(=O)([Mg])
-# ([Mg])C1NCNC(N1)([Mg])
-C
-S
-O
-c1ccc(cc1)
-c1cccc(c1)
-c1ccccc1
-C1SCC(SC1)
-c1ccc(s1)
-c1nnc(s1)
-c1c(C)cc(cc1)
-c1c(C)ccc(c1)
-c1cc(C)cc(c1)
-OC(=O)
 
-#fused aramatic compounds
-C1NCNC(N1)
-c1ccc2c(c1)ccc(c2)
-c1ccc2c(c1)Sc3c(S2)cc(cc3)
-c1cc2c(cc1)Sc3c2cc(cc3)
-c1ccc(cc1)C(c1ccccc1)(c1ccccc1)c1ccc(cc1)
-c1ccc2c(c1)S(=O)(=O)c3c(S2(=O)(=O))cc(cc3)
-c1ccc2c(c1)cc3c(c2)cc(cc3)
-c1c2c(SCCS2)c(c2c1(SCCS2))
-C1CC2CC1CC2
-C(C)
-C(C)(C)
-c1=cc=c(c1)
-c1ccc(cn1)
-c1cnc(cn1)
-c1nsnc1
-c1sc(nc1)
-c1oc(cc1)
+[Mg]c1ccc(cc1)([Mg])
+[Mg]C1SCC(SC1)([Mg])
+[Mg]c1Ccc(c1)([Mg])
+# [Mg]c1nnc(s1)([Mg])
+# [Mg]OC(=O)([Mg])
+# [Mg]S(=O)(=O)([Mg])
+# [Mg]C1NCNC(N1)([Mg])
 
-#inclusing important side chains
-C(C)(C(=O)OC1(C)C2CC3CC(C2)CC1C3)
-#OP(=O)(c1ccccc1)
-#C(C)(C(=O)Sc1nnc(C)s1)
-C(C)(C(=O)Sc1=nCCs1)
-C(C)(C(=O)Sc1sccc1)
-C(C(=O)OCC1C2(S(=O)(=O)CCS2(=O)(=O))CCC1)
-C(C(=O)OCC1C2(SCCS2)CCC1)
-C(C)(C(=O)SCS(=O)(=O)C)
-C(C(=O)SC1CC2(SCCS2)CCC1)
-C(C(C=O)SC1CCCCC1)
+# C
+# S
+# O
+# c1ccc(cc1)
+# c1cccc(c1)
+# c1ccccc1
+# C1SCC(SC1)
+# c1ccc(s1)
+# c1nnc(s1)
+# c1c(C)cc(cc1)
+# c1c(C)ccc(c1)
+# c1cc(C)cc(c1)
+# OC(=O)
+
+# #fused aramatic compounds
+# C1NCNC(N1)
+# c1ccc2c(c1)ccc(c2)
+# c1ccc2c(c1)Sc3c(S2)cc(cc3)
+# c1cc2c(cc1)Sc3c2cc(cc3)
+# c1ccc(cc1)C(c1ccccc1)(c1ccccc1)c1ccc(cc1)
+# c1ccc2c(c1)S(=O)(=O)c3c(S2(=O)(=O))cc(cc3)
+# c1ccc2c(c1)cc3c(c2)cc(cc3)
+# c1c2c(SCCS2)c(c2c1(SCCS2))
+# C1CC2CC1CC2
+# C(C)
+# C(C)(C)
+# c1=cc=c(c1)
+# c1ccc(cn1)
+# c1cnc(cn1)
+# c1nsnc1
+# c1sc(nc1)
+# c1oc(cc1)
+
+# #inclusing important side chains
+# C(C)(C(=O)OC1(C)C2CC3CC(C2)CC1C3)
+# #OP(=O)(c1ccccc1)
+# #C(C)(C(=O)Sc1nnc(C)s1)
+# C(C)(C(=O)Sc1=nCCs1)
+# C(C)(C(=O)Sc1sccc1)
+# C(C(=O)OCC1C2(S(=O)(=O)CCS2(=O)(=O))CCC1)
+# C(C(=O)OCC1C2(SCCS2)CCC1)
+# C(C)(C(=O)SCS(=O)(=O)C)
+# C(C(=O)SC1CC2(SCCS2)CCC1)
+# C(C(C=O)SC1CCCCC1)
+
+
+# C
+# S
+# O
+# [Mg]S(=O)(=O)([Mg])
+# c1ccccc1
+# C1SCC(SC1)
+# c1ccc(s1)
+# c1nnc(s1)
+# C1NCNC(N1)
+# c1ccc(c1)
+#c1ccc(cn1)
+#c1cnc(cn1)
+#c1nsnc1
+#c1sc(nc1)
+#c1oc(cc1)
+#c1ccc2c(c1)ccc(c2)
+# c1ccc2c(c1)Sc3c(S2)cc(cc3)
+# c1cc2c(cc1)Sc3c2cc(cc3)
+# c1ccc2c(c1)S(=O)(=O)c3c(S2(=O)(=O))cc(cc3)
+# c1ccc2c(c1)cc3c(c2)cc(cc3)
+# c1c2c(SCCS2)c(c2c1(SCCS2))

@@ -107,10 +107,11 @@ def get_atom_pair_list(smiles,type1or2):
 
 
 def get_fused_mol(smiles1,smiles2):
+
     list1,size1= get_atom_pair_list(smiles1,1)
-    #print list1,'list1'
+    # print list1,'list1'
     list2,size2=get_atom_pair_list(smiles2,2)
-    #print list2,'list2'
+    # print list2,'list2'
     smiles_combi=smiles1+'.'+smiles2
     lib_can=[]
     lib_can_nMg=[]
@@ -195,12 +196,122 @@ def get_fused_mol(smiles1,smiles2):
                     lib_can_nMg.append(str(can_mol_combi))
     
     return lib_can
+
+def get_fused_mol_c(smiles1,smiles2,rules):
+    list1,size1= get_atom_pair_list(smiles1[0],1)
+    #print list1,'list1'
+    list2,size2=get_atom_pair_list(smiles2[0],2)
+    #print list2,'list2'
+    smiles_combi=smiles1[0]+'.'+smiles2[0]
+    lib_can=[]
+    lib_can_nMg=[]
+    code=smiles1[1]+':'+smiles2[1]
+    for item1 in list1:
+        for item2 in list2:
+            mol_combi= pybel.readstring("smi",smiles_combi)
+            a1_to_set=mol_combi.OBMol.GetAtom(item1[0])
+            a2_to_set=mol_combi.OBMol.GetAtom(item1[1])
+            a3_to_set=mol_combi.OBMol.GetAtom(size1+item2[2])
+            a4_to_set=mol_combi.OBMol.GetAtom(size1+item2[3])
+
+            chng_arom=False
+            if a3_to_set.IsAromatic()==True and a4_to_set.IsAromatic()==True:
+                chng_arom=True
+            bond_to_del=mol_combi.OBMol.GetBond(size1+item2[4],size1+item2[0])
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item1[0],item1[2])
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[1]+size1)
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[2]+size1)
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item2[1]+size1,item2[3]+size1)
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            atoms=list(mol_combi.atoms)
+            
+            mol_combi.OBMol.AddBond(item1[1],item2[2]+size1,1,0,-1)
+            mol_combi.OBMol.AddBond(item1[0],item2[3]+size1,1,0,-1)
+            
+            
+            mol_combi_new= pybel.readstring("smi",str(mol_combi))
+            atoms_new=list(mol_combi_new)
+            
+            for atoms in atoms_new:
+                index=atoms.OBAtom.GetIdx()
+                neigh_atm=False
+                for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
+                    neigh_atm=True
+                if neigh_atm==False:
+                    mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
+            
+            if a1_to_set.GetHeteroValence()==1 or a2_to_set.GetHeteroValence()==1:
+                continue
+                
+            can_mol_combi = mol_combi_new.write("can")
+            
+            if can_mol_combi not in lib_can_nMg:
+                mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
+                if if_add(mol_combi,mol_wt,rules,code)==True:
+                    lib_can.append([str(can_mol_combi),mol_wt])
+                atoms=list(mol_combi_new.atoms)
+                for atom in atoms:
+                    if atom.OBAtom.GetAtomicNum()==12:
+                        atom.OBAtom.SetAtomicNum(1)
+                lib_can_nMg.append(str(can_mol_combi))
+    
+                
+            if chng_arom==True:
+                
+                if not a1_to_set.IsAromatic():
+                    a1_to_set.SetAromatic()
+                    a2_to_set.SetAromatic()
+                mol_combi_new= pybel.readstring("smi",str(mol_combi))
+                atoms_new=list(mol_combi_new)
+                
+                for atoms in atoms_new:
+                    index=atoms.OBAtom.GetIdx()
+                    neigh_atm=False
+                    for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
+                        neigh_atm=True
+                    if neigh_atm==False:
+                        mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
+
+                can_mol_combi = mol_combi_new.write("can")
+                
+                if can_mol_combi not in lib_can_nMg:
+                    mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
+                    if if_add(mol_combi,mol_wt,rules,code)==True:
+                        lib_can.append([str(can_mol_combi),mol_wt])
+                    atoms=list(mol_combi_new.atoms)
+                    for atom in atoms:
+                        if atom.OBAtom.GetAtomicNum()==12:
+                            atom.OBAtom.SetAtomicNum(1)
+                    lib_can_nMg.append(str(can_mol_combi))
+    lib_can_c=[]
+    for item in lib_can:
+        lib_can_c.append([item[0],item[1],smiles1[1]+':'+smiles2[1]])
+            
+    
+    return lib_can_c
         
 def get_fused(smiles1,smiles2):
     #smiles1=smiles1[:-2]
     #smiles2=smiles2[:-2]
     #print smiles1,smiles2
     lib_can1=get_fused_mol(smiles1,smiles2)
+    #lib_can2=get_fused_mol(smiles2,smiles1)
+    # for list1 in lib_can1:
+    #    if list1[0] in
+    #lib_can=lib_can1+lib_can2
+    lib_can=lib_can1
+    #print lib_can
+    return lib_can
+
+def get_fused_c(smiles1,smiles2,rules):
+    #smiles1=smiles1[:-2]
+    #smiles2=smiles2[:-2]
+    #print smiles1,smiles2
+    lib_can1=get_fused_mol_c(smiles1,smiles2,rules)
     #lib_can2=get_fused_mol(smiles2,smiles1)
     # for list1 in lib_can1:
     #    if list1[0] in
@@ -227,6 +338,88 @@ def create_link(smiles1,smiles2):
             can_mol_combi = mol_combi.write("can")
             mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
             library_full.append([str(can_mol_combi),mol_wt])
+    return library_full
+
+def if_add(mol,mol_wt,rules,code):
+    
+    if int(mol_wt)>rules[0] and rules[0]!=0:
+        #print 'mol_wt'
+        return False
+    # Calculating no.of rings
+    bonds = mol.OBMol.NumBonds()
+    
+    if bonds>rules[1] and rules[1]!=0:
+        #print 'bonds'
+        return False
+    no_atoms=len(mol.atoms)
+
+    if no_atoms>rules[2] and rules[2]!=0:
+        #print 'no_atoms'
+        return False
+    
+    if code in rules[3]:
+        #print 'code'
+        return False
+
+    if rules[4].isdigit():
+        rings = len(mol.OBMol.GetSSSR())
+        if rings>int(rules[4]):
+            #print 'rings'
+            return False
+
+    if rules[5].isdigit() or rules[6].isdigit():
+        no_ar=0
+        no_non_ar=0
+        for r in mol.OBMol.GetSSSR():
+            if r.IsAromatic():
+                no_ar=no_ar+1
+            else:
+                no_non_ar=no_non_ar+1
+        if rules[5].isdigit():
+            if no_ar>int(rules[5]) :
+                return False
+        if rules[6].isdigit():
+            if no_ar>int(rules[6]) :
+                return False
+
+    if rules[7].isdigit():
+        num_s_bonds=get_num_struc("*-*")/num_bonds
+        if no_s_bonds>int(rules[7]) :
+            return False
+
+    if rules[8].isdigit():
+        num_d_bonds=get_num_struc("*=*")/num_bonds
+        if no_s_bonds>int(rules[8]) :
+            return False
+
+    if rules[9].isdigit():
+        num_t_bonds=get_num_struc("*#*")/num_bonds
+        if no_s_bonds>int(rules[9]) :
+            return False
+
+    
+    return True
+    
+    
+
+def create_link_c(smiles1,smiles2,rules):
+    library_full=[]
+    
+    mol1_index_list, size1, smiles1=get_index_list_c(smiles1)
+            
+    mol2_index_list, size2, smiles2=get_index_list_c(smiles2)
+    
+    smiles_combi=smiles1[0]+'.'+smiles2[0]
+    
+    for index1 in mol1_index_list:
+        for index2 in mol2_index_list:
+            mol_combi= pybel.readstring("smi",smiles_combi)
+            mol_combi.OBMol.AddBond(index1,index2+size1,1,0,-1)
+            can_mol_combi = mol_combi.write("can")
+            mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
+            code=smiles1[1]+'-'+smiles2[1]
+            if if_add(mol_combi,mol_wt,rules,code)==True:
+                library_full.append([str(can_mol_combi),mol_wt,code])
     return library_full
     
 
@@ -286,6 +479,45 @@ def get_index_list(smiles):
         index=atom.OBAtom.GetIdx()
         atoms_index.append(index)
         
+    return atoms_index, size, smiles
+
+def get_index_list_c(smiles):
+    
+    mol=pybel.readstring("smi",smiles[0])
+            
+    atoms=list(mol.atoms)
+    size=len(atoms)
+
+    can_smiles_list=[]
+    atoms_index=[]
+    atom_num=[]
+
+    for atom in atoms:
+        
+        # Counting the number of hydrogens attached to the atom
+        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
+        if hcount==0:
+            continue # Do not do anything if there are no hydrogens attached
+        
+        newmol=pybel.readstring("smi",smiles[0])
+
+        # Attach Helium atom. Makes it easy to remove duplicates
+        newmol.OBMol.InsertAtom(Heatom) 
+        # Get index of atom
+        index=atom.OBAtom.GetIdx() 
+        # Create a bond between He atom and the curent atom
+        newmol.OBMol.AddBond(index,size+1,1,0,-1) 
+        
+        out.start() # Capturing stderr from openbabel (C program) 
+        # Making use of canonical smiles to remove duplicates
+        can_smiles = newmol.write("can")
+        out.stop() # Closing capture of stderr
+
+        if can_smiles in can_smiles_list:
+            continue
+        can_smiles_list.append(can_smiles)
+        index=atom.OBAtom.GetIdx()
+        atoms_index.append(index)
     return atoms_index, size, smiles
 
 

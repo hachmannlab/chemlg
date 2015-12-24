@@ -41,6 +41,7 @@ _DESCRIPTION = "This is the a library generating molecular libraries."
 # -Increase scalability of parallel - Done
 # -Detailed comments- Partially done
 # -Include He removals in an efficient manner- Done
+# -Track the link or fusion order while building 
 
 ###################################################################################################
 
@@ -609,7 +610,7 @@ if __name__ == "__main__":
     file.write('Sl.No,Molecule_Smiles\n')
 
     for i, smiles in enumerate(final_list):
-        file.write(str(i)+','+smiles+'\n')
+        file.write(str(i+1)+','+smiles+'\n')
                 
     
     sys.stderr.close()
