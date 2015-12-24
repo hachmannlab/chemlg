@@ -1,4 +1,13 @@
-Mol_weight
-Symmetry
-number of rings
-number of atoms
+Please input generation rules below. Do not change the order of the options.
+1. Mol_weight=500
+2. Number of bonds=None
+3. Number of atoms=None
+4. Exclude combinations=F1-F3,F3-F5,F3-F4
+5. No.of rings= None
+6. No.of aromatic rings = None
+7. No.of non aromatic rings = None
+8. No.of single bonds = None
+9. No.of double bonds = None
+10. No.of triple bonds = None
+11. No.of specific atoms= None
+12. symmetry=0
