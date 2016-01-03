@@ -2,8 +2,8 @@
 
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.15"
-_REVISION_DATE = "12/23/2015"
+_SCRIPT_VERSION = "v0.1.16"
+_REVISION_DATE = "01/03/2015"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is a package for generating molecular libraries."
 
@@ -17,12 +17,14 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # v0.1.7 (8/11/2015): Implementing parallel algorithm
 # v0.1.8 (8/15/2015): Including generation rules
 # v0.1.9 (8/21/2015): Further reducing the computation time (efficient parallel code)
-# v0.1.10(8/24/2015): Include fusion 
-# v0.1.11(8/28/2015): Debugging fusion. Removing duplicates in an effective manner
-# v0.1.12(9/11/2015): Added detailed comments
-# v0.1.13(11/13/2015): Saving molecules in different formats 
-# v0.1.14(12/14/2015): Specifying maximum files per folder 
-# v0.1.15(12/23/2015): Tracking the order of combination in liking 
+# v0.1.10 (8/24/2015): Include fusion 
+# v0.1.11 (8/28/2015): Debugging fusion. Removing duplicates in an effective manner
+# v0.1.12 (9/11/2015): Added detailed comments
+# v0.1.13 (11/13/2015): Saving molecules in different formats 
+# v0.1.14 (12/14/2015): Specifying maximum files per folder 
+# v0.1.15 (12/23/2015): Tracking the order of combination in liking 
+# v0.1.15 (12/29/2015): Included generation rules
+# v0.1.16 (01/03/2016): Included log file and error file
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -36,14 +38,20 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # -Try to parallelize the code - Parallelized the core part of the code
 # -Include stopping creteria
 # -Import SMILES from data file -Done
-# -Use error handling properly -Partially done
 # -Implement a smart duplicate removal system - Using Molwt for now, will have to look for better options
 # -Capture the stderr from C program ie. openbabel. -Done (this took a very long time to debug)
 # -Increase scalability of parallel - Done
 # -Detailed comments- Partially done
 # -Include He removals in an efficient manner- Done
 # -Track the link or fusion order while building - Done for linking and fusion
-# -Include binding rules 
+# -Include binding rules - Done
+# -Inlude max no. of specific atoms- Done
+# -Include log file - Done
+# -Include Lipinski's rule- Done
+# -Use error handling properly -Partially done
+# -Improve output style - Partially done
+# -Specify order of fusion and link - This requires a large chunk of rewriting of the code, not done yet
+# -Include range instead of Max value for generation rules - Upper range taken care, lower range not done
 
 ###################################################################################################
 
@@ -57,6 +65,7 @@ import argparse
 #import scipy
 from collections import defaultdict
 import operator
+
 
 ###################################################################################################
 
@@ -147,7 +156,6 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
                 library_full=library_full+my_classes.create_link_c(smiles1,smiles2,rules_l)
             if combi_type=='fusion':
                 library_full=library_full+my_classes.get_fused_c(smiles1,smiles2,rules_l)
-    
 
     ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
     ## This can be easily done parallely as the jobs are independet of each other
@@ -197,6 +205,12 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             for l2 in l1:
                 mol_wt=l2[1]
                 smiles_dict[mol_wt].append([l2[0],l2[2]])
+        if gen!=gen_len-1:
+         
+            for l2 in ini_lib_full:
+                mol_wt=l2[1]
+                smiles_dict[mol_wt].append([l2[0],l2[2]])
+            
     ## SMILES dictionary might have duplicates. Since the duplicates will only be in one Mol Wt
     ## list of the disctionary, we can divide Mol Wts into available processors.
     
@@ -357,8 +371,6 @@ def generation_test(combi_type):
     ini_list=lib_smiles_list
     
     
-    if rank ==0:
-        print lib_smiles_list
     
     ## Generating molecules at each generation until the required length
 
@@ -367,23 +379,12 @@ def generation_test(combi_type):
         ## lib_smiles_list includes all the molecules list up until the current generation 
         lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list,combi_type,gen)
         
-        if rank==0:
-            print len(lib_smiles_list), 'generation_number', gen
+        print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(lib_smiles_list)))
             
         ## printing out time after each generation
         wt2 = MPI.Wtime()
-        if rank==0:    
-            print 'time_taken',wt2-wt1
 
-            # file = open("Final_smiles_output.dat", "w")
-            # file.write('Sl.No,Molecule_Smiles\n')
-            
-            # for i, smiles in enumerate(lib_smiles_list):
-            #     file.write(str(i+1)+','+smiles+'\n')
-                
-
-    if rank ==0:
-        print len(lib_smiles_list)
+        print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt2-wt1))+'\n')
     
     # ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
     # ## This can be easily done parallely as the jobs are independet of each other
@@ -443,8 +444,8 @@ def generation_test(combi_type):
     ## priniting out the time after getting the final list of molecules
     wt2 = MPI.Wtime()
     
-    if rank==0:    
-        print 'Total time_taken',wt2-wt1    
+    #if rank==0:    
+    #    print 'Total time_taken',wt2-wt1    
 
     ## test to see if there are any duplicates
     ## Uncomment the below part to test if any duplicates in final list
@@ -472,11 +473,15 @@ def generation_test(combi_type):
 
 ## This function is to check if the provided SMILES string are valid    
 def check_if_smiles(smiles):
-    try:
-        mol= pybel.readstring("smi",smiles)
-    except:
-        return False
-    return True
+    data=True
+    if rank==0:
+        try:
+            mol= pybel.readstring("smi",smiles)
+        except:
+            data= False
+    data = comm.bcast(data, root=0)
+    
+    return data
 
 ## This function is to check if the provided InChI string are valid    
 def check_if_inchi(inchi):
@@ -486,6 +491,114 @@ def check_if_inchi(inchi):
         return False
     return True
 
+def print_l(sentence):
+    if rank ==0:
+        print sentence
+        logfile.write(str(sentence)+"\n")
+
+def print_le(sentence,msg="Aborting the run"):
+    if rank ==0:
+        print sentence
+        logfile.write(sentence+"\n")
+        error_file.write(sentence+"\n")
+        sys.exit(msg)
+    else:
+        sys.exit()
+def print_e(sentence):
+    if rank ==0:
+        print sentence
+        error_file.write(sentence+"\n")
+        
+        
+
+def get_rules(rulesFile):
+    rules_l=[]
+    print_l('Provided rules')
+
+    for i,lines in enumerate(rulesFile):
+        if i==0:
+            continue
+        print_l(lines[:-1])
+
+        if '=' not in lines:
+            tmp_str = "ERROR: Wrong generation rule provided for "+lines
+            print_le(tmp_str,"Aborting due to wrong generation rule.")
+
+        words=lines.split('=')
+
+        if i==1:
+            ex_combis=words[1][:-1].split(',')
+            for i in xrange(len(ex_combis)):
+                item=ex_combis[i]
+                if '-' in item:
+                    shuffle=item.split('-')
+                    ex_combis.append(shuffle[1]+'-'+shuffle[0])
+                if ':' in item:
+                    shuffle=item.split(':')
+                    ex_combis.append(shuffle[1]+':'+shuffle[0])
+            rules_l.append(ex_combis)
+            continue
+
+        if i==11:
+            atomsg=words[1].strip()
+            #print atomsg,'atomsg'
+            atoms_l=[]
+            if atomsg=='None':
+                pass
+            else:
+                atoms=atomsg.split(',')
+                for atom in atoms:
+                    atomi=atom.split('-')
+                    atoms_l.append([atomi[0].strip(),int(atomi[1])])
+            
+            rules_l.append(atoms_l)
+            continue
+       
+        if i==12:
+            #print words,i
+            rules_l.append(words[1].strip())
+            continue
+
+        
+        if words[1].strip()!='None':
+            if '-' not in words[1]:
+                tmp_str = "ERROR: Wrong generation rule provided for "+lines
+                tmp_str=tmp_str+"Privide the range of number required. For example, 10-20. \n"
+                print_le(tmp_str,"Aborting due to wrong generation rule.")
+            
+            values=words[1].split('-')
+            
+            try:
+                val_l = int(values[0])
+                val_u = int(values[1])
+
+            except ValueError:
+                tmp_str = "ERROR: Wrong generation rule provided for "+lines
+                tmp_str=tmp_str+"Please provide either a number or None as input.\n"
+                tmp_str=tmp_str+"Use - to separate the range of numbers. For example, 10-20.\n"
+                print_le(tmp_str,"Aborting due to wrong generation rule.")
+            val=[val_l,val_u]
+            rules_l.append(val[1])
+            
+        else:
+            rules_l.append('None')
+            
+        # if i==2 or i==3 or i==4:
+        #     #print words,i
+        #     if words[1].strip()=='None':
+        #         words[1]=0
+
+        #     rules_l.append(int(words[1]))
+        #     continue
+
+
+        
+        #rules_l.append(words[1].strip())
+        
+    print_l("\nRules list \n"+str(rules_l) )
+    return rules_l
+
+
 if __name__ == "__main__":
     
     ## initializing MPI to time, to check the MPI efficiency
@@ -494,8 +607,15 @@ if __name__ == "__main__":
     rank = comm.Get_rank()
     mpisize = comm.Get_size()
 
+
+    if rank==0:
+        logfile = open('logfile.txt','a',0)
+        error_file = open('error_file.txt','a',0)
+        
+        my_classes.banner(logfile, _SCRIPT_NAME, _SCRIPT_VERSION, _REVISION_DATE, _AUTHOR, _DESCRIPTION)
+
     ##Initializing number of generations value
-    gen_len=3
+    gen_len=1
     
     ## Defining Mg atom and Helium atom
     myMg=pybel.readstring('smi',"[Mg]")
@@ -508,60 +628,79 @@ if __name__ == "__main__":
     
     parser.add_argument('-i',"--input_file", action='store', dest='file_name', default='building_blocks.dat', help="provide the building block data file. Default is building_blocks.dat file.")
     
-    parser.add_argument('-t',"--molecule_type", action='store', dest='mol_type', default='SMILES', help="Mention the molecule type in this section.")
+    parser.add_argument('-t',"--molecule_type", action='store', dest='mol_type', default='SMILES', help="Mention the molecule type in this section. Default is SMILES")
     
-    parser.add_argument('-c',"--combination_type", action='store', dest='combi_type', default='Link', help="Mention the combination type in this section. Link for linking and Fusion for fusing the molecules")
+    parser.add_argument('-c',"--combination_type", action='store', dest='combi_type', default='Link', help="Mention the combination type in this section. Link for linking and Fusion for fusing the molecules. Default is link.")
 
-    parser.add_argument('-g',"--generation_levels", action='store', dest='gen_len', default='1', help="Give the number of maximum combinations required in each molecule")
+    parser.add_argument('-g',"--generation_levels", action='store', dest='gen_len', default='1', help="Give the number of maximum combinations required in each molecule. Default is 1.")
 
     parser.add_argument('-output',"--output_type", action='store', dest='oft', default='smi', help="Give the type of molecule format for the generated library. Default is SMILES format.")
 
-    parser.add_argument('-max_fpf',"--max_files_per_folder", action='store', dest='max_fpf', default=1000, help="Maximu number of files that are in a single folder. Having a large number of files in a single folder may hinder performace.")
+    parser.add_argument('-max_fpf',"--max_files_per_folder", action='store', dest='max_fpf', default=1000, help="Maximu number of files that are in a single folder. Having a large number of files in a single folder may hinder performace. Default is 10000 files per folder.")
+
+    parser.add_argument('-rf',"--rule_file", action='store', dest='rule_file', default='generation_rules.dat', help="Specified file should contain the generation rules. Order of the rules is fixed. If the order is changed then the program runs into error . Default is generation_rules.dat.")
     
 
     ## defining arguments
     args = parser.parse_args()
     mol_type=args.mol_type.lower()
     combi_type=args.combi_type.lower()
-    max_fpf=args.max_fpf
+    max_fpf=int(args.max_fpf)
     gen_len=int(args.gen_len)
+    rule_file=args.rule_file
+    BB_file=args.file_name
+    oft=args.oft.lower()    
+    
+    print_l("Total generation levels provided = "+str(gen_len)+'\n')
+    print_l("Combination type is "+str(combi_type)+'\n')
+    print_l("Building blocks type is "+str(mol_type)+'\n')
+    print_l("Output molecule type is "+str(args.oft).upper()+'\n')
 
+    
     smiles_list=[]
     
     
     ## Reading the building rules from generation_rules.dat
-    rulesFile=open('generation_rules.dat')
-    # rules list Molwt, no of bonds, no of atoms in order, Rules, no. of aromatic rings, no. of non aromatic rings
-    rules_l=[]
-    for i,lines in enumerate(rulesFile):
-        if i==0:
-            continue
-        words=lines.split('=')
-        if i==4:
-            ex_combis=words[1][:-1].split(',')
-            for i in xrange(len(ex_combis)):
-                item=ex_combis[i]
-                if '-' in item:
-                    shuffle=item.split('-')
-                    ex_combis.append(shuffle[1]+'-'+shuffle[0])
-                if ':' in item:
-                    shuffle=item.split(':')
-                    ex_combis.append(shuffle[1]+':'+shuffle[0])
-            rules_l.append(ex_combis)
-            continue
-        if i==1 or i==2 or i==3:
-            #print words,i
-            if words[1].strip()=='None':
-                words[1]=0
-            rules_l.append(int(words[1]))
-            continue
-        
-        rules_l.append(words[1].strip())
+    print_l("Reading generation rules from the file \'"+rule_file+'\'\n')
 
-    #print rules_l
+    try :
+        rulesFile=open(rule_file)
+    except:
+        tmp_str = "Generation rules file "+rule_file+" does not exist. "
+        tmp_str=tmp_str+"Please provide correct generation rule file.\n"
+        print_le(tmp_str,"Aborting due to wrong file.")
+        
+    # rules list order
+    '''
+    1. Exclude combinations
+    2. No.of bonds
+    3. Max no.of atomS
+    4. Max mol.weight
+    5. Max no.of rings
+    6. Max no.of aromatic rings
+    7. Max no.of non aromatic rings
+    8. Max no.of single bonds
+    9. Max no.of double bonds
+    10. Max no.of triple bonds
+    11. Max no.of specific atoms
+    12. Lipinski's rule
+    13. Combination order
+    14. symmetry
+
+    '''
+    rules_l=get_rules(rulesFile)
+
 
     ## Reading the building blocks from the input file
-    infile=open(args.file_name)
+    print_l("Reading building blocks from the file \'"+BB_file+'\'\n')
+
+    try :
+        infile=open(BB_file)
+    except:
+        tmp_str = "Building blocks file "+BB_file+" does not exist. "
+        tmp_str=tmp_str+"Please provide correct building blocks file.\n"
+        print_le(tmp_str,"Aborting due to wrong file.")
+
     
     ## Read molecules provided in the input 
     for i,line in enumerate(infile):
@@ -570,29 +709,28 @@ if __name__ == "__main__":
             continue
         ## if the inpur is InChI, then convert all into SMILES
         if mol_type == 'inchi':
-            if check_if_inchi(smiles)==False and rank==0:
-                message='Error: The InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct InChI.'.format(smiles,i+1,args.file_name)
-                if rank==0:
-                    print message
-                sys.exit()
+            if check_if_inchi(smiles)==False:
+                tmp_str='Error: The InChI string (\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct InChI.'.format(smiles,i+1,args.file_name)
+                print_le(tmp_str,"Aborting due to wrong file.")
+                
             this_mol=pybel.readstring("inchi",smiles)
             smiles=str(this_mol)
             smiles=smiles.strip()
 
         ## check if smiles
         if check_if_smiles(smiles)==False:
-            message='Error: The SMILES string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES.'.format(smiles,i+1,args.file_name)
-            if rank==0:
-                print message
-            sys.exit()
-            
+            tmp_str='Error: The SMILES string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES.'.format(smiles,i+1,args.file_name)
+            print_le(tmp_str,"Aborting due to wrong file.")
+            kill_me=comm.gather(tmp_str,root=0)
+
         if check_if_smiles(smiles):
             smiles_list.append(smiles)
+    print_l('Number of buidling blocks provided = '+str(len(smiles_list))+'\n')
     
-    if rank==0:
-        print 'Number of smiles provided =',len(smiles_list)
+    print_l('SMILES of the building blocks\n')
     
-        print smiles_list
+    print_l(smiles_list)
+    print_l('=============================================================================\n')
     
     ##assigning the code for each building block
     
@@ -604,17 +742,37 @@ if __name__ == "__main__":
     ## generation_test funtion generates combinatorial molecules
     final_list=generation_test(combi_type)
 
-
-    
     final_list_len=len(final_list)
-    wt2 = MPI.Wtime()
+
+    print_l('Total number of molecules generated = '+str(final_list_len)+'\n')
     
-    if rank==0:    
-        print 'Total time_taken',wt2-wt1    
-        #print final_list
+    outdata="Final_smiles_output.dat"
+    outfile = open(outdata, "w")
+
+    print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
+
+    outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
     
-    oft=args.oft.lower()    
+    for i, smiles in enumerate(final_list):
+        outfile.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
+              
+
+    if oft=='smi':
+        outdata="Final_smiles_output.smi"
+        outfile = open(outdata, "w")
+        
+        print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
+        
+        for i, smiles in enumerate(final_list):
+            outfile.write(smiles[0]+'\n')
+        
+    ## Creating a seperate output file for each Molecule.
+    ## The files are written to folder with specified no. of files per folder.
+
     if oft!='smi':
+        
+        print_l('Writing molecules with molecule type '+str(oft)+'\n')
+    
         if not os.path.exists(oft+"files"):
             os.makedirs(oft+"files")
         smiles_to_scatter=[]
@@ -650,8 +808,7 @@ if __name__ == "__main__":
 
         folder_no=ratio_s+1
         for i,val in enumerate(xrange(start,end+1)):
-            
-            mymol= pybel.readstring("smi",smiles_list[i])
+            mymol= pybel.readstring("smi",smiles_list[i][0])
             mymol.make3D(forcefield='mmff94', steps=50)
             mymol.write(oft, oft+"files/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
 
@@ -660,13 +817,12 @@ if __name__ == "__main__":
             
             
 
+    print_l('File writing terminated successfully'+'\n')
                 
-    file = open("Final_smiles_output.dat", "w")
-    file.write('Sl.No,Molecule_Smiles,Combination_Code\n')
+    wt2 = MPI.Wtime()
     
-    for i, smiles in enumerate(final_list):
-        file.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
-                
+    print_l('Total time_taken '+str('%.3g'%(wt2-wt1))+'\n')
+    
     
     sys.stderr.close()
     

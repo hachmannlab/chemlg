@@ -3,7 +3,7 @@ import sys
 import threading
 import pybel
 from openbabel import OBAtomAtomIter
-
+import time
 
 
 
@@ -251,7 +251,7 @@ def get_fused_mol_c(smiles1,smiles2,rules):
             
             if can_mol_combi not in lib_can_nMg:
                 mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
-                if if_add(mol_combi,mol_wt,rules,code)==True:
+                if if_add(mol_combi_new,mol_wt,rules,code,'f')==True:
                     lib_can.append([str(can_mol_combi),mol_wt])
                 atoms=list(mol_combi_new.atoms)
                 for atom in atoms:
@@ -280,8 +280,14 @@ def get_fused_mol_c(smiles1,smiles2,rules):
                 
                 if can_mol_combi not in lib_can_nMg:
                     mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
-                    if if_add(mol_combi,mol_wt,rules,code)==True:
+                    
+                    #print mol_combi_new,'before'
+
+                    #print if_add(mol_combi_new,mol_wt,rules,code,'f')
+                    if if_add(mol_combi_new,mol_wt,rules,code,'f')==True:
                         lib_can.append([str(can_mol_combi),mol_wt])
+
+                        #print mol_combi_new,'after'
                     atoms=list(mol_combi_new.atoms)
                     for atom in atoms:
                         if atom.OBAtom.GetAtomicNum()==12:
@@ -340,14 +346,72 @@ def create_link(smiles1,smiles2):
             library_full.append([str(can_mol_combi),mol_wt])
     return library_full
 
-def if_add(mol,mol_wt,rules,code):
+def get_num_struc(mol,smarts):
+    smarts = pybel.Smarts(smarts)
+ 
+    smarts.obsmarts.Match(mol.OBMol)
+    num_matches = sum(1 for indicies in smarts.obsmarts.GetMapList())
+    num_unique_matches = len(smarts.findall(mol))
+    return num_unique_matches
+
+HBD = pybel.Smarts("[#7,#8;!H0]")
+
+HBA = pybel.Smarts("[#7,#8]")
+
+def lipinski(mol):
+
+   """Return the values of the Lipinski descriptors."""
+
+   desc = {'molwt': mol.molwt,
+
+      'HBD': len(HBD.findall(mol)),
+
+      'HBA': len(HBA.findall(mol)),
+
+      'logP': mol.calcdesc(['logP']) ['logP']}
+
+   return desc
+
+passes_all_rules = lambda desc: (desc ['molwt'] <= 500 and
+
+         desc ['HBD'] <= 5 and desc ['HBA'] <= 10 and
+
+         desc ['logP'] <= 5)
+
+
+def if_add(mol,mol_wt,rules,code,c_type='l'):
     
-    if int(mol_wt)>rules[0] and rules[0]!=0:
-        #print 'mol_wt'
+    #print rules
+    if c_type=='f':
+        mol=pybel.readstring('smi',str(mol))
+
+
+    #print mol,'before'
+    atoms=list(mol.atoms)
+    del_idx=[]
+
+    ## iterating over all atoms of the molecule
+    for atom in atoms:
+        ## Removing Helium atoms
+        if atom.OBAtom.GetAtomicNum()==2:
+            ## it is easy to convert Helium atom to hydrogen than deleting the atom
+            atom.OBAtom.SetAtomicNum(1)
+            
+            ## Removing Magnesium atoms
+        if atom.OBAtom.GetAtomicNum()==12:
+            atom.OBAtom.SetAtomicNum(1)
+    #print mol,'after'
+
+
+    if code in rules[0]:
+        
+        #print 'code',rules[3]
         return False
+
     # Calculating no.of rings
     bonds = mol.OBMol.NumBonds()
-    
+    #print rules[1]
+
     if bonds>rules[1] and rules[1]!=0:
         #print 'bonds'
         return False
@@ -357,8 +421,8 @@ def if_add(mol,mol_wt,rules,code):
         #print 'no_atoms'
         return False
     
-    if code in rules[3]:
-        #print 'code'
+    if int(mol_wt)>rules[3] and rules[3]!=0:
+        #print 'mol_wt'
         return False
 
     if rules[4].isdigit():
@@ -383,21 +447,41 @@ def if_add(mol,mol_wt,rules,code):
                 return False
 
     if rules[7].isdigit():
-        num_s_bonds=get_num_struc("*-*")/num_bonds
+        no_s_bonds=get_num_struc(mol,"*-*")
         if no_s_bonds>int(rules[7]) :
             return False
 
     if rules[8].isdigit():
-        num_d_bonds=get_num_struc("*=*")/num_bonds
-        if no_s_bonds>int(rules[8]) :
+        no_d_bonds=get_num_struc(mol,"*=*")
+        if no_d_bonds>int(rules[8]) :
             return False
 
     if rules[9].isdigit():
-        num_t_bonds=get_num_struc("*#*")/num_bonds
-        if no_s_bonds>int(rules[9]) :
+        no_t_bonds=get_num_struc(mol,"*#*")
+        if no_t_bonds>int(rules[9]) :
+            return False
+    
+
+    if isinstance(rules[10],list):
+        for item in rules[10]:
+            no_at=0
+            if item[0]=='C'or'S'or'N'or'O'or'c'or's'or'n'or'o':
+                no_at=get_num_struc(mol,item[0].lower())
+                no_at=no_at+get_num_struc(mol,item[0].upper())
+            else:
+                no_at=get_num_struc(mol,item[0])
+            #print no_at,'no_atom'
+            if no_at>item[1]:
+                #print 'hello'
+                return False
+    
+    if rules[11].lower()=='true':
+
+        descriptors = lipinski(mol)
+        
+        if not passes_all_rules(descriptors):
             return False
 
-    
     return True
     
     
@@ -527,3 +611,23 @@ This is to remove the stereo chemistry information from smiles provided.
 def remove_stereochemistry(smiles):
     return smiles.replace("@", "").replace("/", "-").replace("\\", "-")
 
+
+## from lib_jcode.py
+def banner(logfile, SCRIPT_NAME, SCRIPT_VERSION, REVISION_DATE, AUTHOR, DESCRIPTION,):
+    """(banner):
+        Banner for this little script.
+    """
+    str = []
+    str.append("============================================================================== ")
+    str.append(SCRIPT_NAME + " " + SCRIPT_VERSION + " (" + REVISION_DATE + ")")
+    str.append(AUTHOR)
+    str.append("============================================================================== ")
+    str.append(time.ctime())
+    str.append("")    
+    str.append(DESCRIPTION)
+    str.append("")
+
+    print 
+    for line in str:
+        print line
+        logfile.write(line + '\n')
