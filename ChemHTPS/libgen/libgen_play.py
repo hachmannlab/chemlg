@@ -73,7 +73,7 @@ import operator
 from mpi4py import MPI
 import os
 #import threading
-from lib_modules import my_classes
+from lib_modules import libgen_classes
 from itertools import islice
 
 
@@ -147,15 +147,15 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     for smiles1 in smiles_list_gen:
         for smiles2 in ini_list:
             ## Check for the combination type and send the smiles to respective functions
-            ## create_link function (included in my_classes) creates linked molecules.
-            ## Whereas, get_fused (included in my_classes) creates fused molecule.
+            ## create_link function (included in libgen_classes) creates linked molecules.
+            ## Whereas, get_fused (included in libgen_classes) creates fused molecule.
             ## The return type for these functions is a list with first element the SMILES
             ## of the generated molecule and second element its molecular weight.
             
             if combi_type=='link':
-                library_full=library_full+my_classes.create_link_c(smiles1,smiles2,rules_l)
+                library_full=library_full+libgen_classes.create_link_c(smiles1,smiles2,rules_l)
             if combi_type=='fusion':
-                library_full=library_full+my_classes.get_fused_c(smiles1,smiles2,rules_l)
+                library_full=library_full+libgen_classes.get_fused_c(smiles1,smiles2,rules_l)
 
     ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
     ## This can be easily done parallely as the jobs are independet of each other
@@ -612,7 +612,7 @@ if __name__ == "__main__":
         logfile = open('logfile.txt','a',0)
         error_file = open('error_file.txt','a',0)
         
-        my_classes.banner(logfile, _SCRIPT_NAME, _SCRIPT_VERSION, _REVISION_DATE, _AUTHOR, _DESCRIPTION)
+        libgen_classes.banner(logfile, _SCRIPT_NAME, _SCRIPT_VERSION, _REVISION_DATE, _AUTHOR, _DESCRIPTION)
 
     ##Initializing number of generations value
     gen_len=1
