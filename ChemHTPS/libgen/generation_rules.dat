@@ -1,0 +1,15 @@
+Please input generation rules below. Do not change the order of the options.
+1. Exclude combinations=F1-F3,F3-F5,F3-F4
+2. Max no.of bonds= 0-30
+3. Max no.of atoms= 0-20
+4. Max mol.weight=0-300
+5. Max no.of rings=None
+6. Max no.of aromatic rings = None
+7. Max no.of non aromatic rings = None
+8. Max no.of single bonds = None
+9. Max no.of double bonds = None
+10. Max no.of triple bonds = None
+11. Max no.of specific atoms= S-2,O-2
+12. Lipinski's rule = True
+13. Combination order= None
+14. symmetry=None
