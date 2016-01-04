@@ -10,10 +10,6 @@ Please input generation rules below. Do not change the order of the options.
 9. Max no.of double bonds = None
 10. Max no.of triple bonds = None
 11. Max no.of specific atoms= S-2,O-2
-<<<<<<< HEAD
-12. Lipinski's rule = True 
-=======
 12. Lipinski's rule = True
->>>>>>> 78bdc4b0faabc9401bcc55f58e57fe085ac3858c
 13. Combination order= None
 14. symmetry=None
