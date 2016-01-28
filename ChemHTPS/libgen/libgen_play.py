@@ -639,7 +639,8 @@ if __name__ == "__main__":
     parser.add_argument('-max_fpf',"--max_files_per_folder", action='store', dest='max_fpf', default=1000, help="Maximu number of files that are in a single folder. Having a large number of files in a single folder may hinder performace. Default is 10000 files per folder.")
 
     parser.add_argument('-rf',"--rule_file", action='store', dest='rule_file', default='generation_rules.dat', help="Specified file should contain the generation rules. Order of the rules is fixed. If the order is changed then the program runs into error . Default is generation_rules.dat.")
-    
+
+    parser.add_argument('-htps',"--ChemHTPS", action='store_true', dest='chemhtps', default=False, help="Tells the library generator whether it is being run from inside the ChemHTPS program or not for purposes of output file destination. Default is False.")
 
     ## defining arguments
     args = parser.parse_args()
@@ -649,7 +650,13 @@ if __name__ == "__main__":
     gen_len=int(args.gen_len)
     rule_file=args.rule_file
     BB_file=args.file_name
-    oft=args.oft.lower()    
+    oft=args.oft.lower()
+
+    ## setting output directory
+    if args.chemhtps:
+        output_dest = os.getcwd() + '/screeninglib/'
+    else:
+        output_dest = os.getcwd() + '/'
     
     print_l("Total generation levels provided = "+str(gen_len)+'\n')
     print_l("Combination type is "+str(combi_type)+'\n')
@@ -746,7 +753,7 @@ if __name__ == "__main__":
 
     print_l('Total number of molecules generated = '+str(final_list_len)+'\n')
     
-    outdata="Final_smiles_output.dat"
+    outdata=output_dest + "Final_smiles_output.dat"
     outfile = open(outdata, "w")
 
     print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
@@ -758,7 +765,7 @@ if __name__ == "__main__":
               
 
     if oft=='smi':
-        outdata="Final_smiles_output.smi"
+        outdata=output_dest + "Final_smiles_output.smi"
         outfile = open(outdata, "w")
         
         print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
@@ -773,8 +780,8 @@ if __name__ == "__main__":
         
         print_l('Writing molecules with molecule type '+str(oft)+'\n')
     
-        if not os.path.exists(oft+"files"):
-            os.makedirs(oft+"files")
+        if not os.path.exists(output_dest + oft +"files"):
+            os.makedirs(output_dest + oft +"files")
         smiles_to_scatter=[]
         if rank ==0:
             smiles_to_scatter=[]
@@ -803,14 +810,14 @@ if __name__ == "__main__":
         
         for i in xrange(ratio_s,ratio_e):
             
-            if not os.path.exists(oft+"files/"+str(i+1)+"_"+str(max_fpf)):
-                os.makedirs(oft+"files/"+str(i+1)+"_"+str(max_fpf))
+            if not os.path.exists(output_dest + oft+"files/"+str(i+1)+"_"+str(max_fpf)):
+                os.makedirs(output_dest + oft+"files/"+str(i+1)+"_"+str(max_fpf))
 
         folder_no=ratio_s+1
         for i,val in enumerate(xrange(start,end+1)):
             mymol= pybel.readstring("smi",smiles_list[i][0])
             mymol.make3D(forcefield='mmff94', steps=50)
-            mymol.write(oft, oft+"files/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
+            mymol.write(oft, output_dest + oft+"files/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
 
             if (val+1)%max_fpf==0:
                 folder_no=folder_no+1

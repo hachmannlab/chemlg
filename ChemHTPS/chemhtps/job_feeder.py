@@ -37,6 +37,7 @@ from misc import (banner,
 
 ###################################################################################################
 
+
 def feed_jobs(project_name):
     """(feed_jobs):
         This function feeds the jobs to the queue.
@@ -48,39 +49,38 @@ def feed_jobs(project_name):
 
     cwd = os.getcwd()
 
-    #TODO think about way to handle non default folders and paths (possibly argparser)
-    slurm_path= cwd + '/job_templates'
+    # TODO think about way to handle non default folders and paths (possibly argparser)
+    slurm_path = cwd + '/job_templates'
     job_pool_path = cwd + '/jobpool'
     scratch_path = '/gpfs/scratch/' + project_name
     result_path = cwd + '/archive'
     problem_path = cwd + '/lost+found'
     queue_file_path = cwd + '/queue_list.dat'
 
-    chk_mkdir(scratch_path) #Do this for result and problem paths as well if they aren't default folders
+    chk_mkdir(scratch_path)  # Do this for result and problem paths as well if they aren't default folders
 
     # Makes sure all necessary components are present
     if not os.path.isdir(slurm_path):
-        sys.exit('Missing dir: ' + slurm_path)
         error_file.write('no slurm path')
+        sys.exit('Missing dir: ' + slurm_path)
     if not os.path.isdir(job_pool_path):
-        sys.exit('Missing dir: ' + job_pool_path)
         error_file.write('no jobpool path')
+        sys.exit('Missing dir: ' + job_pool_path)
     if not os.path.isdir(result_path):
-        sys.exit('Missing dir: ' + result_path)
         error_file.write('no result path')
+        sys.exit('Missing dir: ' + result_path)
     if not os.path.isdir(problem_path):
-        sys.exit('Missing dir: ' + problem_path)
         error_file.write('no problem path')
+        sys.exit('Missing dir: ' + problem_path)
     if not os.path.isfile(queue_file_path):
-        sys.exit('Missing dir: ' + queue_file_path)
         error_file.write('no queue path')
-
+        sys.exit('Missing dir: ' + queue_file_path)
 
     # Keeps track of the run dir
     run_dir_counter = 0
 
     while 1:
-        queue_list =[] # List of triples (queue name, total jobs that can be run, job type)
+        queue_list = []  # List of triples (queue name, total jobs that can be run, job type)
         queue_file = open(queue_file_path, 'r')
         # Reads the list of available queues
         while 1:
@@ -158,7 +158,6 @@ def feed_jobs(project_name):
                     os.chdir(cwd)
 
         # TODO: Need to process finished jobs still
-
 
         if quickcycle_flag:
             time.sleep(60)
