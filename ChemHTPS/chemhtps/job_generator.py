@@ -25,6 +25,7 @@ import os
 import shutil
 
 from misc import (chk_mkdir)
+from template_generator import generate_template
 
 ###################################################################################################
 
@@ -39,8 +40,8 @@ def generate_jobs():
         sys.exit('There is no candidate library of molecules in ' + cwd)
 
     # Not sure this is the best way to get the template should maybe ask which template to use
-    template = 'PBE0_def2svp.inp'
-    with open(cwd + '/job_templates/' + template, 'r', 0) as jt:
+    template = generate_template()
+    with open(template, 'r', 0) as jt:
         job_template = jt.readlines()
     job_template = tuple(job_template)
     for geo in geom:
