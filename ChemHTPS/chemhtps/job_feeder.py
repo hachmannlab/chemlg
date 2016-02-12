@@ -24,6 +24,7 @@ import sys
 import os
 import time
 import subprocess
+import fnmatch
 
 from misc import (banner,
                   format_invoked_opts,
@@ -146,8 +147,18 @@ def feed_jobs(project_name):
 
                     # Move slurm script into job folder
                     # TODO possibly rethink this maybe do in job_generator module, also options for different slurm scripts
-                    tmp_str = 'cp ' + slurm_path + '/' + slurm_script + ' ' + job_target_path + '/' + job_source_path.split('/')[-1]
-                    os.system(tmp_str)
+                    # Changed to allow for slurm scripts to already be in job folder
+                    slurm_exists = False
+                    for root, directories, filenames in os.walk(job_target_path):
+                        for filename in fnmatch.filter(filenames, '*.sh'):
+                            if not filename:
+                                slurm_exists = True
+                            slurm_script = os.path.join(root, filename)
+                    if slurm_exists:
+                        pass
+                    else:
+                        tmp_str = 'cp ' + slurm_path + '/' + slurm_script + ' ' + job_target_path + '/' + job_source_path.split('/')[-1]
+                        os.system(tmp_str)
 
                     os.chdir(job_target_path + '/' + job_source_path.split('/')[-1])
 

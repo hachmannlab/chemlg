@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name="orcatest"
-#SBATCH --output=orca.out
+#SBATCH --output=slurm_orca.out
 ##SBATCH --mail-user=wevangel@buffalo.edu
 ##SBATCH --mail-type=END
 echo "SLURM_JOBID="$SLURM_JOBID
@@ -22,7 +22,5 @@ which orca
 
 echo "Launch job"
 orca $job".inp" >& $job".out"
-cd ..
-tar -cjf $job".tbz" $job
 #
 echo "All Done!"

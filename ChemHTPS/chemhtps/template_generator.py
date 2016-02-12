@@ -162,7 +162,6 @@ def generate_template():
     menu_names = {0: 'Program', 1: 'Template', 2: 'Job', 3: 'Method', 4: 'Basis', 5: 'Convergence'}
     options = {0: '', 1: '', 2: '', 3: '', 4: '', 5: ''}
     i = 0
-    a = 1
     while i <= len(menus):
         if i == len(menus):
             pos = showresult(menu, menu_names, options)
@@ -170,7 +169,6 @@ def generate_template():
                 menus[1] = []
                 i = 0
             else:
-                a = -2
                 break
         pos = runmenu(menu, menus[i])
         options[i] = menus[i][pos]
@@ -190,7 +188,6 @@ def generate_template():
             i += -1
         elif i == 1 and pos != menus[1].index('Make New Template'):
             i = 6
-            a = -1
         else:
             i += 1
 
@@ -202,10 +199,10 @@ def generate_template():
 
     # Now need to either use the selected template or generate a new one
     input_str = ''
-    if a == -1:  # means an already existing template was selected
+    if options[1] != 'Make New Template':  # means an already existing template was selected
         input_str = options[1]
-        print options[1]
-    elif a == -2:  # means a new template was selected
+        # print options[1]
+    else:  # means a new template was selected
         input_str = cwd
         input_str += '/job_templates/%s' % (options[0] + '/' + options[3] + '_' + options[4] + '.inp')
         with open(input_str, 'w') as input_file:
@@ -214,7 +211,7 @@ def generate_template():
                 tmp += ' opt'
             tmp += '\n'
             input_file.write(tmp)
-        for option in options:
-            print options[option]
+        # for option in options:
+            # print options[option]
 
     return input_str

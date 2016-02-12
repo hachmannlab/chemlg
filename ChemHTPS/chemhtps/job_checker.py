@@ -61,7 +61,7 @@ def check_jobs(scratch, archive, lost):
                     while f.read(1) != b"\n":
                         f.seek(-2, 1)
                     orca_last = f.readline().split('\n')[0]
-            elif 'orca' in filename:
+            elif 'slurm_orca' in filename:
                 # tmp = 'slurm output ' + os.path.join(root, filename)
                 slurm_out = os.path.join(root, filename)
                 with open(slurm_out, 'rb') as f:
@@ -76,7 +76,7 @@ def check_jobs(scratch, archive, lost):
             tmp = "mv " + job_path + ".tbz " + archive
             os.system(tmp)
             tmp = "rm -rf " + job_path
-            # os.system(tmp)
+            os.system(tmp)
             now = datetime.datetime.now()
             logfile.write('Job ' + job_id + ' has finished and been moved to the archive: ' + str(now) + '\n')
         # This is the case where one of the coordinates is way off
@@ -87,7 +87,7 @@ def check_jobs(scratch, archive, lost):
             tmp = "mv " + job_path + ".coordofftbz " + lost
             os.system(tmp)
             tmp = "rm -rf " + job_path
-            # os.system(tmp)
+            os.system(tmp)
             now = datetime.datetime.now()
             logfile.write(
                 'Job ' + job_id + ' has not finished due to the geomery being very off moved to lost+found: ' + str(
@@ -99,7 +99,7 @@ def check_jobs(scratch, archive, lost):
             tmp = "mv " + job_path + ".missingcoord.tbz " + lost
             os.system(tmp)
             tmp = "rm -rf " + job_path
-            # os.system(tmp)
+            os.system(tmp)
             now = datetime.datetime.now()
             logfile.write(
                 'Job ' + job_id + ' has not finished due to a missing coordinate in the geometry: ' + str(now) + '\n')
@@ -154,7 +154,7 @@ def check_jobs(scratch, archive, lost):
             tmp = "mv " + job_path + ".bad.tbz " + lost
             os.system(tmp)
             tmp = "rm -rf " + job_path
-            # os.system(tmp)
+            os.system(tmp)
             now = datetime.datetime.now()
             logfile.write('Job ' + job_id + ' has not finished for unknown reason: ' + str(now) + '\n')
             error_file.write(
