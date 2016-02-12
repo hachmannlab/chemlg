@@ -57,3 +57,8 @@ def setup_project(project_name):
 
     with open(project_name + '/screeninglib/generatorrules.dat', 'w') as gener:
         gener.close()
+
+    with open(project_name + '/queue_list.dat', 'w') as queue_list:
+        lines = ['general-c 0 long\n', 'debug 3 short\n', 'gpu 0 long\n', 'viz 0 long\n', 'largemem 0 long\n']
+        queue_list.writelines(lines)
+        queue_list.close()

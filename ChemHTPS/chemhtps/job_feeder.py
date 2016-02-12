@@ -35,6 +35,8 @@ from misc import (banner,
                   target_dir_struct,
                   mv2subdir_struct)
 
+from job_checker import check_jobs
+
 ###################################################################################################
 
 
@@ -161,8 +163,10 @@ def feed_jobs(project_name):
 
         if quickcycle_flag:
             time.sleep(60)
+            check_jobs(scratch_path, result_path, problem_path)
         else:
             time.sleep(500)
+            check_jobs(scratch_path, result_path, problem_path)
 
     # end of run section (Note: since we use an endless loop, we will probably never use the regular exit)
     tmp_str = "------------------------------------------------------------------------------ "
