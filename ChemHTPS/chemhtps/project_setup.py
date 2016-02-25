@@ -56,8 +56,8 @@ def setup_project(project_name):
             os.system(tmp)
 
     with open(project_name + '/' + project_name + '.config', 'w') as config:
-        config.write('project_name = ' + project_name)
-        config.write('user_name = ' + user)
+        config.write('project_name = ' + project_name + '\n')
+        config.write('user_name = ' + user + '\n')
 
     with open(project_name + '/queue_list.dat', 'w') as queue_list:
         lines = ['ub-hpc general-compute 0 long\n', 'ub-hpc debug 3 short\n', 'ub-hpc gpu 0 long\n', 'ub-hpc largemem 0 long\n',

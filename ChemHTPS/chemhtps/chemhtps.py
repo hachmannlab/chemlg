@@ -142,7 +142,10 @@ def main(args, commline_list):
     if args.prioritizepool:
         prioritize_pool()
 
-    user_name = config_opts['user_name']
+    try:
+        user_name = config_opts['user_name']
+    except:
+        pass
     if args.feedjobs:
         feed_jobs(args.project_name, user_name)
 

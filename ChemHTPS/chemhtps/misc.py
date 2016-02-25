@@ -472,9 +472,10 @@ def list_chunks(l, n):
 
 ###################################################################################################
 
-def menu_input(menu, prompt, row, col):
+def menu_input(menu, row, col):
     curses.echo()
-    menu.addstr(row, col, prompt)
-    menu.refresh()
-    user_input = menu.getstr(row+1, col+5, 50)
+    curses.curs_set(1)
+    user_input = menu.getstr(row+5, col+8, 100)
+    curses.noecho()
+    curses.curs_set(0)
     return user_input

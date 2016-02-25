@@ -54,10 +54,10 @@ def generate_geometries():
     inp = ['Building Block File', 'Please enter the name of the building block file: ', 'Manual input', 'Exit Program']
     rule = ['Generator Rules File', 'Please enter the name of the rule file: ', 'Manual input', 'Previous Menu']
     moltyp = ['Molecule Type', 'Please enter the input molecule type: ', 'smiles', 'inchi', 'Previous Menu']
-    combi = ['Combination Type', 'Please enter the combination type for the library: ', 'linking', 'fusion',
+    combi = ['Combination Type', 'Please enter the combination type for the library: ', 'link', 'fusion',
              'Previous Menu']
     gens = ['Generation Level', 'Please enter the number of generations: ', 'Generation: ', 'Previous Menu']
-    outtyp = ['Output Type', 'Please enter the output format', 'smiles', 'xyz', 'Previous Menu']
+    outtyp = ['Output Type', 'Please enter the output format', 'smi', 'xyz', 'Previous Menu']
     lib_name = ['Library Name', 'Press Enter: ', 'Press here to enter a name', 'Previous Menu']
 
     # dictionary of menus for navigation purposes
@@ -86,11 +86,17 @@ def generate_geometries():
         elif i != 0 and pos == menus[i].index('Previous Menu'):
             i += -1
         elif i == 0 and pos == menus[0].index('Manual input'):
-            options[0] = menu_input(menu, "Enter the path to a building_block file:", 2, 2)
+            options[0] = menu_input(menu, pos, len(menus[0][pos]))
+            i += 1
         elif i == 1 and pos == menus[1].index('Manual input'):
-            options[1] = menu_input(menu, "Enter the path to a rule file:", 2, 2)
+            options[1] = menu_input(menu, pos, len(menus[1][pos]))
+            i += 1
+        elif i == 4 and pos == menus[4].index('Generation: '):
+            options[4] = menu_input(menu, pos, len(menus[4][pos]))
+            i += 1
         elif i == 6 and pos == menus[6].index('Press here to enter a name'):
-            options[6] = menu_input(menu, 'Enter the library name now', 2, 2) + '_'
+            options[6] = menu_input(menu, pos, len(menus[6][pos])) + '_'
+            i += 1
         else:
             i += 1
 
@@ -103,8 +109,10 @@ def generate_geometries():
 
     ops = ''
     for i in xrange(len(menus)):
-        ops += '--' + menu_name[i] + ' ' + options[i] + ' '
-    tmp_str = 'python ~/chemhtps/ChemHTPS/libgen/libgen_play.py ' + ops + '--ChemHTPS'
+        ops += '--' + menu_names[i] + ' ' + options[i] + ' '
+    libgen_path = os.path.realpath(__file__).rsplit('/', 2)[0]
+    libgen_path += '/libgen/libgen_play.py '
+    tmp_str = 'python ' + libgen_path + ops + '--ChemHTPS'
     os.system(tmp_str)
 
 # TODO: write this function creating all the stuff in the dummy_project, including the config file containing the project name
