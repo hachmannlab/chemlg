@@ -274,16 +274,16 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     ## printing out smiles after every generation. This mus not be included in the final version
     ## only for test purpose
     
-    if rank==0:
-        outdata="gen_"+str(gen+1)+"_smiles.dat"
-        outfile = open(outdata, "w")
+    # if rank==0:
+    #     outdata="gen_"+str(gen+1)+"_smiles.dat"
+    #     outfile = open(outdata, "w")
         
-        print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
+    #     print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
         
-        outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
+    #     outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
         
-        for i, smiles in enumerate(library):
-            outfile.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
+    #     for i, smiles in enumerate(library):
+    #         outfile.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
     
     ## Return the list with all molecules until this generation number
     #print library
@@ -768,13 +768,16 @@ if __name__ == "__main__":
     final_list_len=len(final_list)
 
     print_l('Total number of molecules generated = '+str(final_list_len)+'\n')
-    
+
+    #if rank==0:
     outdata=output_dest + "Final_smiles_output.dat"
     outfile = open(outdata, "w")
 
     print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
 
-    outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
+
+    if rank==0:
+        outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
     
     for i, smiles in enumerate(final_list):
         outfile.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
@@ -786,8 +789,9 @@ if __name__ == "__main__":
         
         print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
         
-        for i, smiles in enumerate(final_list):
-            outfile.write(smiles[0]+'\n')
+        if rank ==0:
+            for i, smiles in enumerate(final_list):
+                outfile.write(smiles[0]+'\n')
         
     ## Creating a seperate output file for each Molecule.
     ## The files are written to folder with specified no. of files per folder.
@@ -796,10 +800,10 @@ if __name__ == "__main__":
         
         print_l('Writing molecules with molecule type '+str(oft)+'\n')
     
-        if not os.path.exists(output_dest + args.lib_name + oft):
-            os.makedirs(output_dest + args.lib_name + oft)
         smiles_to_scatter=[]
         if rank ==0:
+            if not os.path.exists(output_dest + args.lib_name + oft):
+                os.makedirs(output_dest + args.lib_name + oft)
             smiles_to_scatter=[]
             for i in xrange(mpisize):
                 start=int(i*(final_list_len)/mpisize)
