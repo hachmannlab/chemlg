@@ -58,12 +58,13 @@ def generate_geometries():
              'Previous Menu']
     gens = ['Generation Level', 'Please enter the number of generations: ', 'Generation: ', 'Previous Menu']
     outtyp = ['Output Type', 'Please enter the output format', 'smiles', 'xyz', 'Previous Menu']
+    lib_name = ['Library Name', 'Press Enter: ', 'Press here to enter a name', 'Previous Menu']
 
     # dictionary of menus for navigation purposes
-    menus = {0: inp, 1: rule, 2: moltyp, 3: combi, 4: gens, 5: outtyp}
+    menus = {0: inp, 1: rule, 2: moltyp, 3: combi, 4: gens, 5: outtyp, 6: lib_name}
     menu_names = {0: 'input_file', 1: 'rule_file', 2: 'molecule_type', 3: 'combination_type',
-                  4: 'generation_levels', 5: 'output_type'}
-    options = {0: '', 1: '', 2: '', 3: '', 4: '', 5: ''}
+                  4: 'generation_levels', 5: 'output_type', 6: 'lib_name'}
+    options = {0: '', 1: '', 2: '', 3: '', 4: '', 5: '', 6: ''}
     # Build out the inp and rule menu lists
     for root, directories, filenames in os.walk(cwd + '/screeninglib'):
         for filename in fnmatch.filter(filenames, '*building*'):
@@ -88,6 +89,8 @@ def generate_geometries():
             options[0] = menu_input(menu, "Enter the path to a building_block file:", 2, 2)
         elif i == 1 and pos == menus[1].index('Manual input'):
             options[1] = menu_input(menu, "Enter the path to a rule file:", 2, 2)
+        elif i == 6 and pos == menus[6].index('Press here to enter a name'):
+            options[6] = menu_input(menu, 'Enter the library name now', 2, 2) + '_'
         else:
             i += 1
 
@@ -99,7 +102,7 @@ def generate_geometries():
 
 
     ops = ''
-    for i in xrange(6):
+    for i in xrange(len(menus)):
         ops += '--' + menu_name[i] + ' ' + options[i] + ' '
     tmp_str = 'python ~/chemhtps/ChemHTPS/libgen/libgen_play.py ' + ops + '--ChemHTPS'
     os.system(tmp_str)

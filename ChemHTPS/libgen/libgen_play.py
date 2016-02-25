@@ -640,6 +640,8 @@ if __name__ == "__main__":
 
     parser.add_argument('-rf',"--rule_file", action='store', dest='rule_file', default='generation_rules.dat', help="Specified file should contain the generation rules. Order of the rules is fixed. If the order is changed then the program runs into error . Default is generation_rules.dat.")
 
+    parser.add_argument('-n', "--lib_name", action='store', dest='lib_name', default='new_library_', help="The name of the new library to be created. Default is new_library")
+
     parser.add_argument('-htps',"--ChemHTPS", action='store_true', dest='chemhtps', default=False, help="Tells the library generator whether it is being run from inside the ChemHTPS program or not for purposes of output file destination. Default is False.")
 
     ## defining arguments
@@ -780,8 +782,8 @@ if __name__ == "__main__":
         
         print_l('Writing molecules with molecule type '+str(oft)+'\n')
     
-        if not os.path.exists(output_dest + oft +"files"):
-            os.makedirs(output_dest + oft +"files")
+        if not os.path.exists(output_dest + args.lib_name + oft):
+            os.makedirs(output_dest + args.lib_name + oft)
         smiles_to_scatter=[]
         if rank ==0:
             smiles_to_scatter=[]
@@ -810,14 +812,14 @@ if __name__ == "__main__":
         
         for i in xrange(ratio_s,ratio_e):
             
-            if not os.path.exists(output_dest + oft+"files/"+str(i+1)+"_"+str(max_fpf)):
-                os.makedirs(output_dest + oft+"files/"+str(i+1)+"_"+str(max_fpf))
+            if not os.path.exists(output_dest + args.lib_name + oft+"/"+str(i+1)+"_"+str(max_fpf)):
+                os.makedirs(output_dest + args.lib_name + oft+"/"+str(i+1)+"_"+str(max_fpf))
 
         folder_no=ratio_s+1
         for i,val in enumerate(xrange(start,end+1)):
             mymol= pybel.readstring("smi",smiles_list[i][0])
             mymol.make3D(forcefield='mmff94', steps=50)
-            mymol.write(oft, output_dest + oft+"files/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
+            mymol.write(oft, output_dest + args.lib_name +oft+"/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
 
             if (val+1)%max_fpf==0:
                 folder_no=folder_no+1
