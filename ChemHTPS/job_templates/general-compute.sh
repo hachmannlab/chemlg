@@ -1,6 +1,6 @@
 #!/bin/sh
-#SBATCH --partition=debug
-#SBATCH --time=01:00:00
+#SBATCH --partition=general-compute
+#SBATCH --time=72:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --job-name="orcatest"

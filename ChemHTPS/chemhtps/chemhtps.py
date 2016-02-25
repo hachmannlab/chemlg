@@ -9,7 +9,7 @@ DESCRIPTION = "ChemHTPS is a virtual high-throughput screening program suite for
 
 # Version history timeline (move to CHANGES periodically):
 # v0.0.1 (2015-06-24): complete refactoring of original ChemHTPS code in new package format
-
+# v0.1.0 (2016-02-24): alpha version
 
 ###################################################################################################
 # TASKS OF THIS MODULE:
@@ -142,8 +142,9 @@ def main(args, commline_list):
     if args.prioritizepool:
         prioritize_pool()
 
+    user_name = config_opts['user_name']
     if args.feedjobs:
-        feed_jobs(args.project_name)
+        feed_jobs(args.project_name, user_name)
 
 # TODO: add parser function
 

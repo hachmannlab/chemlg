@@ -7,7 +7,8 @@ _AUTHORS = "Johannes Hachmann (hachmann@buffalo.edu) and William Evangelista (we
 _DESCRIPTION = "This module takes the set up jobs and runs them through the high-throughput system"
 
 # Version history timeline:
-# v0.1.0 (2015-06-24): basic implementation
+# v0.0.1 (2015-06-24): basic implementation
+# v0.1.0 (2016-02-24): added support for clusters instead of just partitions
 
 ###################################################################################################
 # TASKS OF THIS MODULE:
@@ -41,9 +42,11 @@ from job_checker import check_jobs
 ###################################################################################################
 
 
-def feed_jobs(project_name):
+def feed_jobs(project_name, user_name):
     """(feed_jobs):
         This function feeds the jobs to the queue.
+        :param project_name: The name of the project
+        :param user_name: The name of the user
     """
     time_start = time.time()
     logfile = open('job_feeder.log', 'a', 0)
@@ -83,7 +86,7 @@ def feed_jobs(project_name):
     run_dir_counter = 0
 
     while 1:
-        queue_list = []  # List of triples (queue name, total jobs that can be run, job type)
+        queue_list = []  # List of quadruples (cluster name, partition name, total jobs that can be run, job type)
         queue_file = open(queue_file_path, 'r')
         # Reads the list of available queues
         while 1:
@@ -91,7 +94,7 @@ def feed_jobs(project_name):
             if not line:
                 break
             words = line.split()
-            if len(words) == 3:
+            if len(words) == 4:
                 if words[0][0] != '#':
                     queue_list.append(words)
         queue_file.close()
@@ -100,22 +103,22 @@ def feed_jobs(project_name):
 
         # Process the queues
         for queue in queue_list:
-            slurm_script = project_name + queue[0] + '.sh'
+            slurm_script = project_name + queue[1] + '.sh'
 
             # Check current load on the queue
-            if len(queue[0]) < 10:
-                tmp_str = "squeue -u wevangel | grep '" + queue[0] + " ' | grep 'R\|PD' | wc -l"
+            if len(queue[1]) < 10:
+                tmp_str = "squeue -M " + queue[0] + " -u " + user_name + " | grep '" + queue[1] + " ' | grep 'R\|PD' | wc -l"
             else:
-                tmp_str = "squeue -u wevangel | grep '" + queue[0][0:9] + " ' | grep 'R\|PD'  | wc -l"
+                tmp_str = "squeue -M " + queue[0] + " -u " + user_name + " | grep '" + queue[1][0:9] + " ' | grep 'R\|PD'  | wc -l"
             queue_load = int(subprocess.Popen(tmp_str, shell=True, stdout=subprocess.PIPE).stdout.read())
             # Check for space on the queue for new jobs
-            if queue_load < int(queue[1]):
-                n_new_jobs = int(queue[1]) - queue_load
-                if n_new_jobs > (int(queue[1]) / 2):
+            if queue_load < int(queue[2]):
+                n_new_jobs = int(queue[2]) - queue_load
+                if n_new_jobs > (int(queue[2]) / 2):
                     quickcycle_flag = True
-                if queue[2] == 'long':
+                if queue[3] == 'long':
                     job_pool_type_list = ('priority', 'long', 'short')
-                elif queue[2] == 'short':
+                elif queue[3] == 'short':
                     job_pool_type_list = ('short',)
                 else:
                     sys.exit('Unknown queue type')

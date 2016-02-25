@@ -7,7 +7,8 @@ _AUTHORS = "Johannes Hachmann (hachmann@buffalo.edu) and William Evangelista (we
 _DESCRIPTION = "This module sets up the project, including the file and directory structure."
 
 # Version history timeline:
-# v1.0.0 (2015-06-24): basic implementation
+# v0.0.1 (2015-06-24): basic implementation
+# v0.1.0 (2016-02-24): alpha version
 
 ###################################################################################################
 # TASKS OF THIS MODULE:
@@ -32,6 +33,7 @@ def setup_project(project_name):
     dir_list = ['/archive', '/db', '/jobpool/short', '/jobpool/priority', '/jobpool/long', '/lost+found',
                 '/screeninglib/geometrylib', '/screeninglib/structurelib']
     cwd = os.getcwd()  # just in case we need this
+    user = os.getlogin()
 
     for dir in dir_list:
         os.makedirs(project_name + dir, 0755)
@@ -48,15 +50,17 @@ def setup_project(project_name):
     for root, directories, filenames in os.walk(cwd + '/' + project_name + '/job_templates'):
         for filename in fnmatch.filter(filenames, '*.sh'):
             current_name = os.path.join(root, filename)
-            tmp = project_name + filename # prepend project name to slurm scripts
+            tmp = project_name + filename  # prepend project name to slurm scripts
             new_name = os.path.join(root, tmp)
             tmp = 'mv ' + current_name + ' ' + new_name
             os.system(tmp)
 
     with open(project_name + '/' + project_name + '.config', 'w') as config:
         config.write('project_name = ' + project_name)
+        config.write('user_name = ' + user)
 
     with open(project_name + '/queue_list.dat', 'w') as queue_list:
-        lines = ['general-c 0 long\n', 'debug 3 short\n', 'gpu 0 long\n', 'viz 0 long\n', 'largemem 0 long\n']
+        lines = ['ub-hpc general-compute 0 long\n', 'ub-hpc debug 3 short\n', 'ub-hpc gpu 0 long\n', 'ub-hpc largemem 0 long\n',
+                 'chemistry beta 0 long\n']
         queue_list.writelines(lines)
         queue_list.close()

@@ -8,6 +8,7 @@ _DESCRIPTION = "This is a module for miscellaneous, general purpose functions."
 
 # Version history timeline:
 # v1.0.0 (2015-06-24): adaptation of old lib_jcode
+# v1.0.1 (2016-02-24): added a menu input function
 
 ###################################################################################################
 # TASKS OF THIS MODULE:
@@ -27,6 +28,7 @@ import datetime
 import subprocess
 import hashlib
 import mmap
+import curses
 from numpy import fromstring
 
 ###################################################################################################
@@ -467,3 +469,12 @@ def list_chunks(l, n):
     """
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
+
+###################################################################################################
+
+def menu_input(menu, prompt, row, col):
+    curses.echo()
+    menu.addstr(row, col, prompt)
+    menu.refresh()
+    user_input = menu.getstr(row+1, col+5, 50)
+    return user_input
