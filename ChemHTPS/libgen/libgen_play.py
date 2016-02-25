@@ -270,6 +270,20 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             for mol_wt in dict_indi:
                 for smiles_indi in dict_indi[mol_wt]:
                     library.append([smiles_indi[0][:-2],smiles_indi[1]])
+
+    ## printing out smiles after every generation. This mus not be included in the final version
+    ## only for test purpose
+    
+    if rank==0:
+        outdata="gen_"+str(gen+1)+"_smiles.dat"
+        outfile = open(outdata, "w")
+        
+        print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
+        
+        outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
+        
+        for i, smiles in enumerate(library):
+            outfile.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
     
     ## Return the list with all molecules until this generation number
     #print library
@@ -442,7 +456,7 @@ def generation_test(combi_type):
     #         lib_smiles_list=list(set(lib_smiles_list))
     
     ## priniting out the time after getting the final list of molecules
-    wt2 = MPI.Wtime()
+    # wt2 = MPI.Wtime()
     
     #if rank==0:    
     #    print 'Total time_taken',wt2-wt1    

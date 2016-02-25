@@ -1,9 +1,9 @@
 #!/bin/sh
 #SBATCH --partition=general-compute
 #SBATCH --time=100:00:00
-#SBATCH --job-name="ttest_libgen"
-#SBATCH --output=ttest_libgen.out
-#SBATCH --error=ttest_libgen.err
+#SBATCH --job-name="ttest_libgen2"
+#SBATCH --output=ttest_libgen2.out
+#SBATCH --error=ttest_libgen2.err
 #SBATCH --clusters=chemistry
 #SBATCH --partition=beta
 #SBATCH --account=pi-hachmann
