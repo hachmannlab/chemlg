@@ -75,7 +75,7 @@ def generate_jobs():
         job_template = jt.readlines()
     job_template = tuple(job_template)
     for folder in lib:
-        folder_dir = cwd + 'jobpool/short/' + library_name + '_' + folder
+        folder_dir = cwd + '/jobpool/short/' + library_name + '_' + folder
         chk_mkdir(folder_dir)
         for geo in os.listdir(library + '/' + folder):
             temp = list(job_template)
