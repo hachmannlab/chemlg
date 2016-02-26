@@ -72,9 +72,9 @@ def check_jobs(scratch, archive, lost):
                     slurm_last = f.readline().split('\n')[0]
         # This is the case where the job has completed succesfully
         if slurm_last == "All Done!" and "TOTAL RUN TIME:" in orca_last:
-            tmp = "tar -cjf " + job_path + ".tbz " + job_path
+            tmp = "tar -cjf " + job_id + ".tbz " + "-C " + job_path.rsplit('/',1)[0] + " " + job_id
             os.system(tmp)
-            tmp = "mv " + job_path + ".tbz " + archive
+            tmp = "mv " + job_id + ".tbz " + archive
             os.system(tmp)
             tmp = "rm -rf " + job_path
             os.system(tmp)
@@ -83,9 +83,10 @@ def check_jobs(scratch, archive, lost):
         # This is the case where one of the coordinates is way off
         # This also probably pops up for a number of different errors
         elif slurm_last == "All Done!" and orca_last == "ABORTING THE RUN":
-            tmp = "tar -cjf " + job_path + ".coordoff.tbz " + job_path
+            #tmp = "tar -cjf " + job_path + ".coordoff.tbz " + job_path
+            tmp = "tar -cjf " + job_id + ".coordoff.tbz " + "-C " + job_path.rsplit('/',1)[0] + " " + job_id
             os.system(tmp)
-            tmp = "mv " + job_path + ".coordofftbz " + lost
+            tmp = "mv " + job_id + ".coordoff.tbz " + lost
             os.system(tmp)
             tmp = "rm -rf " + job_path
             os.system(tmp)
@@ -95,9 +96,10 @@ def check_jobs(scratch, archive, lost):
                     now) + '\n')
         # This is the case where a coordinate is missing from the geometry file
         elif slurm_last == "All Done!" and orca_last == "No atoms to convert in Cartesian2Internal":
-            tmp = "tar -cjf " + job_path + ".missingcoord.tbz " + job_path
+            #tmp = "tar -cjf " + job_path + ".missingcoord.tbz " + job_path
+            tmp = "tar -cjf " + job_id + ".missingcoord.tbz " + "-C " + job_path.rsplit('/',1)[0] + " " + job_id
             os.system(tmp)
-            tmp = "mv " + job_path + ".missingcoord.tbz " + lost
+            tmp = "mv " + job_id + ".missingcoord.tbz " + lost
             os.system(tmp)
             tmp = "rm -rf " + job_path
             os.system(tmp)
@@ -154,9 +156,10 @@ def check_jobs(scratch, archive, lost):
             now = datetime.datetime.now()
             logfile.write('Job ' + job_id + ' ran out of time and has been restarted: ' + str(now) + '\n')
         else:
-            tmp = "tar -cjf " + job_path + ".bad.tbz " + job_path
+            #tmp = "tar -cjf " + job_path + ".bad.tbz " + job_path
+            tmp = "tar -cjf " + job_id + ".bad.tbz " + "-C " + job_path.rsplit('/',1)[0] + " " + job_id
             os.system(tmp)
-            tmp = "mv " + job_path + ".bad.tbz " + lost
+            tmp = "mv " + job_id + ".bad.tbz " + lost
             os.system(tmp)
             tmp = "rm -rf " + job_path
             os.system(tmp)
