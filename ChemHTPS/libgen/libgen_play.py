@@ -2,8 +2,8 @@
 
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.16"
-_REVISION_DATE = "01/03/2015"
+_SCRIPT_VERSION = "v0.1.17"
+_REVISION_DATE = "02/25/2015"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is a package for generating molecular libraries."
 
@@ -25,6 +25,7 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # v0.1.15 (12/23/2015): Tracking the order of combination in liking 
 # v0.1.15 (12/29/2015): Included generation rules
 # v0.1.16 (01/03/2016): Included log file and error file
+# v0.1.17 (02/25/2016): Added more options, changed to Ra and Fr and included lower limit
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -42,7 +43,7 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # -Capture the stderr from C program ie. openbabel. -Done (this took a very long time to debug)
 # -Increase scalability of parallel - Done
 # -Detailed comments- Partially done
-# -Include He removals in an efficient manner- Done
+# -Include Fr removals in an efficient manner- Done
 # -Track the link or fusion order while building - Done for linking and fusion
 # -Include binding rules - Done
 # -Inlude max no. of specific atoms- Done
@@ -51,12 +52,12 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # -Use error handling properly -Partially done
 # -Improve output style - Partially done
 # -Specify order of fusion and link - This requires a large chunk of rewriting of the code, not done yet
-# -Include range instead of Max value for generation rules - Upper range taken care, lower range not done
+# -Include range instead of Max value for generation rules - Done
 
 ###################################################################################################
 
 import sys
-#sys.path.insert(0, "/user/m27/pkg/openbabel/2.3.2/lib")
+sys.path.insert(0, "/user/m27/pkg/openbabel/2.3.2/lib")
 import pybel
 from openbabel import OBAtomAtomIter
 #import subprocess
@@ -83,6 +84,90 @@ This is to remove the stereo chemistry information from smiles provided.
 def remove_stereochemistry(smiles):
     return smiles.replace("@", "").replace("/", "-").replace("\\", "-")
 
+
+
+def get_num_struc(mol,smarts):
+    smarts = pybel.Smarts(smarts)
+ 
+    smarts.obsmarts.Match(mol.OBMol)
+    num_matches = sum(1 for indicies in smarts.obsmarts.GetMapList())
+    num_unique_matches = len(smarts.findall(mol))
+    return num_unique_matches
+
+
+def if_del(mol,rules):
+    
+
+    #print mol,'after'
+
+    if rules[1][0]!=0:
+        bonds = mol.OBMol.NumBonds()
+        #print rules[1][1]
+        
+        if bonds<rules[1][0]:
+            #print 'bonds'
+            return False
+    
+    if rules[2][0]!=0:
+        no_atoms=len(mol.atoms)
+        
+        if no_atoms<rules[2][0]:
+            #print 'no_atoms'
+            return False
+
+    if rules[3][0]!=0:
+        
+        mol_wt=mol.OBMol.GetMolWt()
+        
+        if int(mol_wt)<rules[3][0]:
+            #print 'mol_wt'
+            return False
+
+    if isinstance(rules[4][0],(int)):
+        if rules[4][0]!=0:
+            rings = len(mol.OBMol.GetSSSR())
+            if rings>int(rules[4][1]):
+                #print 'rings'
+                return False
+
+    if isinstance(rules[5][0],(int)) or isinstance(rules[6][0],(int)):
+        
+        if rules[5][0]!=0 or rules[6][0]!=0:
+            no_ar=0
+            no_non_ar=0
+            for r in mol.OBMol.GetSSSR():
+                if r.IsAromatic():
+                    no_ar=no_ar+1
+                else:
+                    no_non_ar=no_non_ar+1
+            if isinstance(rules[5][0],(int)):
+                if no_ar<int(rules[5][0]) :
+                    return False
+            if isinstance(rules[6][0],(int)):
+                if no_ar<int(rules[6][0]) :
+                    return False
+
+    if isinstance(rules[7][0],(int)):
+        if rules[7][0]!=0:
+            no_s_bonds=get_num_struc(mol,"*-*")
+            if no_s_bonds<int(rules[7][0]) :
+                return False
+
+    if isinstance(rules[8][0],(int)):
+        if rules[8][0]!=0:
+            no_d_bonds=get_num_struc(mol,"*=*")
+            if no_d_bonds<int(rules[8][0]) :
+                return False
+
+    if isinstance(rules[9][0],(int)):
+        if rules[9][0]!=0:
+            no_t_bonds=get_num_struc(mol,"*#*")
+            if no_t_bonds<int(rules[9][0]) :
+                return False    
+
+    return True
+    
+    
 '''
 This function creates a new generation with the building blocks provided
 and the current of molecules
@@ -157,29 +242,40 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             if combi_type=='fusion':
                 library_full=library_full+libgen_classes.get_fused_c(smiles1,smiles2,rules_l)
 
-    ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
+    ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     ## This can be easily done parallely as the jobs are independet of each other
     ## Making the list ready to scatter between processors
 
     if gen==gen_len-1:
 
         library_full=ini_lib_full+library_full
+        atm_del_l=[]
         for pos,smiles in enumerate(library_full):
+            
             mol_combi= pybel.readstring("smi",smiles[0])
+            
             atoms=list(mol_combi.atoms)
             del_idx=[]
             ## iterating over all atoms of the molecule
             for atom in atoms:
-                ## Removing Helium atoms
-                if atom.OBAtom.GetAtomicNum()==2:
-                    ## it is easy to convert Helium atom to hydrogen than deleting the atom
+                ## Removing Francium atoms
+                if atom.OBAtom.GetAtomicNum()==87:
+                    ## it is easy to convert Francium atom to hydrogen than deleting the atom
                     atom.OBAtom.SetAtomicNum(1)
                 
-                ## Removing Magnesium atoms
-                if atom.OBAtom.GetAtomicNum()==12:
+                ## Removing Radium atoms
+                if atom.OBAtom.GetAtomicNum()==88:
                     atom.OBAtom.SetAtomicNum(1)
-            ## After removing Mg atoms, Fusion molecules list might contain duplicates.
+                    #print mol_combi
+            ## mark the index of the molecules that do not the lower limit in the rules list
+            if if_del(mol_combi,rules_l)==False:
+                
+                #print 'mol_combi',mol_combi
+                atm_del_l.append(pos)
+            
+            ## After removing Ra atoms, Fusion molecules list might contain duplicates.
             ## So convert all the SMILES to canonical so that it can be deleted later
+            
             if combi_type=='fusion':
                 can_mol_combi = mol_combi.write("can")
                 library_full[pos][0]=str(can_mol_combi)
@@ -188,8 +284,13 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             if combi_type=='link':       
                 library_full[pos][0]=str(mol_combi)
                 library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
+
+        ## deleted the atoms that were marked to be deleted
+        for pos_del in atm_del_l[::-1]:
+            del library_full[pos_del]
     ## once the new generation is ready in processor, collect all the lists into the master
     ## processor
+
     library_gather=comm.gather(library_full,root=0)
 
     # ## As there can be duplicates in fused molecules we have to remove the duplicates
@@ -293,7 +394,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
         return []       
 '''
 For a given molecule, this fucntion converts all the atoms that are not connected to 
-Mg atom to fully satisfied (no hydrogens). This is done by attaching He atoms to these atoms.
+Ra atom to fully satisfied (no hydrogens). This is done by attaching Fr atoms to these atoms.
 ''' 
 def reverse_mol(smiles):
     
@@ -305,10 +406,10 @@ def reverse_mol(smiles):
     for atom in atoms:
         atom_num.append(atom.OBAtom.GetAtomicNum())
     
-    ## Changes will done only if there is a Magnesium atom in the molecule. If no Magnesium atom is
+    ## Changes will done only if there is a Radium atom in the molecule. If no Radium atom is
     ## present then every atom is considered as a site point for combination. 
     
-    if 12 in atom_num:
+    if 88 in atom_num:
         ## generate a new molecule for each loop so that the old one is not changed
         #newmol=pybel.readstring("smi",smiles)
         
@@ -321,7 +422,7 @@ def reverse_mol(smiles):
             
             index=atom.OBAtom.GetIdx()
             
-            ### Below section (commented) can be used to the include site points containing Mg to have multiple 
+            ### Below section (commented) can be used to the include site points containing Ra to have multiple 
             ### combinations at the site point
             
             #this_atom=mol.OBMol.GetAtom(index)
@@ -330,27 +431,27 @@ def reverse_mol(smiles):
             ## Check all the atoms that attached to this atom
             ## and append the index to atom_num_n list
             #for atom_n in OBAtomAtomIter(this_atom):
-            #    check_12=atom_n.GetAtomicNum()
-            #    atom_num_n.append(check_12)
-            ## if Mg present in the attached atoms, then do not do anything.
-            #if 12 in atom_num_n:
+            #    check_88=atom_n.GetAtomicNum()
+            #    atom_num_n.append(check_88)
+            ## if Ra present in the attached atoms, then do not do anything.
+            #if 88 in atom_num_n:
             #    continue
             ##
             
-            ## This is replacing hydrogen atoms with Helium atom
+            ## This is replacing hydrogen atoms with Francium atom
             while hcount!=0:
                 size=len(list(mol.atoms))
-                mol.OBMol.InsertAtom(Heatom)
+                mol.OBMol.InsertAtom(Fratom)
                 mol.OBMol.AddBond(index,size+1,1,0,-1)
                 hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
                 
         ## As the atoms are now changed in molecule, we will have to define atom list again
         atoms=list(mol.atoms)
         
-        ## Replace all Magnesium atoms with hydrogen, which makes them site points.
+        ## Replace all Radium atoms with hydrogen, which makes them site points.
         
         for atom in atoms:
-            if atom.OBAtom.GetAtomicNum()==12:
+            if atom.OBAtom.GetAtomicNum()==88:
                 atom.OBAtom.SetAtomicNum(1)
                    
     smiles=str(mol)[:-2]
@@ -373,7 +474,7 @@ def generation_test(combi_type):
             continue
         lib_can.append([can_mol_combi,smiles[1]])
 
-    ## If the combination type is link, modify the molecule with Helium atoms
+    ## If the combination type is link, modify the molecule with Francium atoms
     if combi_type=='link':
         for i in xrange(len(lib_can)):
             lib_smiles_list.append([reverse_mol(lib_can[i][0]),lib_can[i][1]])
@@ -383,7 +484,6 @@ def generation_test(combi_type):
             lib_smiles_list.append([lib_can[i][0][:-2],lib_can[i][1]]) # Note: Blank spaces are removed
     
     ini_list=lib_smiles_list
-    
     
     
     ## Generating molecules at each generation until the required length
@@ -400,7 +500,7 @@ def generation_test(combi_type):
 
         print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt2-wt1))+'\n')
     
-    # ## Now we have to delete the He atoms for linked atoms and Mg atoms for Fused atoms
+    # ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     # ## This can be easily done parallely as the jobs are independet of each other
     # ## Making the list ready to scatter between processors
 
@@ -422,15 +522,15 @@ def generation_test(combi_type):
     #     del_idx=[]
     #     ## iterating over all atoms of the molecule
     #     for atom in atoms:
-    #         ## Removing Helium atoms
-    #         if atom.OBAtom.GetAtomicNum()==2:
-    #             ## it is easy to convert Helium atom to hydrogen than deleting the atom
+    #         ## Removing Francium atoms
+    #         if atom.OBAtom.GetAtomicNum()==87:
+    #             ## it is easy to convert Francium atom to hydrogen than deleting the atom
     #             atom.OBAtom.SetAtomicNum(1)
                 
-    #         ## Removing Magnesium atoms
-    #         if atom.OBAtom.GetAtomicNum()==12:
+    #         ## Removing Radium atoms
+    #         if atom.OBAtom.GetAtomicNum()==88:
     #             atom.OBAtom.SetAtomicNum(1)
-    #     ## After removing Mg atoms, Fusion molecules list might contain duplicates.
+    #     ## After removing Ra atoms, Fusion molecules list might contain duplicates.
     #     ## So convert all the SMILES to canonical tso that it can be deleted later
     #     if combi_type=='fusion':
     #         can_mol_combi = mol_combi.write("can")
@@ -592,10 +692,10 @@ def get_rules(rulesFile):
                 tmp_str=tmp_str+"Use - to separate the range of numbers. For example, 10-20.\n"
                 print_le(tmp_str,"Aborting due to wrong generation rule.")
             val=[val_l,val_u]
-            rules_l.append(val[1])
+            rules_l.append(val)
             
         else:
-            rules_l.append('None')
+            rules_l.append([0,'None'])
             
         # if i==2 or i==3 or i==4:
         #     #print words,i
@@ -611,6 +711,11 @@ def get_rules(rulesFile):
         
     print_l("\nRules list \n"+str(rules_l) )
     return rules_l
+
+
+def lower_limit(smiles_l,rules_l):
+    
+    return smiles_l
 
 
 if __name__ == "__main__":
@@ -631,11 +736,11 @@ if __name__ == "__main__":
     ##Initializing number of generations value
     gen_len=1
     
-    ## Defining Mg atom and Helium atom
-    myMg=pybel.readstring('smi',"[Mg]")
-    Mgatom=myMg.OBMol.GetAtom(1)
-    myHe=pybel.readstring('smi',"[He]")
-    Heatom=myHe.OBMol.GetAtom(1)
+    ## Defining Ra atom and Francium atom
+    myRa=pybel.readstring('smi',"[Ra]")
+    Raatom=myRa.OBMol.GetAtom(1)
+    myFr=pybel.readstring('smi',"[Fr]")
+    Fratom=myFr.OBMol.GetAtom(1)
     
     ## Argument parser desription
     parser = argparse.ArgumentParser(description='This is a pacakge to generate a combinatorial library of molecules based on the building blocks provided. Please provide the building blocks in the a file in either SMILES form or InChi.')
@@ -711,6 +816,7 @@ if __name__ == "__main__":
     14. symmetry
 
     '''
+
     rules_l=get_rules(rulesFile)
 
 
@@ -741,6 +847,9 @@ if __name__ == "__main__":
             smiles=smiles.strip()
 
         ## check if smiles
+        if 'X' in smiles:
+            smiles=smiles.replace('[x]','[Ra]')
+            smiles=smiles.replace('[X]','[Ra]')
         if check_if_smiles(smiles)==False:
             tmp_str='Error: The SMILES string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES.'.format(smiles,i+1,args.file_name)
             print_le(tmp_str,"Aborting due to wrong file.")
@@ -765,8 +874,14 @@ if __name__ == "__main__":
     ## generation_test funtion generates combinatorial molecules
     final_list=generation_test(combi_type)
 
+    ## Removing the molecules according to the lower limit in generation rules
+    
+    final_list=lower_limit(final_list,rules_l)
+    
+
     final_list_len=len(final_list)
 
+    
     print_l('Total number of molecules generated = '+str(final_list_len)+'\n')
 
     #if rank==0:
@@ -841,6 +956,8 @@ if __name__ == "__main__":
 
             if (val+1)%max_fpf==0:
                 folder_no=folder_no+1
+	if rank == 0:
+	    os.system('cp '+BB_file+' '+rule_file+' '+output_dest+args.lib_name+oft+'/.')
             
             
 

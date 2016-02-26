@@ -4,10 +4,11 @@
 
 
 ## Test molecules for Fusion
-# [Mg]c1ccc(cc1)([Mg])
-# [Mg]C1SCC(SC1)([Mg])
-# [Mg]c1Ccc(c1)([Mg])
-# [Mg]c1nnc(s1)([Mg])
+
+[X]c1ccc(cc1)([X])
+[X]C1SCC(SC1)([X])
+[X]c1Ccc(c1)([X])
+[X]c1nnc(s1)([X])
 
 
 ##fused aramatic compounds
@@ -37,27 +38,27 @@
 
 ## Test for polyimide segement generation
 
-C
-S
-O
-[Mg]S(=O)(=O)([Mg])
-c1ccccc1
-C1SCC(SC1)
-c1ccc(s1)
-c1nnc(s1)
-C1NCNC(N1)
-c1ccc(c1)
-c1ccc(cn1)
-c1cnc(cn1)
-c1nsnc1
-c1sc(nc1)
-c1oc(cc1)
-c1ccc2c(c1)ccc(c2)
-c1ccc2c(c1)Sc3c(S2)cc(cc3)
-c1cc2c(cc1)Sc3c2cc(cc3)
-c1ccc2c(c1)S(=O)(=O)c3c(S2(=O)(=O))cc(cc3)
-c1ccc2c(c1)cc3c(c2)cc(cc3)
-c1c2c(SCCS2)c(c2c1(SCCS2))
+# C
+# S
+# O
+# [X]S(=O)(=O)([X])
+# c1ccccc1
+# C1SCC(SC1)
+# c1ccc(s1)
+# c1nnc(s1)
+# C1NCNC(N1)
+# c1ccc(c1)
+# c1ccc(cn1)
+# c1cnc(cn1)
+# c1nsnc1
+# c1sc(nc1)
+# c1oc(cc1)
+# c1ccc2c(c1)ccc(c2)
+# c1ccc2c(c1)Sc3c(S2)cc(cc3)
+# c1cc2c(cc1)Sc3c2cc(cc3)
+# c1ccc2c(c1)S(=O)(=O)c3c(S2(=O)(=O))cc(cc3)
+# c1ccc2c(c1)cc3c(c2)cc(cc3)
+# c1c2c(SCCS2)c(c2c1(SCCS2))
 
 
 ## More molecules for testing
@@ -71,15 +72,15 @@ c1c2c(SCCS2)c(c2c1(SCCS2))
 # c1sc(nc1)
 # c1oc(cc1)
 
-# [Mg]OC(=O)([Mg])
-# [Mg]S(=O)(=O)([Mg])
-# [Mg]C1NCNC(N1)([Mg])
+# [X]OC(=O)([X])
+# [X]S(=O)(=O)([X])
+# [X]C1NCNC(N1)([X])
 
-# c1(C)([Mg])cc([Mg])ccc1
-# C1CC([Mg])CC1
-# ([Mg])C([Mg])
-# ([Mg])S([Mg])
-# ([Mg])O([Mg])
+# c1(C)([X])cc([X])ccc1
+# C1CC([X])CC1
+# ([X])C([X])
+# ([X])S([X])
+# ([X])O([X])
 
 # C
 # S
