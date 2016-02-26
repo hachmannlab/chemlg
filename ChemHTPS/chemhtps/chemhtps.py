@@ -61,6 +61,8 @@ from job_generator import (generate_jobs,
                            prioritize_pool)
 from job_feeder import feed_jobs
 
+os.environ["LD_LIBRARY_PATH"] = ":/projects/academic/hachmann/packages/Anaconda"
+
 ###################################################################################################
 # Necessary Functions:
 
@@ -168,7 +170,7 @@ def main(args, commline_list):
     
 ##################################################################################################
 
-if __name__=="__main__":
+if __name__ == "__main__":
     usage_str = "usage: %(prog)s [options] arg"
     version_str = "%(prog)s " + PROGRAM_VERSION
     parser = argparse.ArgumentParser(usage=usage_str)

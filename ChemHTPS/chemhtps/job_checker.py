@@ -26,6 +26,7 @@ import os
 import sys
 import fnmatch
 import datetime
+from misc import chk_mkdir
 
 
 def check_jobs(scratch, archive, lost):
@@ -119,7 +120,9 @@ def check_jobs(scratch, archive, lost):
                         new_value = str(3 * value)
                         lines[i] = '#SBATCH --mem=' + new_value + '\n'
                 nslurm.writelines(lines)
-            tmp = 'sbatch ' + slurm_script
+            restarts = cwd + 'jobpool/priority/restarts'
+            chk_mkdir(restarts)
+            tmp = 'mv ' + job_path + ' ' + restarts
             os.system(tmp)
             now = datetime.datetime.now()
             logfile.write(
@@ -139,12 +142,14 @@ def check_jobs(scratch, archive, lost):
                     os.system(tmp)
             with open(input_file, 'r') as inp:
                 lines = inp.readlines()
-                print lines
+                #print lines
             with open(input_file, 'w') as ninp:
                 lines.insert(1, "!MORead\n")
                 lines.insert(2, '%moinp "old.gbw"\n')
                 ninp.writelines(lines)
-            tmp = 'sbatch ' + slurm_script
+            restarts = cwd + 'jobpool/priority/restarts'
+            chk_mkdir(restarts)
+            tmp = 'mv ' + job_path + ' ' + restarts
             os.system(tmp)
             now = datetime.datetime.now()
             logfile.write('Job ' + job_id + ' ran out of time and has been restarted: ' + str(now) + '\n')

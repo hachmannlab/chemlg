@@ -9,6 +9,7 @@ _DESCRIPTION = "This module takes the set up jobs and runs them through the high
 # Version history timeline:
 # v0.0.1 (2015-06-24): basic implementation
 # v0.1.0 (2016-02-24): added support for clusters instead of just partitions
+# v0.1.1 (2016-02-25): changed the way jobs are located
 
 ###################################################################################################
 # TASKS OF THIS MODULE:
@@ -58,7 +59,7 @@ def feed_jobs(project_name, user_name):
     # TODO think about way to handle non default folders and paths (possibly argparser)
     slurm_path = cwd + '/job_templates'
     job_pool_path = cwd + '/jobpool'
-    scratch_path = '/gpfs/scratch/' + project_name
+    scratch_path = '/gpfs/scratch/' + user_name + '_' + project_name
     result_path = cwd + '/archive'
     problem_path = cwd + '/lost+found'
     queue_file_path = cwd + '/queue_list.dat'
@@ -127,14 +128,15 @@ def feed_jobs(project_name, user_name):
                 # Make a list of job source paths
                 job_source_path_list = []
                 for job_pool_type in job_pool_type_list:
-                    for job in os.listdir(job_pool_path + '/' + job_pool_type):
-                        # TODO: listdir gives random order should sort by timestamp
-                        if job_counter == n_new_jobs:
-                            break
-                        tmp_str = job_pool_path + '/' + job_pool_type + '/' + job
-                        if os.path.isdir(tmp_str):
-                            job_source_path_list.append(tmp_str)
-                            job_counter += 1
+                    for folder in os.listdir(job_pool_path + '/' + job_pool_type):
+                        for job in os.listdir(job_pool_path + '/' + job_pool_type + '/' + folder):
+                            # TODO: listdir gives random order should sort by timestamp
+                            if job_counter == n_new_jobs:
+                                break
+                            tmp_str = job_pool_path + '/' + job_pool_type + '/' + folder + '/' + job
+                            if os.path.isdir(tmp_str):
+                                job_source_path_list.append(tmp_str)
+                                job_counter += 1
 
                 for job_source_path in job_source_path_list:
                     while 1:
@@ -166,6 +168,7 @@ def feed_jobs(project_name, user_name):
                     os.chdir(job_target_path + '/' + job_source_path.split('/')[-1])
 
                     # Submit job to the queue
+                    os.environ["PATH"] += os.pathsep + cwd + '/job_templates'
                     tmp_str = 'sbatch ' + slurm_script
                     os.system(tmp_str)
                     tmp_str = std_datetime_str() + ": Submitting " + job_target_path + '/' + job_source_path.split('/')[-1]

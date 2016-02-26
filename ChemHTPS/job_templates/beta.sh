@@ -31,6 +31,6 @@ module list
 which orca
 
 echo "Launch job"
-orca $job".inp" >& $job".out"
+srun python job_runscript.py --scratch_dir $SLURMTMPDIR --submit_dir $SLURM_SUBMIT_DIR
 #
 echo "All Done!"

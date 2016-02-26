@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 _MODULE_NAME = "project_setup"
-_MODULE_VERSION = "v1.0.0"
-_REVISION_DATE = "2015-06-24"
+_MODULE_VERSION = "v0.1.0"
+_REVISION_DATE = "2016-02-24"
 _AUTHORS = "Johannes Hachmann (hachmann@buffalo.edu) and William Evangelista (wevangel@buffalo.edu)"
 _DESCRIPTION = "This module sets up the project, including the file and directory structure."
 
