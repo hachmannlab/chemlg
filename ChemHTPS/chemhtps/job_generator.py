@@ -96,17 +96,20 @@ def generate_jobs():
         job_template = jt.readlines()
     job_template = tuple(job_template)
     for folder in lib:
-        folder_dir = cwd + '/jobpool/' + job_type + library_name + '_' + folder
-        chk_mkdir(folder_dir)
-        for geo in os.listdir(library + '/' + folder):
-            temp = list(job_template)
-            job_file = library + '/' + folder + '/' + geo
-            job_dir = folder_dir + '/' + geo.split('.')[0]
-            chk_mkdir(job_dir)
-            shutil.copy(job_file, job_dir + '/' + geo)
-            temp.append('* xyzfile 0 1 ' + geo + '\n')
-            with open(job_dir + '/' + geo.split('.')[0] + '.inp', 'w') as tmp:
-                tmp.writelines(temp)
+        if '.dat' in folder:
+            pass
+        else:
+            folder_dir = cwd + '/jobpool/' + job_type + library_name + '_' + folder
+            chk_mkdir(folder_dir)
+            for geo in os.listdir(library + '/' + folder):
+                temp = list(job_template)
+                job_file = library + '/' + folder + '/' + geo
+                job_dir = folder_dir + '/' + geo.split('.')[0]
+                chk_mkdir(job_dir)
+                shutil.copy(job_file, job_dir + '/' + geo)
+                temp.append('* xyzfile 0 1 ' + geo + '\n')
+                with open(job_dir + '/' + geo.split('.')[0] + '.inp', 'w') as tmp:
+                    tmp.writelines(temp)
 
 
 def prioritize_pool():
