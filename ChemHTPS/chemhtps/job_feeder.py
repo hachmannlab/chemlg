@@ -38,7 +38,7 @@ from misc import (banner,
                   target_dir_struct,
                   mv2subdir_struct)
 
-from job_checker import check_jobs
+from job_checker import check_jobs, Job
 
 ###################################################################################################
 
@@ -59,7 +59,7 @@ def feed_jobs(project_name, user_name):
     # TODO think about way to handle non default folders and paths (possibly argparser)
     slurm_path = cwd + '/job_templates'
     job_pool_path = cwd + '/jobpool'
-    scratch_path = '/gpfs/scratch/' + user_name + '_' + project_name
+    scratch_path =  os.environ['GLOBAL_SCRATCH'] + '/' + user_name + '/' + project_name
     result_path = cwd + '/archive'
     problem_path = cwd + '/lost+found'
     queue_file_path = cwd + '/queue_list.dat'
@@ -86,6 +86,8 @@ def feed_jobs(project_name, user_name):
     # Keeps track of the run dir
     run_dir_counter = 0
 
+    job_class_list = []
+
     while 1:
         queue_list = []  # List of quadruples (cluster name, partition name, total jobs that can be run, job type)
         queue_file = open(queue_file_path, 'r')
@@ -104,7 +106,6 @@ def feed_jobs(project_name, user_name):
 
         # Process the queues
         for queue in queue_list:
-            slurm_script = project_name + queue[1] + '.sh'
 
             # Check current load on the queue
             if len(queue[1]) < 10:
@@ -139,6 +140,7 @@ def feed_jobs(project_name, user_name):
                                 job_counter += 1
 
                 for job_source_path in job_source_path_list:
+                    slurm_script = project_name + queue[1] + '.sh'
                     while 1:
                         job_target_path = scratch_path + '/%07d' % run_dir_counter
                         if os.path.isdir(job_target_path):
@@ -156,9 +158,9 @@ def feed_jobs(project_name, user_name):
                     slurm_exists = False
                     for root, directories, filenames in os.walk(job_target_path):
                         for filename in fnmatch.filter(filenames, '*.sh'):
-                            if not filename:
+                            if filename != None:
                                 slurm_exists = True
-                            slurm_script = os.path.join(root, filename)
+                                slurm_script = os.path.join(root, filename)
                     if slurm_exists:
                         pass
                     else:
@@ -170,7 +172,10 @@ def feed_jobs(project_name, user_name):
                     # Submit job to the queue
                     os.environ["PATH"] += os.pathsep + cwd + '/job_templates'
                     tmp_str = 'sbatch ' + slurm_script
-                    os.system(tmp_str)
+                    job_class_list.append(job_source_path.split('/')[-1])
+                    job_class_list[-1]=Job(job_class_list[-1], queue[0], tmp_str)
+
+
                     tmp_str = std_datetime_str() + ": Submitting " + job_target_path + '/' + job_source_path.split('/')[-1]
                     logfile.write(tmp_str + '\n')
 
@@ -180,10 +185,10 @@ def feed_jobs(project_name, user_name):
 
         if quickcycle_flag:
             time.sleep(60)
-            check_jobs(scratch_path, result_path, problem_path)
+            job_class_list = check_jobs(user_name, scratch_path, result_path, problem_path, job_class_list)
         else:
             time.sleep(500)
-            check_jobs(scratch_path, result_path, problem_path)
+            job_class_list = check_jobs(user_name, scratch_path, result_path, problem_path, job_class_list)
 
     # end of run section (Note: since we use an endless loop, we will probably never use the regular exit)
     tmp_str = "------------------------------------------------------------------------------ "

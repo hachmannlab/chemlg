@@ -43,8 +43,8 @@ def main(args, commline_list):
     signal.signal(signal.SIGTERM, handler)
 
     # move files from submit directory to the local scratch of the node
-    tmp_str = 'mv ' + submit + '/* ' + scratch
-    os.system(tmp_str)
+    tmp_str = 'mv ' + submit + '/!(slurm_orca.out) ' + scratch
+    subprocess.Popen("bash -O extglob -c '" + tmp_str + "'", shell=True).communicate()
     os.chdir(scratch) # change directory to the local scratch
 
     # find the name of the input file
