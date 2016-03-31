@@ -60,7 +60,7 @@ def setup_project(project_name):
         config.write('user_name = ' + user + '\n')
 
     with open(project_name + '/queue_list.dat', 'w') as queue_list:
-        lines = ['ub-hpc general-compute 0 long\n', 'ub-hpc debug 3 short\n', 'ub-hpc gpu 0 long\n', 'ub-hpc largemem 0 long\n',
-                 'chemistry beta 0 long\n']
+        lines = ['#cluster partition limit type\n', 'ub-hpc general-compute 0 long\n', 'ub-hpc debug 3 short\n',
+                 'ub-hpc gpu 0 long\n', 'ub-hpc largemem 0 long\n', 'chemistry beta 0 long\n']
         queue_list.writelines(lines)
         queue_list.close()

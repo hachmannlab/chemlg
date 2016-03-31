@@ -24,6 +24,7 @@ import os
 import shutil
 from chemhtps.project_setup import setup_project
 from chemhtps.job_generator import generate_jobs
+from misc import chk_mkdir
 
 
 def test_gonna_fail():
@@ -32,9 +33,9 @@ def test_gonna_fail():
 
 def test_setup_project():
     setup_project('testing')
-    dir_list = ['/archive', '/db', '/jobpool', '/job_templates', '/lost+found', '/screeninglib/geometrylib',
-                '/screeninglib/structurelib']
-    file_list = ['/testing.config', '/screeninglib/buildingblocks.dat', '/screeninglib/generatorrules.dat']
+    dir_list = ['/archive', '/db', '/jobpool/short', '/jobpool/priority', '/jobpool/long', '/lost+found',
+                '/screeninglib/geometrylib', '/screeninglib/structurelib', '/job_templates']
+    file_list = ['/testing.config', '/screeninglib/building_blocks.dat', '/screeninglib/generation_rules.dat']
     for dir in dir_list:
         assert True == os.path.isdir('testing' + dir)
     for file in file_list:
@@ -42,14 +43,15 @@ def test_setup_project():
 
 
 def test_generate_jobs():
-    template = ['!DFT PBE0 Def2-SVP smallPRINT PRINTBASIS PRINTGAP\n', '!opt']
-    with open('testing/job_templates/PBE0_def2svp.inp', 'w') as test_template:
-        test_template.writelines(template)
+    # template = ['!DFT PBE0 Def2-SVP smallPRINT PRINTBASIS PRINTGAP\n', '!opt']
+    # with open('testing/job_templates/PBE0_def2svp.inp', 'w') as test_template:
+    #     test_template.writelines(template)
     testgeo = ['C 0.000000 0.000000 0.000000\n', 'C 0.000000 0.000000 1.400000\n', 'C 1.212436 0.000000 2.100000\n',
                'C 2.424871 0.000000 1.400000\n', 'C 2.424871 0.000000 0.000000\n', 'C 1.212436 0.000000 -0.700000\n',
                'H -0.943102 0.000000 1.944500\n', 'H 1.212436 0.000000 3.189000\n', 'H 3.367973 0.000000 1.944500\n',
                'H 3.367973 0.000000 -0.544500\n', 'H 1.212436 0.000000 -1.789000\n', 'H -0.943102 0.000000 -0.544500\n']
-    with open('testing/screeninglib/geometrylib/testing.xyz', 'w') as test_geo:
+    chk_mkdir('testing/screeninglib/newlib/1_1000')
+    with open('testing/screeninglib/newlib/1_1000/testing.xyz', 'w') as test_geo:
         test_geo.writelines(testgeo)
     cwd = os.getcwd()
     os.chdir(cwd + '/testing')

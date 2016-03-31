@@ -149,6 +149,9 @@ def main(args, commline_list):
     except:
         pass
     if args.feedjobs:
+        tmp_str = 'sbatch job_templates/' + args.project_name + 'feedjobs.sh'
+        os.system(tmp_str)
+    if args.feedjobs_local:
         feed_jobs(args.project_name, user_name)
 
 # TODO: add parser function
@@ -176,7 +179,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(usage=usage_str)
 
     defaults = {'project_name':None, 'setup':False, 'generatelib':False, 'generatejobs':False, 'prioritize':False,
-                'run':False, 'log':'ChemHTPS.log', 'err':'ChemHTPS.err', 'print':2}
+                'run':False, 'run_local':False, 'log':'ChemHTPS.log', 'err':'ChemHTPS.err', 'print':2}
 
     # tests for a config file
     cwd = os.getcwd()
@@ -231,7 +234,13 @@ if __name__ == "__main__":
                         dest='feedjobs',
                         action='store_true',
                         default=defaults['run'],
-                        help='prioritizes the jobs pool [default: %(default)s]')
+                        help='Runs the jobs from on the cluster [default: %(default)s]')
+
+    parser.add_argument('--feedjobs_local',
+                        dest='feedjobs_local',
+                        action='store_true',
+                        default=defaults['run_local'],
+                        help='Runs the jobs locally [default: %(default)s]')
 
 
     # specify log files 
