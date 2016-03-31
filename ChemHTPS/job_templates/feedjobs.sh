@@ -2,7 +2,7 @@
 #SBATCH --clusters=chemistry
 #SBATCH --partition=beta
 #SBATCH --account=pi-hachmann
-#SBATCH --time=0
+##SBATCH --time=0
 #SBATCH --nodes=1
 #SBATCH --job-name="feedjobs"
 #SBATCH --output=feedjobs.out

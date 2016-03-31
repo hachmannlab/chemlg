@@ -261,7 +261,7 @@ if __name__ == "__main__":
 
 
     args = parser.parse_args(sys.argv[1:])
-    if cwd[-len(args.project_name):] != args.project_name and args.setup_project == False:
+    if cwd.rsplit('/')[-1] != args.project_name and args.setup_project == False:
         sys.exit("ChemHTPS must be run from inside the project directory, or with the setup_project flag.")
     elif args.setup_project == True and args.project_name == None:
         sys.exit("Need to give the project_name flag to setup a project.")
