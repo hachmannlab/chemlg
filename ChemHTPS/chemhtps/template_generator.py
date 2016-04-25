@@ -28,10 +28,15 @@ import curses
 
 
 def runmenu(menu, menu_list):
-    """(runmenu):
+    """
+    .. function:: runmenu(menu, menu_list)
         This function runs a menu based on a given list.
+
         :param menu: The curses window
-        :param menu_list: The list of options that makes the menu
+        :type menu: window object
+        :param list menu_list: The list of options that makes the menu
+        :return pos: The position of the cursor in the menu
+        :rtype: int
     """
 
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -84,11 +89,16 @@ def runmenu(menu, menu_list):
 
 
 def showresult(menu, menu_names, options):
-    """(showresult):
+    """
+    .. function:: showresult(menu, menu_names, options)
         This function shows the end results for confirmation
+
         :param menu: The curses window
-        :param menu_names: The names of the options
-        :param options: The selected options
+        :type menu: window object
+        :param dict menu_names: The names of the options
+        :param dict options: The selected options
+        :return pos: The position of the cursor in the menu
+        :rtype: int
     """
 
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
@@ -134,8 +144,12 @@ def showresult(menu, menu_names, options):
 
 
 def generate_template():
-    """(generate_template):
+    """
+    .. function:: generate_template()
         This function generates the template to be used for the job_generator.
+
+        :return input_str: The path of the template file
+        :rtype: str
     """
 
     cwd = os.getcwd()

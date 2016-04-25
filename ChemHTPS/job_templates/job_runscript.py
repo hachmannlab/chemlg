@@ -30,14 +30,24 @@ import subprocess
 ###################################################################################################
 
 def main(args, commline_list):
-    """(main):
-    :param args: arguments from the parser
-    :param commline_list: the entered commandline to start the program
+    """
+    .. function:: main(args, commline_list)
+        Function to run execute jobs on the cluster
+
+        :param object args: arguments from the parser
+        :param list commline_list: the entered commandline to start the program
     """
     scratch = args.scratch_dir
     submit = args.submit_dir
 
     def handler(signum, frame):
+        """
+        .. function:: handler(signum, frame)
+            Function to move files back when termination signal is sent to a job
+
+            :param signum:
+            :param frame:
+        """
         os.system('mv ' + scratch + '/* ' + submit + '/.')
 
     signal.signal(signal.SIGTERM, handler)

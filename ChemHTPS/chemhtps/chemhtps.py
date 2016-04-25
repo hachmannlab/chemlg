@@ -68,10 +68,15 @@ os.environ["LD_LIBRARY_PATH"] = ":/projects/academic/hachmann/packages/Anaconda"
 
 
 def config_read(config):
-    """(config_read):
+    """
+    .. function:: config_read(config)
         Reads options from the config file
         Based on options following the format
         Option_name = The option
+
+        :param str config: The path of the config file
+        :return config_opts: The options read from the config file
+        :rtype: dict
     """
 
     config_opts = {}
@@ -91,8 +96,12 @@ def config_read(config):
 ###################################################################################################
 
 def main(args, commline_list):
-    """(main):
+    """
+    .. function:: main(args, commline_list
         Driver of ChemHTPS.
+
+        :param object args: The arguments passed from argparse
+        :param list commline_list: What was typed at the command line to execute the program
     """
     time_start = time.time()
     logfile = open(args.logfile,'a',0)

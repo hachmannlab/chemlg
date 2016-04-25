@@ -32,22 +32,25 @@ from misc import chk_mkdir
 
 
 class Job(object):
-    """(Job):
-    A class to handle all aspects of a job unit
-    :param name: The name of the job unit
-    :param cluster: Which cluster the job was submitted to
-    :param path: The path to the location the job is run from
-    :param slurm_id: The slurm job id of the job
-    :param slurm_last_line: The last line of the slurm output file
-    :param out_last_line: The last line of the quantum software output file
-    :param is_running: A boolean that is true if the job is running and False if its not
-    :param rm_path: a path for removal, if populated can be deleted because the job has been tarred
+    """
+    .. class:: Job(name, cluster, sbatch)
+        A class to handle all aspects of a job unit
+
+        :param str name: The name of the job unit
+        :param str cluster: Which cluster the job was submitted to
+        :param str sbatch: The slurm submission string
+        :param str path: The path to the location the job is run from
+        :param str slurm_id: The slurm job id of the job
+        :param str slurm_last_line: The last line of the slurm output file
+        :param str out_last_line: The last line of the quantum software output file
+        :param bool is_running: A boolean that is true if the job is running and False if its not
+        :param str rm_path: a path for removal, if populated can be deleted because the job has been tarred
     """
 
     def __init__(self, name, cluster, sbatch):
-        """(__init__):
-        Return a Job object.
-        :param sbatch: the slurm submission string
+        """
+        .. method:: __init__(self, name, cluster, sbatch)
+            Initialize a Job object.
         """
         self.name = name
         self.cluster = cluster
@@ -60,8 +63,12 @@ class Job(object):
 
 
     def check_status(self, user_name):
-        """(check_status)
-        Checks if the slurm job has finished or not and updates the is_running variable
+        """
+        .. method:: check_status(self, user_name)
+            Checks if the slurm job has finished or not and updates the is_running variable
+
+            :return self.is_running: The state of the job
+            :rtype: bool
         """
         tmp = "squeue -M " + self.cluster + " -u " + user_name + " | grep " + self.slurm_id + " | wc -l"
         number = int(subprocess.check_output(tmp, shell=True))
@@ -72,8 +79,9 @@ class Job(object):
         return self.is_running
 
     def time_limit_restart(self):
-        """(time_limit_restart)
-        makes the necessary changes to the input file and gbw file to restart a job that ran out of time
+        """
+        .. method:: time_limit_restart(self)
+            Makes the necessary changes to the input file and gbw file to restart a job that ran out of time
         """
         input_file = self.path + '/' + self.name + '.inp'
         gbw = self.path + '/' + self.name + '.gbw'
@@ -87,10 +95,14 @@ class Job(object):
             ninp.writelines(lines)
 
     def nth_line(self, n, file_name):
-        """(nth_line)
-        Returns the nth from the end line of the specified file
-        :param file_name: The name of the file
-        :param n: number of lines from the end
+        """
+        .. method:: nth_line(self, n, file_name)
+            Returns the nth from the end line of the specified file
+
+            :param str file_name: The name of the file
+            :param int n: Number of lines from the end
+            :return line: The nth line
+            :rtype: str
         """
         with open(self.path + '/' + file_name) as out:
             out.seek(-1, 2)
@@ -102,23 +114,29 @@ class Job(object):
             out.seek(2,1)
             tmp = out.readlines()
             #tmp = filter(lambda a: a != '\n', tmp)
-            return tmp[0].strip('\n')
+            line = tmp[0].strip('\n')
+            return line
 
     def slurm_last(self):
-        """(slurm_last)
-        Get the last line of the slurm output
+        """
+        .. method:: slurm_last(self)
+            Get the last line of the slurm output
         """
         self.slurm_last_line = self.nth_line(1, 'slurm_orca.out')
             
     def out_last(self):
-        """(orca_last)
-        Get the last line of the quantum software output
+        """
+        .. method:: orca_last(self)
+            Get the last line of the quantum software output
         """
         self.out_last_line = self.nth_line(1, self.name + ".out")
 
     def tar_job_unit(self, tbz='.tbz'):
-        """(tar_job_unit)
-        Tars the jobunit preparing it for transport
+        """
+        .. method:: tar_job_unit(self, tbz='.tbz')
+            Tars the jobunit preparing it for transport
+
+            :param str tbz: The tar file extension
         """
         cwd = os.getcwd()
         os.chdir(self.path.rsplit('/', 1)[0])
@@ -129,29 +147,34 @@ class Job(object):
         os.chdir(cwd)
 
     def move_job(self, dest_path):
-        """(move_job)
-        moves the job unit to the specified location
-        :param dest_path: The destination path
+        """
+        .. method:: move_job(self, dest_path)
+            moves the job unit to the specified location
+
+            :param str dest_path: The destination path where the jobunit is going
         """
         tmp = "mv " + self.path + " " + dest_path
         print tmp
         os.system(tmp)
 
     def rm_job(self):
-        """(rm_job)
-        deletes the job folder after the job has been tarred
+        """
+        .. method:: rm_job(self)
+            Deletes the job folder after the job has been tarred
         """
         tmp = "rm -r " + self.rm_path
         os.system(tmp)
 
 
 def check_jobs(user_name, scratch, archive, lost, job_list):
-    """(check_jobs):
-    This function checks for completed or crashed jobs and processes them.
-    :param scratch: The path of the scratch directory where jobs are run
-    :param archive: The path of the archive to place finished jbos
-    :param lost: The path of the lost and found folder for user attention
-    :param job_list: A list of current job units to check
+    """
+    .. function:: check_jovs(user_name, scratch, archive, lost, job_list)
+        This function checks for completed or crashed jobs and processes them.
+
+        :param str scratch: The path of the scratch directory where jobs are run
+        :param str archive: The path of the archive to place finished jobs
+        :param str lost: The path of the lost and found folder for user attention
+        :param str job_list: A list of current job units to check
     """
 
     cwd = os.getcwd()

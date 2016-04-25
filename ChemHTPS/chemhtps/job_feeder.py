@@ -44,10 +44,12 @@ from job_checker import check_jobs, Job
 
 
 def feed_jobs(project_name, user_name):
-    """(feed_jobs):
+    """
+    .. function:: feed_jobs(project_name, user_name)
         This function feeds the jobs to the queue.
-        :param project_name: The name of the project
-        :param user_name: The name of the user
+
+        :param str project_name: The name of the project
+        :param str user_name: The name of the user
     """
     time_start = time.time()
     logfile = open('job_feeder.log', 'a', 0)

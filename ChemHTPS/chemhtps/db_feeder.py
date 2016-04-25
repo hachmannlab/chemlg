@@ -20,8 +20,11 @@ _DESCRIPTION = "This module sets up the project, including the file and director
 ###################################################################################################
 
 def populate_db(datatype):
-    """(populate_db):
+    """
+    .. function:: populate_db(datatype)
         This function populates the project database.
+
+        :param datatype: Placeholder argument
     """
     
 # TODO: write this function creating all the stuff in the dummy_project, including the config file containing the project name
