@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-#SBATCH --clusters=chemistry
-#SBATCH --partition=beta
-#SBATCH --account=pi-hachmann
-##SBATCH --time=0
-#SBATCH --nodes=1
-#SBATCH --job-name="feedjobs"
-#SBATCH --output=feedjobs.out
+Timehere
+Nodeshere
+#SBATCH --job-name="generatelib"
+#SBATCH --output=generatelib.out
+Cpushere
 
 # ====================================================
 # For 16-core nodes
 # ====================================================
-#SBATCH --constraint=CPU-E5-2630v3
-#SBATCH --tasks-per-node=1
-#SBATCH --mem=64000
+##SBATCH --constraint=CPU-E5-2630v3
+##SBATCH --cpus-per-task=16
+##SBATCH --mem=64000
 
 echo "SLURM job ID         = "$SLURM_JOB_ID
 echo "Working Dir          = "$SLURM_SUBMIT_DIR
@@ -25,8 +23,10 @@ echo "Memory per Node      = "$SLURM_MEM_PER_NODE
 
 ulimit -s unlimited
 module load python
+module load intel-mpi
+
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 
 echo "Launch job"
-srun chemhtps.py --feedjobs_local
-#
+Runlinehere
 echo "All Done!"

@@ -885,10 +885,10 @@ if __name__ == "__main__":
     print_l('Total number of molecules generated = '+str(final_list_len)+'\n')
 
     #if rank==0:
-    outdata=output_dest + "Final_smiles_output.dat"
-    outfile = open(outdata, "w")
+    F_smi=output_dest + "Final_smiles_output.dat"
+    outfile = open(F_smi, "w")
 
-    print_l('Writing molecules SMILES to file \''+outdata+'\' along with corresponding code.\n')
+    print_l('Writing molecules SMILES to file \''+F_smi+'\' along with corresponding code.\n')
 
 
     if rank==0:
@@ -899,7 +899,10 @@ if __name__ == "__main__":
               
 
     if oft=='smi':
-        outdata=output_dest + "Final_smiles_output.smi"
+        if rank ==0:
+            if not os.path.exists(output_dest + args.lib_name + oft):
+                os.makedirs(output_dest + args.lib_name + oft)
+        outdata=output_dest + args.lib_name + oft + "/Final_smiles_output.smi"
         outfile = open(outdata, "w")
         
         print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
@@ -907,6 +910,7 @@ if __name__ == "__main__":
         if rank ==0:
             for i, smiles in enumerate(final_list):
                 outfile.write(smiles[0]+'\n')
+	    os.system('cp '+BB_file+' '+rule_file+' '+F_smi+' '+output_dest+args.lib_name+oft+'/.')
         
     ## Creating a seperate output file for each Molecule.
     ## The files are written to folder with specified no. of files per folder.
@@ -957,7 +961,7 @@ if __name__ == "__main__":
             if (val+1)%max_fpf==0:
                 folder_no=folder_no+1
 	if rank == 0:
-	    os.system('cp '+BB_file+' '+rule_file+' '+output_dest+args.lib_name+oft+'/.')
+	    os.system('cp '+BB_file+' '+rule_file+' '+F_smi+' '+output_dest+args.lib_name+oft+'/.')
             
             
 

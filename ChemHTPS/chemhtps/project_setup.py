@@ -31,8 +31,7 @@ def setup_project(project_name):
     .. function:: setup_project(project_name)
         This function sets up the project, including the file and directory structure.
     """
-    dir_list = ['/archive', '/db', '/jobpool/short', '/jobpool/priority', '/jobpool/long', '/lost+found',
-                '/screeninglib/geometrylib', '/screeninglib/structurelib']
+    dir_list = ['/archive', '/db', '/jobpool/short', '/jobpool/priority', '/jobpool/long', '/lost+found', '/screeninglib']
     cwd = os.getcwd()  # just in case we need this
     user = os.getlogin()
 

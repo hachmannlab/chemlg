@@ -142,7 +142,7 @@ def main(args, commline_list):
     if args.generatelib:
         generate_structurelib()
         populate_db("moleculegraph")
-        generate_geometries()
+        generate_geometries(args.project_name)
         populate_db("moleculegeom")
 
 # TODO: we may want to put a db-based bookkeeping step in here                
