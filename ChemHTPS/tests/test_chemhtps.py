@@ -29,7 +29,6 @@ from chemhtps.misc import chk_mkdir
 
 def test_gonna_fail():
     """
-    .. function:: test_gonna_fail()
     Just an experiment
     """
     assert True == False  # Going to fail here on line 34
@@ -37,7 +36,6 @@ def test_gonna_fail():
 
 def test_setup_project():
     """
-    .. function:: test_setup_project()
     A test for the setup_project() function in project_setup.py
     """
     setup_project('testing')
@@ -52,7 +50,6 @@ def test_setup_project():
 
 def test_generate_jobs():
     """
-    .. function:: test_generate_jobs()
     A test of the generate_jobs() function in job_generator.py
     """
     # template = ['!DFT PBE0 Def2-SVP smallPRINT PRINTBASIS PRINTGAP\n', '!opt']
@@ -76,7 +73,6 @@ def test_generate_jobs():
 
 def test_wrap_up():
     """
-    .. function:: test_wrap_up()
     This test just deletes the temporary test project that was created to run the previous tests
     """
     shutil.rmtree('testing')

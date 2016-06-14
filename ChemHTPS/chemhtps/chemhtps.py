@@ -61,7 +61,6 @@ from job_generator import (generate_jobs,
                            prioritize_pool)
 from job_feeder import feed_jobs
 
-os.environ["LD_LIBRARY_PATH"] = ":/projects/academic/hachmann/packages/Anaconda"
 
 ###################################################################################################
 # Necessary Functions:
@@ -69,7 +68,6 @@ os.environ["LD_LIBRARY_PATH"] = ":/projects/academic/hachmann/packages/Anaconda"
 
 def config_read(config):
     """
-    .. function:: config_read(config)
         Reads options from the config file
         Based on options following the format
         Option_name = The option
@@ -97,7 +95,6 @@ def config_read(config):
 
 def main(args, commline_list):
     """
-    .. function:: main(args, commline_list
         Driver of ChemHTPS.
 
         :param object args: The arguments passed from argparse
@@ -276,11 +273,7 @@ if __name__ == "__main__":
         sys.exit("Need to give the project_name flag to setup a project.")
     elif cwd[-len(args.project_name):] == args.project_name and no_config == True:
         sys.exit("There is no config file in the project directory.")
-    main(args, sys.argv)   #numbering of sys.argv is only meaningful if it is launched as main
-    
-else:
-    sys.exit("Sorry, must run as driver...")
-    
 
-if __name__ == '__main__':
-    pass
+    os.environ["LD_LIBRARY_PATH"] = ":/projects/academic/hachmann/packages/Anaconda"
+    main(args, sys.argv)   #numbering of sys.argv is only meaningful if it is launched as main
+

@@ -28,7 +28,6 @@ import fnmatch
 
 def setup_project(project_name):
     """
-    .. function:: setup_project(project_name)
         This function sets up the project, including the file and directory structure.
     """
     dir_list = ['/archive', '/db', '/jobpool/short', '/jobpool/priority', '/jobpool/long', '/lost+found', '/screeninglib']

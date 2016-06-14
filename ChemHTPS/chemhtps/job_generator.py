@@ -34,7 +34,6 @@ from template_generator import generate_template, runmenu, showresult
 
 def generate_jobs():
     """
-    .. function:: generate_jobs()
         This function generates the computational chemistry jobs.
     """
     cwd = os.getcwd()
@@ -115,7 +114,6 @@ def generate_jobs():
 
 def prioritize_pool():
     """
-    .. function:: prioritize_pool()
         This function prioritizes the jobs pool.
     """
 

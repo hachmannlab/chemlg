@@ -36,7 +36,6 @@ from numpy import fromstring
 # TODO: check out similar codes and see if we should add anything
 def banner(SCRIPT_NAME, SCRIPT_VERSION, REVISION_DATE, AUTHORS, CONTRIBUTORS, DESCRIPTION,):
     """
-    .. function:: banner(SCRIPT_NAME, SCRIPT_VERSION, REVISION_DATE, AUTHORS, CONTRIBUTORS, DESCRIPTION)
         Banner for python scripts.
 
         :param SCRIPT_NAME: The name of the script
@@ -66,7 +65,6 @@ def banner(SCRIPT_NAME, SCRIPT_VERSION, REVISION_DATE, AUTHORS, CONTRIBUTORS, DE
 
 def format_invoked_opts(opts,commline_list=[]):
     """
-    .. function:: format_invoked_opts(opts, commline_list=[])
         Prints the invoked options to stdout and the logfile.
 
         :param object opts: An object storing the relevant options
@@ -91,7 +89,6 @@ def format_invoked_opts(opts,commline_list=[]):
 
 def wc_dir(dir):
     """
-    .. function:: wc_dir(dir)
         Returns the number of dirs in a given dir via ls -1d | wc -l. 
         Note that this becomes a rather expensive function call when dir contains many subdirs.
     """    
@@ -106,7 +103,6 @@ def wc_dir(dir):
 
 def wc_all(dir):
     """
-    .. function:: wc_all(dir)
         Returns the number of files and dirs in a given dir via ls -1 | wc -l. 
         Not that this becomes a rather expensive function call when dir contains many entries.
     """    
@@ -121,7 +117,6 @@ def wc_all(dir):
 
 def line_count(file_namestr):
     """
-    .. line_count(file_namestr)
         Returns the number of lines in a file.
     """    
     if os.path.getsize(file_namestr) == 0:
@@ -135,7 +130,6 @@ def line_count(file_namestr):
 
 def mksubdir_struct(dir,max_n_entries=10000,run_always=False):
     """
-    .. function:: mksubdir_struct(dir, max_n_entries=10000, run_always=False)
         This function takes the content of a dir and makes numbered substructure dirs with each n_entries of the original dir.
         The motivation was to have a function with limits the number of entries in a directory to a certain threshold
         (e.g., 10,000 or 30,000) in order to avoid performance issues with the OS/filesystem.
@@ -174,7 +168,6 @@ def mksubdir_struct(dir,max_n_entries=10000,run_always=False):
 
 def chk_mkdir(dir,warning=False):
     """
-    .. function:: chk_mkdir(dir, warning=False)
         This function checks whether a directory exists and if not creates it.
     """
     if not os.path.isdir(dir):
@@ -187,7 +180,6 @@ def chk_mkdir(dir,warning=False):
 
 def chk_rmdir(dir,check='any'):
     """
-    .. function:: chk_rmdir(dir,check='any')
         This function checks whether a directory exists and removes it, if it is empty.
     """
     if os.path.isdir(dir):
@@ -212,7 +204,6 @@ def chk_rmdir(dir,check='any'):
 
 def chk_rmfile(file_namestr):
     """
-    .. function:: chk_rmfile(file_namestr)
         This function checks whether a file is empty and if yes deletes it.
     """
     file = open(file_namestr,'r')
@@ -225,7 +216,6 @@ def chk_rmfile(file_namestr):
 
 def target_dir_struct(target_dir_path, maxitems = 10000, digits=5):
     """
-    .. function:: target_dir_struct(target_dir_path, maxitems = 10000, digits=5)
         This function checks whether a target dir exists and establishes/checks the subdir structure.
 
         :param str target_dir_path: The path of the directory
@@ -265,7 +255,6 @@ def target_dir_struct(target_dir_path, maxitems = 10000, digits=5):
 
 def mv2subdir_struct(source_dir_pathstr, target_subdir, target_subdir_n, target_subdir_pathstr, maxitems = 10000):
     """
-    .. function:: mv2subdir_struct(source_dir_pathstr, target_subdir, target_subdir_n, target_subdir_pathstr, maxitems = 10000)
         This function moves a source folder into a target subdir structure and updates it.
 
         :param str source_dir_pathstr: The path of the dir to be moved
@@ -298,7 +287,6 @@ def mv2subdir_struct(source_dir_pathstr, target_subdir, target_subdir_n, target_
 
 def std_datetime_str(mode='datetime'):
     """
-    .. function:: std_datetime_str(mode='datetime')
         This function gives out the formatted time as a standard string, i.e., YYYY-MM-DD hh:mm:ss.
     """
     if mode == 'datetime':
@@ -317,7 +305,6 @@ def std_datetime_str(mode='datetime'):
 ##################################################################################################
 def tot_exec_time_str(time_start):
     """
-    .. function:: tot_exec_time_str(time_start)
         This function gives out the formatted time string.
     """
     time_end = time.time()
@@ -329,7 +316,6 @@ def tot_exec_time_str(time_start):
 
 def intermed_exec_timing(time_start,intermed_n,total_n,n_str="n"):
     """
-    .. function:: intermed_exec_timing(time_start, intermed_n, total_n, n_str='n')
         This function gives out the intermediate timing, speed, pace, projected remaining and end time.
     """
     tmp_time = time.time()
@@ -350,7 +336,6 @@ def intermed_exec_timing(time_start,intermed_n,total_n,n_str="n"):
 
 def intermed_process_timing(time_start,process_n,intermed_n,total_n,n_str="n"):
     """
-    .. function:: intermed_process_timing(time_start, process_n, intermed_n, total_n, n_str='n')
         This function gives out the intermediate timing, speed, pace, projected remaining and end time of a particular process with restarted time.
     """
     tmp_time = time.time()
@@ -374,7 +359,6 @@ def intermed_process_timing(time_start,process_n,intermed_n,total_n,n_str="n"):
 
 def timeit(func):
     """
-    .. function:: timeit(func)
         Annotate a function with its elapsed execution time.
     """
     def timed_func(*args, **kwargs):
@@ -400,7 +384,6 @@ def timeit(func):
 
 def dsu_sort(list, index, reverse=False):
     """
-    .. function:: dsu_sort(list, index, reverse=False)
     """
 # TODO: infoline
     for i, e in enumerate(list):
@@ -417,7 +400,6 @@ def dsu_sort(list, index, reverse=False):
 
 def dsu_sort2(list, index, reverse=False):
     """
-    .. function:: dsu_sort2(list, index, reverse=False)
         This function sorts only based on the primary element, not on secondary elements in case of equality.
     """
     for i, e in enumerate(list):
@@ -447,7 +429,6 @@ def isFloat(x):
 
 def md5checksum(file_path, blocksize=8192): # 4kB blocks
     """
-    .. function:: md5checksum(file_path, blocksize=8192)
         Compute md5 hash of the specified file.
     """
     file = open(file_path, 'rb')
@@ -464,7 +445,6 @@ def md5checksum(file_path, blocksize=8192): # 4kB blocks
 
 def filelinecount(filename):
     """
-    .. function:: filelinecount(filename)
         Counts the number of lines in a file.
     """
     f = open(filename, "r+")
@@ -479,7 +459,6 @@ def filelinecount(filename):
 
 def revdict_lookup(dict,lookup_val):
     """
-    .. function:: revdict_lookup(dict, lookup_val)
         Performs a reverse dictionary lookup. Careful: only returns first match, but there may be others.
     """    
     key = (key for key,value in dict.items() if value==lookup_val).next()
@@ -490,7 +469,6 @@ def revdict_lookup(dict,lookup_val):
 
 def queryset_iterator(queryset, chunksize=1000, reverse=False, id_only=False, values= False):
     """
-    .. function:: queryset_iterator(queryset, chunksize=1000, reverse=False, id_only=False, values-False)
         Django incremental queryset iterator.
         Found on: http://www.poeschko.com/2012/02/memory-efficient-django-queries/
     """    
@@ -521,7 +499,6 @@ def queryset_iterator(queryset, chunksize=1000, reverse=False, id_only=False, va
 
 def list_chunks(l, n):
     """
-    .. function:: list_chunks(l, n)
         Yield successive n-sized chunks from l.
         Found on: http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
     """
@@ -532,7 +509,6 @@ def list_chunks(l, n):
 
 def menu_input(menu, row, col):
     """
-    .. function:: menu_input(menu, row, col)
         Function to allow the user to enter text in a curses menu
 
         :param menu: The curses window

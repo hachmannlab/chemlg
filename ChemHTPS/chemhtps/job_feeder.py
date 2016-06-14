@@ -45,7 +45,6 @@ from job_checker import check_jobs, Job
 
 def feed_jobs(project_name, user_name):
     """
-    .. function:: feed_jobs(project_name, user_name)
         This function feeds the jobs to the queue.
 
         :param str project_name: The name of the project

@@ -30,14 +30,12 @@ from misc import menu_input
 
 def generate_structurelib():
     """
-    .. function:: generate_structurelib()
         This function generates a screening library of structures (SMILES).
     """
 
 
 def generate_geometries(project_name):
     """
-    .. function:: generate_geommetries()
         This function generates the guess geometries for a screening library.
     """
     logfile = open('lib_gen.log', 'a', 0)

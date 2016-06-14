@@ -29,7 +29,6 @@ import curses
 
 def runmenu(menu, menu_list):
     """
-    .. function:: runmenu(menu, menu_list)
         This function runs a menu based on a given list.
 
         :param menu: The curses window
@@ -90,7 +89,6 @@ def runmenu(menu, menu_list):
 
 def showresult(menu, menu_names, options):
     """
-    .. function:: showresult(menu, menu_names, options)
         This function shows the end results for confirmation
 
         :param menu: The curses window
@@ -145,7 +143,6 @@ def showresult(menu, menu_names, options):
 
 def generate_template():
     """
-    .. function:: generate_template()
         This function generates the template to be used for the job_generator.
 
         :return input_str: The path of the template file

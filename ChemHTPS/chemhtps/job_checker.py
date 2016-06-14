@@ -33,7 +33,6 @@ from misc import chk_mkdir
 
 class Job(object):
     """
-    .. class:: Job(name, cluster, sbatch)
         A class to handle all aspects of a job unit
 
         :param str name: The name of the job unit
@@ -49,7 +48,6 @@ class Job(object):
 
     def __init__(self, name, cluster, sbatch):
         """
-        .. method:: __init__(self, name, cluster, sbatch)
             Initialize a Job object.
         """
         self.name = name
@@ -64,7 +62,6 @@ class Job(object):
 
     def check_status(self, user_name):
         """
-        .. method:: check_status(self, user_name)
             Checks if the slurm job has finished or not and updates the is_running variable
 
             :return self.is_running: The state of the job
@@ -80,7 +77,6 @@ class Job(object):
 
     def time_limit_restart(self):
         """
-        .. method:: time_limit_restart(self)
             Makes the necessary changes to the input file and gbw file to restart a job that ran out of time
         """
         input_file = self.path + '/' + self.name + '.inp'
@@ -96,7 +92,6 @@ class Job(object):
 
     def nth_line(self, n, file_name):
         """
-        .. method:: nth_line(self, n, file_name)
             Returns the nth from the end line of the specified file
 
             :param str file_name: The name of the file
@@ -119,21 +114,18 @@ class Job(object):
 
     def slurm_last(self):
         """
-        .. method:: slurm_last(self)
             Get the last line of the slurm output
         """
         self.slurm_last_line = self.nth_line(1, 'slurm_orca.out')
             
     def out_last(self):
         """
-        .. method:: orca_last(self)
             Get the last line of the quantum software output
         """
         self.out_last_line = self.nth_line(1, self.name + ".out")
 
     def tar_job_unit(self, tbz='.tbz'):
         """
-        .. method:: tar_job_unit(self, tbz='.tbz')
             Tars the jobunit preparing it for transport
 
             :param str tbz: The tar file extension
@@ -148,7 +140,6 @@ class Job(object):
 
     def move_job(self, dest_path):
         """
-        .. method:: move_job(self, dest_path)
             moves the job unit to the specified location
 
             :param str dest_path: The destination path where the jobunit is going
@@ -159,7 +150,6 @@ class Job(object):
 
     def rm_job(self):
         """
-        .. method:: rm_job(self)
             Deletes the job folder after the job has been tarred
         """
         tmp = "rm -r " + self.rm_path
@@ -168,7 +158,6 @@ class Job(object):
 
 def check_jobs(user_name, scratch, archive, lost, job_list):
     """
-    .. function:: check_jovs(user_name, scratch, archive, lost, job_list)
         This function checks for completed or crashed jobs and processes them.
 
         :param str scratch: The path of the scratch directory where jobs are run

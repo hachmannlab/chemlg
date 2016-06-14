@@ -21,7 +21,6 @@ _DESCRIPTION = "This module sets up the project, including the file and director
 
 def populate_db(datatype):
     """
-    .. function:: populate_db(datatype)
         This function populates the project database.
 
         :param datatype: Placeholder argument
