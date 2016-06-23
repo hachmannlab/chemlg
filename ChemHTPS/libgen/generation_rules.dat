@@ -1,15 +1,15 @@
 Please input generation rules below. Do not change the order of the options.
 1. Exclude combinations = F1-F3
-2. Max and min no.of bonds = None
-3. Max and min no.of atoms = 10-3000
-4. Max and min mol.weight = 100-3000
-5. Max and min no.of rings = None
-6. Max and min no.of aromatic rings = 0-20
-7. Max and min no.of non aromatic rings = None
-8. Max and min no.of single bonds = None
-9. Max and min no.of double bonds = None
-10. Max and min no.of triple bonds = None
-11. Max no.of specific atoms = S-4,O-4
+2. Min and max no. of bonds = None
+3. Min and max no. of atoms = 0-3000
+4. Min and max mol.weight = 0-3000
+5. Min and max no. of rings = None
+6. Min and max no. of aromatic rings = 0-20
+7. Min and max no. of non aromatic rings = None
+8. Min and max no. of single bonds = None
+9. Min and max no. of double bonds = None
+10. Min and max no. of triple bonds = None
+11. Max no. of specific atoms = S-4,O-4
 12. Lipinski's rule = False
 13. Combination order= None
-14. symmetry=None
+14. Symmetry=None
