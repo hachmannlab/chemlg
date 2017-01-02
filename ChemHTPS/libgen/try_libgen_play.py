@@ -177,7 +177,9 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     library_can=[]
     library_full=[]
     library=[]
-    ini_list_m=[]
+    #ini_list_m=[]
+    #print smiles_list_gen,'smiles_list_gen'
+    #print ini_list,'ini_list'
     
     # Creating a dictionary of molecules. This is a faster way to prevent duplicates
     
@@ -196,73 +198,51 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     
     ## Dividing the list into processors
     scattered_gen=comm.scatter(smiles_to_scatter,root=0)
+    # ini_lib_full=[]
 
-    ini_lib_full=[]
-    for smiles in scattered_gen:
+    # for smiles in scattered_gen:
         
-        mol_combi= pybel.readstring("smi",smiles[0])
+    #     mol_combi= pybel.readstring("smi",smiles[0])
         
-        ## Here the dictionary is based on molecular weight of compund. 
-        ## All same molecular weight compunds will be appended to the same list. 
-        ## This data structures helps in indentifying duplicates fast.
-        ## This way of structure also makes it possible to delete duplicates in 
-        ## a parallel fashion. Otherwise, it is extremely challenging to parallelize
-        ## duplicates removal algorithm.
+    #     ## Here the dictionary is based on molecular weight of compund. 
+    #     ## All same molecular weight compunds will be appended to the same list. 
+    #     ## This data structures helps in indentifying duplicates fast.
+    #     ## This way of structure also makes it possible to delete duplicates in 
+    #     ## a parallel fashion. Otherwise, it is extremely challenging to parallelize
+    #     ## duplicates removal algorithm.
 
-        mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
+    #     mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
         
-        #smiles_dict[mol_wt].append(str(mol_combi))
+    #     #smiles_dict[mol_wt].append(str(mol_combi))
         
-        can_mol_combi = mol_combi.write("can")
-        ini_lib_full.append([str(can_mol_combi),mol_wt,smiles[1]])
+    #     can_mol_combi = mol_combi.write("can")
+    #     ini_lib_full.append([str(can_mol_combi),mol_wt,smiles[1]])
         
-    for smiles in ini_list:
+    # for smiles in ini_list:
         
-        mol_combi= pybel.readstring("smi",smiles[0])
+    #     mol_combi= pybel.readstring("smi",smiles[0])
         
-        ## Here the dictionary is based on molecular weight of compund. 
-        ## All same molecular weight compunds will be appended to the same list. 
-        ## This data structures helps in indentifying duplicates fast.
-        ## This way of structure also makes it possible to delete duplicates in 
-        ## a parallel fashion. Otherwise, it is extremely challenging to parallelize
-        ## duplicates removal algorithm.
+    #     ## Here the dictionary is based on molecular weight of compund. 
+    #     ## All same molecular weight compunds will be appended to the same list. 
+    #     ## This data structures helps in indentifying duplicates fast.
+    #     ## This way of structure also makes it possible to delete duplicates in 
+    #     ## a parallel fashion. Otherwise, it is extremely challenging to parallelize
+    #     ## duplicates removal algorithm.
 
-        mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
+    #     mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
         
-        #smiles_dict[mol_wt].append(str(mol_combi))
+    #     #smiles_dict[mol_wt].append(str(mol_combi))
         
-        can_mol_combi = mol_combi.write("can")
-        ini_list_m.append([str(can_mol_combi),mol_wt,smiles[1]])
+    #     can_mol_combi = mol_combi.write("can")
+    #     ini_list_m.append([str(can_mol_combi),mol_wt,smiles[1]])
         
                         
-    ## It is better to initialize a list to be divided among processors in the master 
-    ## processor. Also, put the list as empty in other processors.
-    
-    if rank!=0:
-        smiles_gen_list=None
-    
-    ## Scatter, function of comm, is used to divide the list among the processors. But, 
-    ## scatter only works when the size of the list is equal to the number of processors
-    ## available. Therefore, we will have to restructure the list into a list of lists with 
-    ## size equal to number of processors.
-    
-    if rank ==0:
-        smiles_to_scatter=[]
-        for i in xrange(mpisize):
-            start=int(i*(len(smiles_list_gen))/mpisize)
-            end=int((i+1)*(len(smiles_list_gen))/mpisize)-1
-            smiles_to_scatter.append(smiles_list_gen[start:end+1])
-    else:
-        smiles_to_scatter=[]
-    
-    ## Dividing the list into processors
-    smiles_list_gen=comm.scatter(smiles_to_scatter,root=0)
-    
     ## Now individual processors will generate molecules based on the list of molecules 
     ## in that processor list.
 
-    for smiles1 in smiles_list_gen:
+    for smiles1 in scattered_gen:
         for smiles2 in ini_list:
+            #print smiles1,smiles2,gen
             ## Check for the combination type and send the smiles to respective functions
             ## create_link function (included in libgen_classes) creates linked molecules.
             ## Whereas, get_fused (included in libgen_classes) creates fused molecule.
@@ -270,17 +250,17 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             ## of the generated molecule and second element its molecular weight.
             
             if combi_type=='link':
-                library_full=library_full+libgen_classes.create_link_c(smiles1,smiles2,rules_l)
+                library_full=library_full+libgen_classes.create_link_c([smiles1[0],smiles1[2]],[smiles2[0],smiles2[2]],rules_l)
             if combi_type=='fusion':
-                library_full=library_full+libgen_classes.get_fused_c(smiles1,smiles2,rules_l)
-    #G_list=G_list+library_full
+                library_full=library_full+libgen_classes.get_fused_c([smiles1[0],smiles1[2]],[smiles2[0],smiles2[2]],rules_l)
+    #print library_full,'library_full'
     ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     ## This can be easily done parallely as the jobs are independent of each other
     ## Making the list ready to scatter between processors
     
     if gen==gen_len-1:
 
-        library_full=ini_lib_full+library_full
+        library_full=scattered_gen+library_full
         atm_del_l=[]
         for pos,smiles in enumerate(library_full):
             
@@ -310,11 +290,11 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             
             if combi_type=='fusion':
                 can_mol_combi = mol_combi.write("can")
-                library_full[pos][0]=str(can_mol_combi)
+                library_full[pos][0]=str(can_mol_combi)[:-2]
                 library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
             ## If linked type, then there are no duplicates so no need for canonical
             if combi_type=='link':       
-                library_full[pos][0]=str(mol_combi)
+                library_full[pos][0]=str(mol_combi)[:-2]
                 library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
 
         ## deleted the atoms that were marked to be deleted
@@ -342,7 +322,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
                 smiles_dict[mol_wt].append([l2[0],l2[2]])
         if gen!=gen_len-1:
          
-            for l2 in ini_list_m:
+            for l2 in ini_list:
                 mol_wt=l2[1]
                 smiles_dict[mol_wt].append([l2[0],l2[2]])
             
@@ -396,7 +376,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     
     ## Gather the list of SMILES from each processor to the master processor
     smiles_dict_g=comm.gather(smiles_dict_indi,root=0)
-   
+
     ## This is to see if computation time can be further decreased
     #library_g=comm.gather(library,root=0)
    
@@ -413,9 +393,9 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
         for dict_indi in smiles_dict_g:
             for mol_wt in dict_indi:
                 for smiles_indi in dict_indi[mol_wt]:
-                    library.append([smiles_indi[0][:-2],smiles_indi[1]])
+                    #print smiles_indi[0],'smiles_idi'
+                    library.append([smiles_indi[0],str(mol_wt),smiles_indi[1]])
 
-    
     ## printing out smiles after every generation. This mus not be included in the final version
     ## only for test purpose
     
@@ -498,7 +478,9 @@ def reverse_mol(smiles):
             if atom.OBAtom.GetAtomicNum()==88:
                 atom.OBAtom.SetAtomicNum(1)
                    
-    smiles=str(mol)[:-2]
+    #smiles=str(mol)[:-2]
+    smiles=mol.write("can")[:-2]
+    #print smiles
     return smiles
 
     
@@ -521,12 +503,13 @@ def generation_test(combi_type):
     ## If the combination type is link, modify the molecule with Francium atoms
     if combi_type=='link':
         for i in xrange(len(lib_can)):
-            lib_smiles_list.append([reverse_mol(lib_can[i][0]),lib_can[i][1]])
+            lib_smiles_list.append([reverse_mol(lib_can[i][0]),lib_can[i][1],lib_can[i][2]])
     ## If the combination type is fusion, do not do anything. 
     if combi_type=='fusion':
         for i in xrange(len(lib_can)):
-            lib_smiles_list.append([lib_can[i][0][:-2],lib_can[i][1]]) # Note: Blank spaces are removed
+            lib_smiles_list.append([lib_can[i][0][:-2],lib_can[i][1],lib_can[i][2]]) # Note: Blank spaces are removed
     
+    #print lib_smiles_list,'is this the one'
     ini_list=lib_smiles_list
     
     
@@ -537,6 +520,7 @@ def generation_test(combi_type):
         ## lib_smiles_list includes all the molecules list up until the current generation 
         lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list,combi_type,gen)
         
+        #print lib_smiles_list,'lib_smiles_list'
         print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(lib_smiles_list)))
             
         ## printing out time after each generation
