@@ -316,7 +316,7 @@ def get_fused_mol_c(smiles1,smiles2,rules):
                     lib_can_nRa.append(str(can_mol_combi))
     lib_can_c=[]
     for item in lib_can:
-        lib_can_c.append([item[0],item[1],smiles1[1]+':'+smiles2[1]])
+        lib_can_c.append([item[0][:-2],item[1],smiles1[1]+':'+smiles2[1]])
             
     
     return lib_can_c
@@ -526,7 +526,7 @@ def create_link_c(smiles1,smiles2,rules):
             mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
             code=smiles1[1]+'-'+smiles2[1]
             if if_add(mol_combi,mol_wt,rules,code)==True:
-                library_full.append([str(can_mol_combi),mol_wt,code])
+                library_full.append([str(can_mol_combi)[:-2],mol_wt,code])
     return library_full
     
 
