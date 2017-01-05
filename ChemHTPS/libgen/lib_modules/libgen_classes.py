@@ -318,7 +318,6 @@ def get_fused_mol_c(smiles1,smiles2,rules):
     for item in lib_can:
         lib_can_c.append([item[0][:-2],item[1],smiles1[1]+':'+smiles2[1]])
             
-    
     return lib_can_c
         
 def get_fused(smiles1,smiles2):
@@ -504,6 +503,13 @@ def if_add(mol,mol_wt,rules,code,c_type='l'):
         if not passes_all_rules(descriptors):
             #print "hello"
             return False
+
+    if rules[14]!='None':
+        for item in rules[14]:
+            
+            no_occ=get_num_struc(mol,item)
+            if no_occ>0 :
+                return False            
 
     return True
     

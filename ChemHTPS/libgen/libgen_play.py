@@ -26,7 +26,7 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # v0.1.15 (12/29/2015): Included generation rules
 # v0.1.16 (01/03/2016): Included log file and error file
 # v0.1.17 (02/25/2016): Added more options, changed to Ra and Fr and included lower limit
-# v0.1.18 (01/02/2017): Further reducing the computation time (efficient parallel code) and also change the data structure
+# v0.1.18 (01/02/2017): Further reducing the computation time (efficient parallel code), changes to the molecule data structure, included Fingerprint matching as well as substructure inclusion and exclusion
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -34,26 +34,33 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 ###################################################################################################
 
 ###################################################################################################
+
 # TODO:
 # -Get the reaction without reactor-Done
 # -Try to run reactor from python instead subprocess -Don't need this anymore
 # -Try to parallelize the code - Parallelized the core part of the code
-# -Include stopping creteria
 # -Import SMILES from data file -Done
-# -Implement a smart duplicate removal system - Using Molwt for now, will have to look for better options
 # -Capture the stderr from C program ie. openbabel. -Done (this took a very long time to debug)
 # -Increase scalability of parallel - Done
-# -Detailed comments- Partially done
 # -Include Fr removals in an efficient manner- Done
-# -Track the link or fusion order while building - Done for linking and fusion
+# -Track the link or fusion order while building - Done
 # -Include binding rules - Done
-# -Inlude max no. of specific atoms- Done
+# -Inlude max no. of specific atoms - Done
 # -Include log file - Done
 # -Include Lipinski's rule- Done
-# -Use error handling properly -Partially done
 # -Improve output style - Partially done
+# -Include Fingerprint match criteria - Done 
+# -Include substructure inclusion and removal criteria - Done
+
 # -Specify order of fusion and link - This requires a large chunk of rewriting of the code, not done yet
 # -Include range instead of Max value for generation rules - Done
+# -Detailed comments- Partially done
+# -Implement a smart duplicate removal system - Using Molwt for now, will have to look for better options
+# -Use error handling properly -Partially done
+# -Include stopping criteria - Mostly done
+# -Include genetic algorithm
+# -The input can be mixture of smiles and inchi
+# -Parallelize the reading of input SMILES incase the input is large
 
 ###################################################################################################
 
@@ -76,7 +83,7 @@ from mpi4py import MPI
 import os
 #import threading
 from lib_modules import libgen_classes
-from itertools import islice
+from itertools import islice,chain
 
 
 '''
@@ -98,7 +105,6 @@ def get_num_struc(mol,smarts):
 
 def if_del(mol,rules):
     
-
     #print mol,'after'
 
     if rules[1][0]!=0:
@@ -165,6 +171,20 @@ def if_del(mol,rules):
             no_t_bonds=get_num_struc(mol,"*#*")
             if no_t_bonds<int(rules[9][0]) :
                 return False    
+                
+    if rules[12]!='None':
+        for mol_to_comp in rules[12]:
+            mol2=pybel.readstring('smi',mol_to_comp[0])
+            tanimoto=mol.calcfp()|mol2.calcfp()            
+            if tanimoto<float(mol_to_comp[1]):
+                return False
+           
+    if rules[13]!='None':
+        for item in rules[13]:
+            
+            no_occ=get_num_struc(mol,item)
+            if no_occ==0 :
+                return False            
 
     return True
     
@@ -219,8 +239,21 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     ## Making the list ready to scatter between processors
 
     if gen==gen_len-1:
+        if rank ==0:
+            smiles_to_scatter=[]
+            for i in xrange(mpisize):
+                list_to_scatter=list(chain.from_iterable(Global_list))
+                start=int(i*(len(list_to_scatter))/mpisize)
+                end=int((i+1)*(len(list_to_scatter))/mpisize)-1
+                smiles_to_scatter.append(list_to_scatter[start:end+1])
+        else:
+            smiles_to_scatter=[]
+    
+        ## Dividing the list into processors
+        scattered_list=comm.scatter(smiles_to_scatter,root=0)
+        
+        library_full=scattered_list+library_full
 
-        library_full=scattered_gen+library_full
         atm_del_l=[]
         for pos,smiles in enumerate(library_full):
             
@@ -278,11 +311,6 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             for l2 in l1:
                 mol_wt=l2[1]
                 smiles_dict[mol_wt].append([l2[0],l2[2]])
-        if gen!=gen_len-1:
-         
-            for l2 in ini_list:
-                mol_wt=l2[1]
-                smiles_dict[mol_wt].append([l2[0],l2[2]])
             
     ## SMILES dictionary might have duplicates. Since the duplicates will only be in one Mol Wt
     ## list of the disctionary, we can divide Mol Wts into available processors.
@@ -304,45 +332,32 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     
     ## Now the duplicates in each Mol Wt can be removed by using 'set'.
 
+    library_indi=[]
     for mol_wt in smiles_dict_indi:
-        # smiles_dict_indi[mol_wt]=list(set(smiles_dict_indi[mol_wt]))
         a=smiles_dict_indi[mol_wt]
-        b= sorted(a, key=operator.itemgetter(0))
-        
-        b_zip=zip(*b)
-        
-        b_dup=[[],[]]
-        for i,item in enumerate(b_zip[0]):
-            if item not in b_dup[0]:
-                b_dup[0].append(item)
-                b_dup[1].append(b_zip[1][i])
-                
-        smiles_dict_indi[mol_wt]=zip(b_dup[0],b_dup[1])
-    
-    ## This is to see if computation time can be further decreased
-    # for mol_wt in smiles_dict_indi:
-        
-    #     for smiles_indi in smiles_dict_indi[mol_wt]:
-    #         library.append(smiles_indi[:-2])
-           
-    
-    ## Gather the list of SMILES from each processor to the master processor
-    smiles_dict_g=comm.gather(smiles_dict_indi,root=0)
-   
-    ## This is to see if computation time can be further decreased
-    #library_g=comm.gather(library,root=0)
-   
-    # if rank ==0:
-    #     for list_g_indi in library_g:
-    #         library=library+list_g_indi
-    
-    ## Now that the duplicates are removed we can make a list. This is because it 
-    ## is easy to deal with list and easy to parallelize.
+        # b= sorted(a, key=operator.itemgetter(0))
+        # #print a
+        # #print b
+        # b_zip=zip(*b)
+        # #print b_zip
+        # b_dup=[[],[]]
+        # for i,item in enumerate(b_zip[0]):
+        #     if item not in b_dup[0]:
+        #         b_dup[0].append(item)
+        #         b_dup[1].append(b_zip[1][i])
+        #         library_indi.append([item,str(mol_wt),b_zip[1][i]])
+
+        tmp_list=[]
+        for i, item in enumerate(a):
+            if item[0] not in tmp_list:
+                tmp_list.append(item[0])
+                library_indi.append([item[0],str(mol_wt),item[1]])
+
+    library_g=comm.gather(library_indi,root=0)
+
     if rank==0:
-        for dict_indi in smiles_dict_g:
-            for mol_wt in dict_indi:
-                for smiles_indi in dict_indi[mol_wt]:
-                    library.append([smiles_indi[0],str(mol_wt),smiles_indi[1]])
+        for item in library_g:
+            library=library+item
 
     ## printing out smiles after every generation. This mus not be included in the final version
     ## only for test purpose
@@ -455,18 +470,21 @@ def generation_test(combi_type):
         for i in xrange(len(lib_can)):
             lib_smiles_list.append([lib_can[i][0][:-2],lib_can[i][1],lib_can[i][2]]) # Note: Blank spaces are removed
     
-    #print lib_smiles_list,'is this the one'
-    ini_list=lib_smiles_list
-    
-    
-    ## Generating molecules at each generation until the required length
-
+    Global_list.append(lib_smiles_list)
     for gen in xrange(gen_len):
         
         ## lib_smiles_list includes all the molecules list up until the current generation 
-        lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list,combi_type,gen)
-        
-        print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(lib_smiles_list)))
+        Global_list.append(create_gen_lev(Global_list[gen],Global_list[0],combi_type,gen))
+        #print Global_list
+        #print lib_smiles_list,'lib_smiles_list'
+        if gen<gen_len-1:
+            print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(Global_list[gen+1])))
+        else:
+            a=sum([len(a) for a in Global_list[:-1]])
+            length=len(Global_list[-1])-a
+            if length<0:
+                length =0
+            print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(length))
             
         ## printing out time after each generation
         wt2 = MPI.Wtime()
@@ -555,8 +573,19 @@ def generation_test(combi_type):
     #     print len(library_can),'after checking for duplicates'
     ###
     
-    return lib_smiles_list
+    return Global_list[-1]
 
+
+def check_if_mol(smiles,line,file_name):
+    if check_if_inchi(smiles)==True:            
+        this_mol=pybel.readstring("inchi",smiles)
+        smiles=str(this_mol)
+        smiles=smiles.strip()
+    elif check_if_smiles(smiles)==False:    
+        ## check if smiles
+        tmp_str='Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
+        print_le(tmp_str,"Aborting due to wrong molecule description.")
+    return smiles
 
 ## This function is to check if the provided SMILES string are valid    
 def check_if_smiles(smiles):
@@ -612,7 +641,7 @@ def get_rules(rulesFile):
             print_le(tmp_str,"Aborting due to wrong generation rule.")
 
         words=lines.split('=')
-
+        value=words[1].strip()
         if i==1:
             ex_combis=words[1][:-1].split(',')
             for i in xrange(len(ex_combis)):
@@ -627,7 +656,7 @@ def get_rules(rulesFile):
             continue
 
         if i==11:
-            atomsg=words[1].strip()
+            atomsg=value
             #print atomsg,'atomsg'
             atoms_l=[]
             if atomsg=='None':
@@ -643,11 +672,43 @@ def get_rules(rulesFile):
        
         if i==12:
             #print words,i
-            rules_l.append(words[1].strip())
+            rules_l.append(value)
+            continue
+
+        if i==13: # This rule is for FP matching
+            #print words,i
+            smiles_to_comp=value
+            if smiles_to_comp=='None':
+                rules_l.append('None')            
+                continue
+            smiles_to_comp=smiles_to_comp.split(',')
+            smiles_to_comp_l=[]
+
+            for item in smiles_to_comp:
+                if '-' not in item:
+                    tmp_str = "ERROR: Wrong generation rule provided for "+lines
+                    tmp_str=tmp_str+"Privide the molecule as SMILES/InChI followed by the Tanimoto index. For example, 'c1ccccc1-20'. \n More molecules can be provided separated by a comma. \n"
+                    print_le(tmp_str,"Aborting due to wrong fingerprint rule.")
+                item_split=item.split('-')
+                smiles=check_if_mol(item_split[0][2:-1],i+1,rule_file)
+                smiles_to_comp_l.append([smiles,item_split[1][:-1]])
+            rules_l.append(smiles_to_comp_l)            
+            continue
+
+        if i==14 or i==15:  # This rule for substructure inclusion and exclusion
+            if value=='None':
+                rules_l.append('None')            
+                continue
+            smiles_l=[]
+            for item in value.split(','):
+                smiles=check_if_mol(item[1:-1],i+1,rule_file)
+                smiles_l.append(smiles)
+            rules_l.append(smiles_l)
+            print value.split(',')
             continue
 
         
-        if words[1].strip()!='None':
+        if value!='None':
             if '-' not in words[1]:
                 tmp_str = "ERROR: Wrong generation rule provided for "+lines
                 tmp_str=tmp_str+"Privide the range of number required. For example, 10-20. \n"
@@ -672,7 +733,7 @@ def get_rules(rulesFile):
             
         # if i==2 or i==3 or i==4:
         #     #print words,i
-        #     if words[1].strip()=='None':
+        #     if value=='None':
         #         words[1]=0
 
         #     rules_l.append(int(words[1]))
@@ -680,7 +741,7 @@ def get_rules(rulesFile):
 
 
         
-        #rules_l.append(words[1].strip())
+        #rules_l.append(value)
         
     print_l("\nRules list \n"+str(rules_l) )
     return rules_l
@@ -728,7 +789,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-output',"--output_type", action='store', dest='oft', default='smi', help="Give the type of molecule format for the generated library. Default is SMILES format.")
 
-    parser.add_argument('-max_fpf',"--max_files_per_folder", action='store', dest='max_fpf', default=1000, help="Maximu number of files that are in a single folder. Having a large number of files in a single folder may hinder performace. Default is 10000 files per folder.")
+    parser.add_argument('-max_fpf',"--max_files_per_folder", action='store', dest='max_fpf', default=1000, help="Maximum number of files that are in a single folder. Having a large number of files in a single folder may hinder performace. Default is 10000 files per folder.")
 
     parser.add_argument('-rf',"--rule_file", action='store', dest='rule_file', default='generation_rules.dat', help="Specified file should contain the generation rules. Order of the rules is fixed. If the order is changed then the program runs into error . Default is generation_rules.dat.")
 
@@ -809,27 +870,18 @@ if __name__ == "__main__":
         smiles= line.strip()
         if smiles.isspace() or len(smiles)==0 or smiles[0]=='#':
             continue
-        ## if the inpur is InChI, then convert all into SMILES
+        ## if the input is InChI, then convert all into SMILES
         if mol_type == 'inchi':
-            if check_if_inchi(smiles)==False:
-                tmp_str='Error: The InChI string (\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct InChI.'.format(smiles,i+1,args.file_name)
-                print_le(tmp_str,"Aborting due to wrong file.")
-                
-            this_mol=pybel.readstring("inchi",smiles)
-            smiles=str(this_mol)
-            smiles=smiles.strip()
-
-        ## check if smiles
+            continue
+        smiles=check_if_mol(smiles,i+1,args.file_name)
+            #kill_me=comm.gather(tmp_str,root=0)
         if 'X' in smiles:
             smiles=smiles.replace('[x]','[Ra]')
             smiles=smiles.replace('[X]','[Ra]')
-        if check_if_smiles(smiles)==False:
-            tmp_str='Error: The SMILES string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES.'.format(smiles,i+1,args.file_name)
-            print_le(tmp_str,"Aborting due to wrong file.")
-            kill_me=comm.gather(tmp_str,root=0)
 
-        if check_if_smiles(smiles):
-            smiles_list.append(smiles)
+        #if check_if_smiles(smiles):
+        smiles_list.append(smiles)
+
     print_l('Number of buidling blocks provided = '+str(len(smiles_list))+'\n')
     
     print_l('SMILES of the building blocks\n')
@@ -844,6 +896,7 @@ if __name__ == "__main__":
         
         smiles_list_c.append([smiles_list[i],'F'+str(i+1)])
 
+    Global_list=[]
     ## generation_test funtion generates combinatorial molecules
     final_list=generation_test(combi_type)
 
@@ -868,7 +921,7 @@ if __name__ == "__main__":
         outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
     
     for i, smiles in enumerate(final_list):
-        outfile.write(str(i+1)+','+smiles[0]+','+smiles[1]+'\n')
+        outfile.write(str(i+1)+','+smiles[0]+','+smiles[2]+'\n')
               
 
     if oft=='smi':
