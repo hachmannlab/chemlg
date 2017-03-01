@@ -193,7 +193,7 @@ def if_del(mol,rules):
 This function creates a new generation with the building blocks provided
 and the current generation of molecules
 '''
-@profile
+#@profile
 def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
 
     library_can=[]
