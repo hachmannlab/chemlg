@@ -43,12 +43,13 @@ from job_checker import check_jobs, Job
 ###################################################################################################
 
 
-def feed_jobs(project_name, user_name):
+def feed_jobs(project_name, user_name, scratch):
     """
         This function feeds the jobs to the queue.
 
         :param str project_name: The name of the project
         :param str user_name: The name of the user
+        :param str scratch: The path of the scratch directory
     """
     time_start = time.time()
     logfile = open('job_feeder.log', 'a', 0)
@@ -60,7 +61,7 @@ def feed_jobs(project_name, user_name):
     # TODO think about way to handle non default folders and paths (possibly argparser)
     slurm_path = cwd + '/job_templates'
     job_pool_path = cwd + '/jobpool'
-    scratch_path =  os.environ['GLOBAL_SCRATCH'] + '/' + user_name + '/' + project_name
+    scratch_path =  scratch
     result_path = cwd + '/archive'
     problem_path = cwd + '/lost+found'
     queue_file_path = cwd + '/queue_list.dat'

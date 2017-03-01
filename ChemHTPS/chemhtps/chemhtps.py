@@ -43,6 +43,7 @@ import sys
 import os
 import time
 import argparse
+import ConfigParser
 
 from misc import (banner,
                   format_invoked_opts,
@@ -60,35 +61,6 @@ from db_feeder import populate_db
 from job_generator import (generate_jobs,
                            prioritize_pool)
 from job_feeder import feed_jobs
-
-
-###################################################################################################
-# Necessary Functions:
-
-
-def config_read(config):
-    """
-        Reads options from the config file
-        Based on options following the format
-        Option_name = The option
-
-        :param str config: The path of the config file
-        :return config_opts: The options read from the config file
-        :rtype: dict
-    """
-
-    config_opts = {}
-    with open(config, 'r') as config:
-        while 1:
-            line = config.readline()
-            if not line: break
-            words = line.split(' = ')
-            if len(words) > 2:
-                sys.exit('Bad option in config file')
-            config_opts[words[0]] = words[1].rstrip('\n')
-        config.close()
-
-    return config_opts
 
 
 ###################################################################################################
@@ -119,13 +91,21 @@ def main(args, commline_list):
     # This part reads options from a .config file if your in the project directory
     cwd = os.getcwd()
     if cwd[-len(args.project_name):] == args.project_name:
-        config_opts = config_read(args.project_name + '.config')
-        print "config options"
-        logfile.write("config options\n")
-        for key, value in config_opts.items():
-            line = "   " + key + ": " + str(value)
-            print line
-            logfile.write(line + '\n')
+        config = ConfigParser.SafeConfigParser()
+        config.read(args.project_name + '.config')
+        try:
+            user_name = config.get('MAIN', 'user_name')
+        except NoOptionError:
+            sys.exit("The config file has no user_name option.")
+        except NoSectionError:
+            sys.exit("The config file has no MAIN section.")
+        try:
+            scratch_path = config.get('MAIN', 'scratch_path')
+        except NoOptionError:
+            sys.exit("The config file has no scratch_path option.")
+        except NoSectionError:
+            sys.exit("The config file has no MAIN section.")
+
 
     tmp_str = "------------------------------------------------------------------------------ "
     print tmp_str
@@ -150,15 +130,11 @@ def main(args, commline_list):
     if args.prioritizepool:
         prioritize_pool()
 
-    try:
-        user_name = config_opts['user_name']
-    except:
-        pass
     if args.feedjobs:
         tmp_str = 'sbatch job_templates/' + args.project_name + 'feedjobs.sh'
         os.system(tmp_str)
     if args.feedjobs_local:
-        feed_jobs(args.project_name, user_name)
+        feed_jobs(args.project_name, user_name, scratch_path)
 
 # TODO: add parser function
 
@@ -190,17 +166,22 @@ if __name__ == "__main__":
     # tests for a config file
     cwd = os.getcwd()
     dirlist = os.listdir(cwd)
+    cfg = []
     for entry in dirlist:
         if '.config' in entry:
-            config = entry
-    try:
-        config_opts = config_read(config)
-    except NameError:
-        no_config = True
-    else:
+            cfg = entry
+    config = ConfigParser.SafeConfigParser()
+    no_config = True
+    if config.read(cfg):
         no_config = False
-        if 'project_name' in config_opts:
-            defaults['project_name'] = config_opts['project_name']
+        try:
+            defaults['project_name'] = config.get('MAIN', 'project_name')
+        except NoOptionError:
+            sys.exit("The config file has no project_name option.")
+        except NoSectionError:
+            sys.exit("The config file has no MAIN section.")
+
+
     # TODO there is still more to be done here
 
     parser.add_argument('--version',

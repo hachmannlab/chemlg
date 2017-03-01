@@ -51,15 +51,15 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # -Improve output style - Partially done
 # -Include Fingerprint match criteria - Done 
 # -Include substructure inclusion and removal criteria - Done
+# -The input can be mixture of smiles and inchi - Done
+# -Include range instead of Max value for generation rules - Done
 
 # -Specify order of fusion and link - This requires a large chunk of rewriting of the code, not done yet
-# -Include range instead of Max value for generation rules - Done
 # -Detailed comments- Partially done
 # -Implement a smart duplicate removal system - Using Molwt for now, will have to look for better options
-# -Use error handling properly -Partially done
+# -Use error handling properly - Mostly done
 # -Include stopping criteria - Mostly done
-# -Include genetic algorithm
-# -The input can be mixture of smiles and inchi
+# -Include genetic algorithm 
 # -Parallelize the reading of input SMILES incase the input is large
 
 ###################################################################################################
@@ -193,6 +193,7 @@ def if_del(mol,rules):
 This function creates a new generation with the building blocks provided
 and the current generation of molecules
 '''
+@profile
 def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
 
     library_can=[]

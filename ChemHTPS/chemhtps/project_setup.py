@@ -21,6 +21,7 @@ _DESCRIPTION = "This module sets up the project, including the file and director
 ###################################################################################################
 
 import os
+import ConfigParser
 import fnmatch
 
 
@@ -54,9 +55,15 @@ def setup_project(project_name):
             tmp = 'mv ' + current_name + ' ' + new_name
             os.system(tmp)
 
-    with open(project_name + '/' + project_name + '.config', 'w') as config:
-        config.write('project_name = ' + project_name + '\n')
-        config.write('user_name = ' + user + '\n')
+    config = ConfigParser.SafeConfigParser(allow_no_value = True)
+    config.add_section('MAIN')
+    config.set('MAIN', '#This is where the main options go')
+    config.set('MAIN', 'project_name', project_name)
+    config.set('MAIN', 'user_name', user)
+    tmp = os.environ['GLOBAL_SCRATCH'] + '/' + user + '/' + project_name
+    config.set('MAIN', 'scratch_path', tmp)
+    with open(project_name + '/' + project_name + '.config', 'w') as cfg:
+        config.write(cfg)
 
     with open(project_name + '/queue_list.dat', 'w') as queue_list:
         lines = ['#cluster partition limit type\n', 'ub-hpc general-compute 0 long\n', 'ub-hpc debug 3 short\n',
