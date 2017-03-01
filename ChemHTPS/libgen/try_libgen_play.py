@@ -75,7 +75,7 @@ from mpi4py import MPI
 import os
 #import threading
 from lib_modules import libgen_classes
-from itertools import islice
+from itertools import islice,chain
 
 
 '''
@@ -257,10 +257,30 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     ## This can be easily done parallely as the jobs are independent of each other
     ## Making the list ready to scatter between processors
-    
-    if gen==gen_len-1:
 
-        library_full=scattered_gen+library_full
+    #print len(library_full),'library_full'
+    #print scattered_gen,'scattered_gen'
+    if gen==gen_len-1:
+        
+        smiles_dict = defaultdict(list) 
+        
+        ## Adding all previous generation molecules to dictionary 
+            
+        if rank ==0:
+            smiles_to_scatter=[]
+            for i in xrange(mpisize):
+                list_to_scatter=list(chain.from_iterable(Global_list))
+                start=int(i*(len(list_to_scatter))/mpisize)
+                end=int((i+1)*(len(list_to_scatter))/mpisize)-1
+                smiles_to_scatter.append(list_to_scatter[start:end+1])
+        else:
+            smiles_to_scatter=[]
+    
+        ## Dividing the list into processors
+        scattered_list=comm.scatter(smiles_to_scatter,root=0)
+        
+        library_full=scattered_list+library_full
+        #print len(library_full)
         atm_del_l=[]
         for pos,smiles in enumerate(library_full):
             
@@ -314,21 +334,19 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
 
     
     wt3 = MPI.Wtime()
+    #print b_dup[0],str(mol_wt),b_dup[1]
     ## concatinating the gathered list into SMILES dictionary based on Mol Wt
     if rank ==0:
         for l1 in library_gather:
             for l2 in l1:
                 mol_wt=l2[1]
                 smiles_dict[mol_wt].append([l2[0],l2[2]])
-        if gen!=gen_len-1:
+        # if gen!=gen_len-1:
          
-            for l2 in ini_list:
-                mol_wt=l2[1]
-                smiles_dict[mol_wt].append([l2[0],l2[2]])
+        #     for l2 in ini_list:
+        #         mol_wt=l2[1]
+        #         smiles_dict[mol_wt].append([l2[0],l2[2]])
             
-    wt4 = MPI.Wtime()
-
-    print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt4-wt3))+'\n')
 
     ## SMILES dictionary might have duplicates. Since the duplicates will only be in one Mol Wt
     ## list of the disctionary, we can divide Mol Wts into available processors.
@@ -351,22 +369,41 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     ## Now the duplicates in each Mol Wt can be removed by using 'set'.
 
 
+    library_indi=[]
+    library_indi2=[]
     for mol_wt in smiles_dict_indi:
         # smiles_dict_indi[mol_wt]=list(set(smiles_dict_indi[mol_wt]))
         a=smiles_dict_indi[mol_wt]
+        # tmp_list=[]
+        # for i, item in enumerate(a):
+        #     if item[0] not in tmp_list:
+        #         tmp_list.append(item[0])
+        #         library_indi2.append([item[0],str(mol_wt),item[1]])
         b= sorted(a, key=operator.itemgetter(0))
-        
+        #print a
+        #print b
         b_zip=zip(*b)
-        
+        #print b_zip
         b_dup=[[],[]]
         for i,item in enumerate(b_zip[0]):
             if item not in b_dup[0]:
                 b_dup[0].append(item)
                 b_dup[1].append(b_zip[1][i])
-                
-        smiles_dict_indi[mol_wt]=zip(b_dup[0],b_dup[1])
+                #print b_dup[0],str(mol_wt),b_dup[1]
+                library_indi.append([item,str(mol_wt),b_zip[1][i]])
+        # print library_indi
+        # print library_indi2
+        #smiles_dict_indi[mol_wt]=zip(b_dup[0],b_dup[1])
+        #library_indi=[]
+        #print smiles_dict_indi
+    # for mol_wt in smiles_dict_indi:
+        
+    #     for smiles_indi in smiles_dict_indi[mol_wt]:
+            
+    #         #print smiles_indi[0],'smiles_idi'
+    #         library_indi.append([smiles_indi[0],str(mol_wt),smiles_indi[1]])
     
-
+        
     ## This is to see if computation time can be further decreased
     # for mol_wt in smiles_dict_indi:
         
@@ -375,7 +412,8 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
            
     
     ## Gather the list of SMILES from each processor to the master processor
-    smiles_dict_g=comm.gather(smiles_dict_indi,root=0)
+    #smiles_dict_g=comm.gather(smiles_dict_indi,root=0)
+    library2=comm.gather(library_indi,root=0)
 
     ## This is to see if computation time can be further decreased
     #library_g=comm.gather(library,root=0)
@@ -387,14 +425,12 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     ## Now that the duplicates are removed we can make a list. This is because it 
     ## is easy to deal with list and easy to parallelize.
 
-
-    
     if rank==0:
-        for dict_indi in smiles_dict_g:
-            for mol_wt in dict_indi:
-                for smiles_indi in dict_indi[mol_wt]:
-                    #print smiles_indi[0],'smiles_idi'
-                    library.append([smiles_indi[0],str(mol_wt),smiles_indi[1]])
+        for item in library2:
+            library=library+item
+    wt4 = MPI.Wtime()
+
+    print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt4-wt3))+'\n')
 
     ## printing out smiles after every generation. This mus not be included in the final version
     ## only for test purpose
@@ -510,18 +546,21 @@ def generation_test(combi_type):
             lib_smiles_list.append([lib_can[i][0][:-2],lib_can[i][1],lib_can[i][2]]) # Note: Blank spaces are removed
     
     #print lib_smiles_list,'is this the one'
-    ini_list=lib_smiles_list
-    
     
     ## Generating molecules at each generation until the required length
-
+    Global_list.append(lib_smiles_list)
     for gen in xrange(gen_len):
         
         ## lib_smiles_list includes all the molecules list up until the current generation 
-        lib_smiles_list=create_gen_lev(lib_smiles_list,ini_list,combi_type,gen)
-        
+        Global_list.append(create_gen_lev(Global_list[gen],Global_list[0],combi_type,gen))
+        #print Global_list
         #print lib_smiles_list,'lib_smiles_list'
-        print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(lib_smiles_list)))
+        if gen<gen_len-1:
+            print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(Global_list[gen+1])))
+        else:
+            a=sum([len(a) for a in Global_list[:-1]])
+            length=len(Global_list[-1])-a
+            print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(length))
             
         ## printing out time after each generation
         wt2 = MPI.Wtime()
@@ -592,13 +631,13 @@ def generation_test(combi_type):
     ## test to see if there are any duplicates
     ## Uncomment the below part to test if any duplicates in final list
     
-    #library_can=[]
+    # library_can=[]
     
-    # for smiles in lib_smiles_list:
+    # for smiles in Global_list[-1]:
         
-    #     mol_combi= pybel.readstring("smi",smiles)
+    #     mol_combi= pybel.readstring("smi",smiles[0])
     #     can_mol_combi = mol_combi.write("can")
-    #     pos=pos+1
+    #     #pos=pos+1
     #     if can_mol_combi in library_can:
     #         print can_mol_combi
     #         continue
@@ -608,9 +647,9 @@ def generation_test(combi_type):
     # if rank==0:
     #     pass
     #     print len(library_can),'after checking for duplicates'
-    ###
     
-    return lib_smiles_list
+    
+    return Global_list[-1]
 
 
 ## This function is to check if the provided SMILES string are valid    
@@ -900,6 +939,7 @@ if __name__ == "__main__":
         smiles_list_c.append([smiles_list[i],'F'+str(i+1)])
 
     ## generation_test funtion generates combinatorial molecules
+    Global_list=[]
     final_list=generation_test(combi_type)
 
     ## Removing the molecules according to the lower limit in generation rules
