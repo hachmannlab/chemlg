@@ -423,10 +423,14 @@ def if_add(mol,mol_wt,rules,code,c_type='l'):
     mol_wt=mol.OBMol.GetMolWt()
     #print mol,'after'
 
-    if code in rules[0]:
+    for item in rules[0]:
+        if item not in code:
+            #print code,rules[0]
+            return False
+    # if code in rules[0]:
         
-        #print 'code',rules[3]
-        return False
+    #     #print 'code',rules[3]
+    #     return False
 
     # Calculating no.of rings
     bonds = mol.OBMol.NumBonds()

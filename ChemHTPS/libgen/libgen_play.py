@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
-
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.18"
-_REVISION_DATE = "01/02/2017"
+_SCRIPT_VERSION = "v0.1.19"
+_REVISION_DATE = "12/26/2017"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is a package for generating molecular libraries."
 
@@ -27,6 +26,7 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # v0.1.16 (01/03/2016): Included log file and error file
 # v0.1.17 (02/25/2016): Added more options, changed to Ra and Fr and included lower limit
 # v0.1.18 (01/02/2017): Further reducing the computation time (efficient parallel code), changes to the molecule data structure, included Fingerprint matching as well as substructure inclusion and exclusion
+# v0.1.19 (12/26/2017): Changed the first rule in generation rules file. This rule is to include specified building blocks in the final library.
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -53,14 +53,16 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # -Include substructure inclusion and removal criteria - Done
 # -The input can be mixture of smiles and inchi - Done
 # -Include range instead of Max value for generation rules - Done
+# -Fix the SMILES recognition error due to split by '=' sign - Done
 
 # -Specify order of fusion and link - This requires a large chunk of rewriting of the code, not done yet
 # -Detailed comments- Partially done
 # -Implement a smart duplicate removal system - Using Molwt for now, will have to look for better options
 # -Use error handling properly - Mostly done
 # -Include stopping criteria - Mostly done
-# -Include genetic algorithm 
+# -Merge genetic algorithm -  Currently it is a separate code
 # -Parallelize the reading of input SMILES incase the input is large
+# -Include a polymer builder
 
 ###################################################################################################
 
@@ -133,7 +135,7 @@ def if_del(mol,rules):
     if isinstance(rules[4][0],(int)):
         if rules[4][0]!=0:
             rings = len(mol.OBMol.GetSSSR())
-            if rings>int(rules[4][1]):
+            if rings<int(rules[4][0]):
                 #print 'rings'
                 return False
 
@@ -637,24 +639,34 @@ def get_rules(rulesFile):
             continue
         print_l(lines[:-1])
 
-        if '=' not in lines:
+        if '==' not in lines:
             tmp_str = "ERROR: Wrong generation rule provided for "+lines
             print_le(tmp_str,"Aborting due to wrong generation rule.")
 
-        words=lines.split('=')
+        words=lines.split('==')
         value=words[1].strip()
         if i==1:
-            ex_combis=words[1][:-1].split(',')
-            for i in xrange(len(ex_combis)):
-                item=ex_combis[i]
-                if '-' in item:
-                    shuffle=item.split('-')
-                    ex_combis.append(shuffle[1]+'-'+shuffle[0])
-                if ':' in item:
-                    shuffle=item.split(':')
-                    ex_combis.append(shuffle[1]+':'+shuffle[0])
-            rules_l.append(ex_combis)
+            in_frags=[]
+            for item in words[1][:-1].split(','):
+                in_frags.append(item.strip())
+            if 'F' not in words[1]:
+                in_frags=[]
+            rules_l.append(in_frags)
+            #print words[1],rules_l,'rules_l'
             continue
+            
+            ## below chuck won't work because the combinations are graph
+            # ex_combis=words[1][:-1].split(',')
+            # for i in xrange(len(ex_combis)):
+            #     item=ex_combis[i]
+            #     if '-' in item:
+            #         shuffle=item.split('-')
+            #         ex_combis.append(shuffle[1]+'-'+shuffle[0])
+            #     if ':' in item:
+            #         shuffle=item.split(':')
+            #         ex_combis.append(shuffle[1]+':'+shuffle[0])
+            # rules_l.append(ex_combis)
+            # continue
 
         if i==11:
             atomsg=value
@@ -872,13 +884,14 @@ if __name__ == "__main__":
         if smiles.isspace() or len(smiles)==0 or smiles[0]=='#':
             continue
         ## if the input is InChI, then convert all into SMILES
-        if mol_type == 'inchi':
-            continue
-        smiles=check_if_mol(smiles,i+1,args.file_name)
-            #kill_me=comm.gather(tmp_str,root=0)
+        # if mol_type == 'inchi':
+        #     continue
         if 'X' in smiles:
             smiles=smiles.replace('[x]','[Ra]')
             smiles=smiles.replace('[X]','[Ra]')
+
+        smiles=check_if_mol(smiles,i+1,args.file_name)
+            #kill_me=comm.gather(tmp_str,root=0)
 
         #if check_if_smiles(smiles):
         smiles_list.append(smiles)
