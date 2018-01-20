@@ -14,5 +14,6 @@ Please input generation rules below. Do not change the order of the options.
 13. Fingerprint matching ('c1ccccc1'-0.1),('C1CCCC1'-0.1) == None
 14. Substructure== None
 15. Substructure exclusion== None
-16. Combination order (currently not functional)== None
-17. Symmetry (currently not functional)== None
+16. Include_BB== True
+17. Combination order (currently not functional)== None
+18. Symmetry (currently not functional)== None

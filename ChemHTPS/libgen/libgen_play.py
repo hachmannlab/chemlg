@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.19"
-_REVISION_DATE = "12/26/2017"
+_SCRIPT_VERSION = "v0.1.20"
+_REVISION_DATE = "01/19/2018"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is a package for generating molecular libraries."
 
@@ -27,6 +27,7 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # v0.1.17 (02/25/2016): Added more options, changed to Ra and Fr and included lower limit
 # v0.1.18 (01/02/2017): Further reducing the computation time (efficient parallel code), changes to the molecule data structure, included Fingerprint matching as well as substructure inclusion and exclusion
 # v0.1.19 (12/26/2017): Changed the first rule in generation rules file. This rule is to include specified building blocks in the final library.
+# v0.1.20 (01/19/2018): Added a new rule. Fixed a bug in rule number of specific atoms rule.
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -105,7 +106,7 @@ def get_num_struc(mol,smarts):
     return num_unique_matches
 
 
-def if_del(mol,rules):
+def if_del(mol,rules,code):
     
     #print mol,'after'
 
@@ -187,6 +188,10 @@ def if_del(mol,rules):
             no_occ=get_num_struc(mol,item)
             if no_occ==0 :
                 return False            
+
+    if rules[15]=='False':
+        if code.count('-')==0:
+            return False
 
     return True
     
@@ -276,7 +281,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
                     atom.OBAtom.SetAtomicNum(1)
                     #print mol_combi
             ## mark the index of the molecules that do not the lower limit in the rules list
-            if if_del(mol_combi,rules_l)==False:
+            if if_del(mol_combi,rules_l,smiles[2])==False:
                 
                 #print 'mol_combi',mol_combi
                 atm_del_l.append(pos)
@@ -720,6 +725,15 @@ def get_rules(rulesFile):
             print value.split(',')
             continue
 
+        if i==16: # This rule is for inclusion of building blocks in the final library
+            if value!='True' and value!='False':
+                tmp_str = "ERROR: Wrong generation rule provided for "+lines
+                tmp_str=tmp_str+"Provide either True or False. \n"
+                print_le(tmp_str,"Aborting due to wrong generation rule.")
+            
+            if value=='False':
+                rules_l.append('False')
+            continue
         
         if value!='None':
             if '-' not in words[1]:

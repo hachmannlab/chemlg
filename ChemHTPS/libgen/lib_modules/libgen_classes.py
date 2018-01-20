@@ -490,7 +490,7 @@ def if_add(mol,mol_wt,rules,code,c_type='l'):
     if isinstance(rules[10],list):
         for item in rules[10]:
             no_at=0
-            if item[0]=='C'or'S'or'N'or'O'or'c'or's'or'n'or'o':
+            if item[0]=='C' or item[0]=='S' or item[0]=='N' or item[0]=='O' or item[0]=='c' or item[0]=='s' or item[0]=='n' or item[0]=='o':
                 no_at=get_num_struc(mol,item[0].lower())
                 no_at=no_at+get_num_struc(mol,item[0].upper())
             else:
