@@ -1,22 +1,14 @@
 from __future__ import print_function
-from ipywidgets import interact
+from ipywidgets import interact, Layout
 import ipywidgets as widgets
-#import ipywidgets.Layout as ly
-from IPython.display import display, clear_output
-from rdkit import Chem
-from rdkit.Chem.Draw import IPythonConsole
-import sys
-from IPython.display import Javascript
-
-
+from IPython.display import display
 style = {'description_width': 'initial'}
 count =0
-BB_list=[]
-
-def GUI_1():
-    global BB_list
+def GUI():
     style = {'description_width': 'initial'}
-
+    
+   
+    style = {'description_width': 'initial'}
     BB = widgets.Text(
         placeholder='Type the SMILES of building block',
         description='Building block:',style=style,
@@ -24,65 +16,24 @@ def GUI_1():
     display(BB)
     button = widgets.Button(description="Add the building block")
     display(button)
-    BB_dis = widgets.HTML(
-        description='Building blocks added:',style=style,
-        )
-    display(BB_dis)
-    
-    button_BB_dis = widgets.Button(description="Visualize building block")
-    display(button_BB_dis)
-
+ 
     def on_button_clicked(b):
-        global count, BB_list
+        global count
         count=count+1
-        display(Javascript('IPython.notebook.execute_cells([3])'))
-        if count>0:
-            BB_list.append(BB.value)
+        if count>1:
             building_blocks2=open("building_blocks.txt","a+")
             building_blocks2.write(BB.value + '\n')
             building_blocks2.close()
-            BB_dis.value = str(BB_list)
-
+            
+            
         else:
             building_blocks1 = open("building_blocks.txt", "w+")
             building_blocks1.write('Building blocks are:' + '\n' + BB.value + '\n')
             building_blocks1.close()
             count=2
-
-    def on_dis_bb_clicked(b):
-
-        global BB_list
-        mol_list = [Chem.MolFromSmiles(smiles) for smiles in BB_list]
-        [mol.SetProp('_Name', 'B'+str(i)) for i,mol in enumerate(mol_list)]
-        ibu=Chem.Draw.MolsToGridImage(mol_list,legends=[mol.GetProp('_Name') for mol in mol_list])
-        display(ibu)
-        #BB_viz()
-
-                        
+            
             
     button.on_click(on_button_clicked)
-    button_BB_dis.on_click(on_dis_bb_clicked)
-
-def BB_viz():
-    
-    global BB_list
-    button_BB_dis = widgets.Button(description="Visualize building block")
-    display(button_BB_dis)
-
-    def on_dis_bb_clicked(b):
-
-        global BB_list
-        clear_output()
-        button_BB_dis = widgets.Button(description="Visualize building block")
-        display(button_BB_dis)
-        mol_list = [Chem.MolFromSmiles(smiles) for smiles in BB_list]
-        [mol.SetProp('_Name', 'B'+str(i)) for i,mol in enumerate(mol_list)]
-        ibu=Chem.Draw.MolsToGridImage(mol_list,legends=[mol.GetProp('_Name') for mol in mol_list])
-        display(ibu)
-            
-    button_BB_dis.on_click(on_dis_bb_clicked)
-
-def GUI_2():
     style = {'description_width': 'initial'}
     building_blocks = widgets.Text(value='F1',
                                    placeholder='Type the building blocks to be used',
@@ -281,7 +232,7 @@ def GUI_2():
     tab.set_title(7, 'ChemHTPS')
 
     display(tab)
-    button = widgets.Button(description="Generate Command line")
+    button = widgets.Button(description="Generate Command line", layout= Layout(width= 'auto'))
     display(button)
 
     def on_button_clicked(b):
