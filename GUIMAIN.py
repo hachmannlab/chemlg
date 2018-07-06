@@ -313,8 +313,8 @@ def GUI_2():
                 substructure.value='None'
             elif substructure_exclusion.value=="":
                 substructure_exclusion.value=='None'
-                
-                
+            display(widgets.HTML(value="""<font size=3>Generation rules file created""",layout = widgets.Layout(height = '60px', width = '90%',size = '20')))   
+               
                 
             generation = open("generation_rules.dat", "w+")
             generation.write(
@@ -328,14 +328,15 @@ def GUI_2():
                                                                                                                                                                          "14. Substructure == " + substructure.value + '\n' + "15. Substructure exclusion == " + substructure_exclusion.value + '\n' +
                 "15. Include_BB == " + Include_BB.value + '\n')
             generation.close()
-
+            
         button1 = widgets.Button(description="Generate rules file",layout=widgets.Layout(border='solid 1px black'),style=style)
+        
         display(button1)
-
+        
         def on_button_clicked(b):
             generation_file()
-            
-            
+           
+             
         display(third)    
         button1.on_click(on_button_clicked)
     second.on_click(second_section)
@@ -455,7 +456,7 @@ def GUI_2():
         display(button)
 
         def on_button_clicked(b):
-            opt = "--input_file %s --molecule_type %s --combination_type %s --generation_levels %s --output_type %s--max_files_per_folder%s --rule_file generation.dat --lib_name %s --ChemHTPS %s" % (
+            opt = "--input_file %s --molecule_type %s --combination_type %s --generation_levels %s --output_type %s--max_files_per_folder %s --rule_file generation.dat --lib_name %s --ChemHTPS %s" % (
             input_file.value, molecule_type.value, combination_type.value, generation_level.value, output_type.value,
             max_files.value, library_name.value, chemHTPS.value)
             print(opt)
