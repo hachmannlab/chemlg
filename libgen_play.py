@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 _SCRIPT_NAME = "Library_Generator"
-_SCRIPT_VERSION = "v0.1.20"
-_REVISION_DATE = "01/19/2018"
+_SCRIPT_VERSION = "v0.1.21"
+_REVISION_DATE = "07/12/2018"
 _AUTHOR = "Mohammad Atif Faiz Afzal (m27@buffalo.edu) and Johannes Hachmann (hachmann@buffalo.edu) "
 _DESCRIPTION = "This is a package for generating molecular libraries."
 
@@ -28,6 +28,7 @@ _DESCRIPTION = "This is a package for generating molecular libraries."
 # v0.1.18 (01/02/2017): Further reducing the computation time (efficient parallel code), changes to the molecule data structure, included Fingerprint matching as well as substructure inclusion and exclusion
 # v0.1.19 (12/26/2017): Changed the first rule in generation rules file. This rule is to include specified building blocks in the final library.
 # v0.1.20 (01/19/2018): Added a new rule. Fixed a bug in rule number of specific atoms rule.
+# v0.1.21 (07/12/2018): Fixed a bug in fusion module. 
 
 ###################################################################################################
 # TASKS OF THIS SCRIPT:
@@ -500,7 +501,6 @@ def generation_test(combi_type):
 
         print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt2-wt1))+'\n')
     
-    print Global_list
     # ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     # ## This can be easily done parallely as the jobs are independet of each other
     # ## Making the list ready to scatter between processors
