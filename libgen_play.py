@@ -110,7 +110,7 @@ def if_del(mol,rules,code):
     
     #print mol,'after'
 
-    if rules[1][0]!=0:
+    if rules[1][0] != 0:
         bonds = mol.OBMol.NumBonds()
         #print rules[1][1]
         
@@ -118,23 +118,23 @@ def if_del(mol,rules,code):
             #print 'bonds'
             return False
     
-    if rules[2][0]!=0:
-        no_atoms=len(mol.atoms)
+    if rules[2][0] != 0:
+        no_atoms = len(mol.atoms)
         
         if no_atoms<rules[2][0]:
             #print 'no_atoms'
             return False
 
-    if rules[3][0]!=0:
+    if rules[3][0] != 0:
         
-        mol_wt=mol.OBMol.GetMolWt()
+        mol_wt = mol.OBMol.GetMolWt()
         
         if int(mol_wt)<rules[3][0]:
             #print 'mol_wt'
             return False
 
     if isinstance(rules[4][0],(int)):
-        if rules[4][0]!=0:
+        if rules[4][0] != 0:
             rings = len(mol.OBMol.GetSSSR())
             if rings<int(rules[4][0]):
                 #print 'rings'
@@ -142,14 +142,14 @@ def if_del(mol,rules,code):
 
     if isinstance(rules[5][0],(int)) or isinstance(rules[6][0],(int)):
         
-        if rules[5][0]!=0 or rules[6][0]!=0:
-            no_ar=0
-            no_non_ar=0
+        if rules[5][0] != 0 or rules[6][0] != 0:
+            no_ar = 0
+            no_non_ar = 0
             for r in mol.OBMol.GetSSSR():
                 if r.IsAromatic():
-                    no_ar=no_ar+1
+                    no_ar = no_ar+1
                 else:
-                    no_non_ar=no_non_ar+1
+                    no_non_ar = no_non_ar+1
             if isinstance(rules[5][0],(int)):
                 if no_ar<int(rules[5][0]) :
                     return False
@@ -158,39 +158,39 @@ def if_del(mol,rules,code):
                     return False
 
     if isinstance(rules[7][0],(int)):
-        if rules[7][0]!=0:
-            no_s_bonds=get_num_struc(mol,"*-*")
+        if rules[7][0] != 0:
+            no_s_bonds = get_num_struc(mol,"*-*")
             if no_s_bonds<int(rules[7][0]) :
                 return False
 
     if isinstance(rules[8][0],(int)):
-        if rules[8][0]!=0:
-            no_d_bonds=get_num_struc(mol,"*=*")
+        if rules[8][0] != 0:
+            no_d_bonds = get_num_struc(mol,"*=*")
             if no_d_bonds<int(rules[8][0]) :
                 return False
 
     if isinstance(rules[9][0],(int)):
-        if rules[9][0]!=0:
-            no_t_bonds=get_num_struc(mol,"*#*")
+        if rules[9][0] != 0:
+            no_t_bonds = get_num_struc(mol,"*#*")
             if no_t_bonds<int(rules[9][0]) :
                 return False    
                 
-    if rules[12]!='None':
+    if rules[12] != 'None':
         for mol_to_comp in rules[12]:
-            mol2=pybel.readstring('smi',mol_to_comp[0])
-            tanimoto=mol.calcfp()|mol2.calcfp()            
+            mol2 = pybel.readstring('smi',mol_to_comp[0])
+            tanimoto = mol.calcfp()|mol2.calcfp()            
             if tanimoto<float(mol_to_comp[1]):
                 return False
            
-    if rules[13]!='None':
+    if rules[13] != 'None':
         for item in rules[13]:
             
-            no_occ=get_num_struc(mol,item)
-            if no_occ==0 :
+            no_occ = get_num_struc(mol,item)
+            if no_occ == 0 :
                 return False            
 
-    if rules[15]=='False':
-        if code.count('-')==0:
+    if rules[15] == 'False':
+        if code.count('-') == 0 and code.count(':') == 0:
             return False
 
     return True
@@ -203,27 +203,25 @@ and the current generation of molecules
 #@profile
 def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
 
-    library_can=[]
-    library_full=[]
-    library=[]
+    library_can, library_full, library = [], [], []
     
     # Creating a dictionary of molecules. This is a faster way to prevent duplicates
     
     smiles_dict = defaultdict(list) 
 
     ## Adding all previous generation molecules to dictionary 
-    if rank ==0:
-        smiles_to_scatter=[]
+    if rank == 0:
+        smiles_to_scatter = []
         for i in xrange(mpisize):
-            list_to_scatter=smiles_list_gen
-            start=int(i*(len(list_to_scatter))/mpisize)
-            end=int((i+1)*(len(list_to_scatter))/mpisize)-1
+            list_to_scatter = smiles_list_gen
+            start = int(i*(len(list_to_scatter))/mpisize)
+            end = int((i+1)*(len(list_to_scatter))/mpisize)-1
             smiles_to_scatter.append(list_to_scatter[start:end+1])
     else:
-        smiles_to_scatter=[]
+        smiles_to_scatter = []
     
     ## Dividing the list into processors
-    scattered_gen=comm.scatter(smiles_to_scatter,root=0)
+    scattered_gen = comm.scatter(smiles_to_scatter,root=0)
                         
 
     ## Now individual processors will generate molecules based on the list of molecules 
@@ -237,51 +235,51 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             ## The return type for these functions is a list with first element the SMILES
             ## of the generated molecule and second element its molecular weight.
 
-            if combi_type=='link':
-                library_full=library_full+libgen_classes.create_link_c([smiles1[0],smiles1[2]],[smiles2[0],smiles2[2]],rules_l)
-            if combi_type=='fusion':
-                library_full=library_full+libgen_classes.get_fused_c([smiles1[0],smiles1[2]],[smiles2[0],smiles2[2]],rules_l)
+            if combi_type == 'link':
+                library_full = library_full+libgen_classes.create_link_c([smiles1[0],smiles1[2]],[smiles2[0],smiles2[2]],rules_l)
+            if combi_type == 'fusion':
+                library_full = library_full+libgen_classes.get_fused_c([smiles1[0],smiles1[2]],[smiles2[0],smiles2[2]],rules_l)
 
     ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     ## This can be easily done parallely as the jobs are independent of each other
     ## Making the list ready to scatter between processors
 
-    if gen==gen_len-1:
-        if rank ==0:
-            smiles_to_scatter=[]
+    if gen == gen_len-1:
+        if rank == 0:
+            smiles_to_scatter = []
             for i in xrange(mpisize):
-                list_to_scatter=list(chain.from_iterable(Global_list))
-                start=int(i*(len(list_to_scatter))/mpisize)
-                end=int((i+1)*(len(list_to_scatter))/mpisize)-1
+                list_to_scatter = list(chain.from_iterable(Global_list))
+                start = int(i*(len(list_to_scatter))/mpisize)
+                end = int((i+1)*(len(list_to_scatter))/mpisize)-1
                 smiles_to_scatter.append(list_to_scatter[start:end+1])
         else:
-            smiles_to_scatter=[]
+            smiles_to_scatter = []
     
         ## Dividing the list into processors
-        scattered_list=comm.scatter(smiles_to_scatter,root=0)
+        scattered_list = comm.scatter(smiles_to_scatter,root=0)
         
-        library_full=scattered_list+library_full
+        library_full = scattered_list+library_full
 
-        atm_del_l=[]
+        atm_del_l = []
         for pos,smiles in enumerate(library_full):
             
-            mol_combi= pybel.readstring("smi",smiles[0])
+            mol_combi = pybel.readstring("smi",smiles[0])
             
-            atoms=list(mol_combi.atoms)
-            del_idx=[]
+            atoms = list(mol_combi.atoms)
+            del_idx = []
             ## iterating over all atoms of the molecule
             for atom in atoms:
                 ## Removing Francium atoms
-                if atom.OBAtom.GetAtomicNum()==87:
+                if atom.OBAtom.GetAtomicNum() == 87:
                     ## it is easy to convert Francium atom to hydrogen than deleting the atom
                     atom.OBAtom.SetAtomicNum(1)
                 
                 ## Removing Radium atoms
-                if atom.OBAtom.GetAtomicNum()==88:
+                if atom.OBAtom.GetAtomicNum() == 88:
                     atom.OBAtom.SetAtomicNum(1)
                     #print mol_combi
             ## mark the index of the molecules that do not the lower limit in the rules list
-            if if_del(mol_combi,rules_l,smiles[2])==False:
+            if if_del(mol_combi,rules_l,smiles[2]) == False:
                 
                 #print 'mol_combi',mol_combi
                 atm_del_l.append(pos)
@@ -289,14 +287,14 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
             ## After removing Ra atoms, Fusion molecules list might contain duplicates.
             ## So convert all the SMILES to canonical so that it can be deleted later
             
-            if combi_type=='fusion':
+            if combi_type == 'fusion':
                 can_mol_combi = mol_combi.write("can")
-                library_full[pos][0]=str(can_mol_combi)[:-2]
-                library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
+                library_full[pos][0] = str(can_mol_combi)[:-2]
+                library_full[pos][1] = int(mol_combi.OBMol.GetMolWt())
             ## If linked type, then there are no duplicates so no need for canonical
             if combi_type=='link':       
-                library_full[pos][0]=str(mol_combi)[:-2]
-                library_full[pos][1]=int(mol_combi.OBMol.GetMolWt())
+                library_full[pos][0] = str(mol_combi)[:-2]
+                library_full[pos][1] = int(mol_combi.OBMol.GetMolWt())
 
         ## deleted the atoms that were marked to be deleted
         for pos_del in atm_del_l[::-1]:
@@ -304,7 +302,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     ## once the new generation is ready in processor, collect all the lists into the master
     ## processor
 
-    library_gather=comm.gather(library_full,root=0)
+    library_gather = comm.gather(library_full,root=0)
 
     # ## As there can be duplicates in fused molecules we have to remove the duplicates
     # if combi_type=='fusion':
@@ -314,10 +312,10 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     #print library_gather
 
     ## concatinating the gathered list into SMILES dictionary based on Mol Wt
-    if rank ==0:
+    if rank == 0:
         for l1 in library_gather:
             for l2 in l1:
-                mol_wt=l2[1]
+                mol_wt = l2[1]
                 smiles_dict[mol_wt].append([l2[0],l2[2]])
             
     ## SMILES dictionary might have duplicates. Since the duplicates will only be in one Mol Wt
@@ -325,24 +323,24 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     
     ## Preparing the dictionary to scatter. This is similar the way described above for dividing 
     ## SMILES list
-    if rank ==0:
-        smiles_dict_scatter=[]
-        items=smiles_dict.items()
+    if rank == 0:
+        smiles_dict_scatter = []
+        items = smiles_dict.items()
         for i in xrange(mpisize):
-            start=int(i*(len(smiles_dict))/mpisize)
-            end=int((i+1)*(len(smiles_dict))/mpisize)-1
+            start = int(i*(len(smiles_dict))/mpisize)
+            end = int((i+1)*(len(smiles_dict))/mpisize)-1
             smiles_dict_scatter.append(dict(item for item in items[start:end+1]))
     else:
-        smiles_dict_scatter=[]
+        smiles_dict_scatter = []
     
     ## Scatterring the list
-    smiles_dict_indi=comm.scatter(smiles_dict_scatter,root=0)
+    smiles_dict_indi = comm.scatter(smiles_dict_scatter,root=0)
     
     ## Now the duplicates in each Mol Wt can be removed by using 'set'.
 
-    library_indi=[]
+    library_indi = []
     for mol_wt in smiles_dict_indi:
-        a=smiles_dict_indi[mol_wt]
+        a = smiles_dict_indi[mol_wt]
         # b= sorted(a, key=operator.itemgetter(0))
         # #print a
         # #print b
@@ -355,17 +353,17 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
         #         b_dup[1].append(b_zip[1][i])
         #         library_indi.append([item,str(mol_wt),b_zip[1][i]])
 
-        tmp_list=[]
+        tmp_list = []
         for i, item in enumerate(a):
             if item[0] not in tmp_list:
                 tmp_list.append(item[0])
                 library_indi.append([item[0],str(mol_wt),item[1]])
 
-    library_g=comm.gather(library_indi,root=0)
+    library_g = comm.gather(library_indi,root=0)
 
-    if rank==0:
+    if rank == 0:
         for item in library_g:
-            library=library+item
+            library = library+item
 
     ## printing out smiles after every generation. This mus not be included in the final version
     ## only for test purpose
@@ -383,7 +381,7 @@ def create_gen_lev(smiles_list_gen,ini_list,combi_type,gen):
     
     ## Return the list with all molecules until this generation number
     #print library
-    if rank==0:
+    if rank == 0:
         return library
     else:
         return []       
@@ -393,9 +391,9 @@ Ra atom to fully satisfied (no hydrogens). This is done by attaching Fr atoms to
 ''' 
 def reverse_mol(smiles):
     
-    mol=pybel.readstring("smi",smiles)            
-    atoms=list(mol.atoms)
-    atom_num=[] # to append atomic number of atoms present in molecule
+    mol = pybel.readstring("smi",smiles)            
+    atoms = list(mol.atoms)
+    atom_num = [] # to append atomic number of atoms present in molecule
 
     ## Make a list of atomic numbers for all atoms that are in the molecule
     for atom in atoms:
@@ -415,7 +413,7 @@ def reverse_mol(smiles):
             #if hcount==0:
             #    continue
             
-            index=atom.OBAtom.GetIdx()
+            index = atom.OBAtom.GetIdx()
             
             ### Below section (commented) can be used to the include site points containing Ra to have multiple 
             ### combinations at the site point
@@ -434,47 +432,47 @@ def reverse_mol(smiles):
             ##
             
             ## This is replacing hydrogen atoms with Francium atom
-            while hcount!=0:
-                size=len(list(mol.atoms))
+            while hcount != 0:
+                size = len(list(mol.atoms))
                 mol.OBMol.InsertAtom(Fratom)
                 mol.OBMol.AddBond(index,size+1,1,0,-1)
                 hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
                 
         ## As the atoms are now changed in molecule, we will have to define atom list again
-        atoms=list(mol.atoms)
+        atoms = list(mol.atoms)
         
         ## Replace all Radium atoms with hydrogen, which makes them site points.
         
         for atom in atoms:
-            if atom.OBAtom.GetAtomicNum()==88:
+            if atom.OBAtom.GetAtomicNum() == 88:
                 atom.OBAtom.SetAtomicNum(1)
                    
-    smiles=mol.write("can")[:-2]
+    smiles = mol.write("can")[:-2]
     return smiles
 
     
 def generation_test(combi_type):
-    lib_smiles_list=[]
-    lib_can=[]
+    lib_smiles_list = []
+    lib_can = []
     
     ## It is important to remove any duplicates that are in the provided SMILES list. 
     ## If not removed then the algorithm makes many more duplicates.
     
     for smiles in smiles_list_c:
         ## using canonical smiles, duplicates can be removed
-        mol_combi= pybel.readstring("smi",smiles[0]) 
-        mol_wt=str(int(mol_combi.OBMol.GetMolWt()))
+        mol_combi = pybel.readstring("smi",smiles[0]) 
+        mol_wt = str(int(mol_combi.OBMol.GetMolWt()))
         can_mol_combi = mol_combi.write("can")
         if can_mol_combi in lib_can:
             continue
         lib_can.append([can_mol_combi,mol_wt,smiles[1]])
 
     ## If the combination type is link, modify the molecule with Francium atoms
-    if combi_type=='link':
+    if combi_type == 'link':
         for i in xrange(len(lib_can)):
             lib_smiles_list.append([reverse_mol(lib_can[i][0]),lib_can[i][1],lib_can[i][2]])
     ## If the combination type is fusion, do not do anything. 
-    if combi_type=='fusion':
+    if combi_type == 'fusion':
         for i in xrange(len(lib_can)):
             lib_smiles_list.append([lib_can[i][0][:-2],lib_can[i][1],lib_can[i][2]]) # Note: Blank spaces are removed
     
@@ -483,15 +481,18 @@ def generation_test(combi_type):
         
         ## lib_smiles_list includes all the molecules list up until the current generation 
         Global_list.append(create_gen_lev(Global_list[gen],Global_list[0],combi_type,gen))
-        #print Global_list
-        #print lib_smiles_list,'lib_smiles_list'
+
         if gen<gen_len-1:
             print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(Global_list[gen+1])))
         else:
-            a=sum([len(a) for a in Global_list[:-1]])
-            length=len(Global_list[-1])-a
+            a = sum([len(a) for a in Global_list[:-1]])
+
+            if rules_l[15] == 'False':
+                a=a-len(Global_list[0])
+
+            length = len(Global_list[-1])-a
             if length<0:
-                length =0
+                length = 0
             print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(length))
             
         ## printing out time after each generation
@@ -499,6 +500,7 @@ def generation_test(combi_type):
 
         print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt2-wt1))+'\n')
     
+    print Global_list
     # ## Now we have to delete the Fr atoms for linked atoms and Ra atoms for Fused atoms
     # ## This can be easily done parallely as the jobs are independet of each other
     # ## Making the list ready to scatter between processors
@@ -585,24 +587,24 @@ def generation_test(combi_type):
 
 
 def check_if_mol(smiles,line,file_name):
-    if check_if_inchi(smiles)==True:            
-        this_mol=pybel.readstring("inchi",smiles)
-        smiles=str(this_mol)
-        smiles=smiles.strip()
-    elif check_if_smiles(smiles)==False:    
+    if check_if_inchi(smiles) == True:            
+        this_mol = pybel.readstring("inchi",smiles)
+        smiles = str(this_mol)
+        smiles = smiles.strip()
+    elif check_if_smiles(smiles) == False:    
         ## check if smiles
-        tmp_str='Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
+        tmp_str = 'Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
         print_le(tmp_str,"Aborting due to wrong molecule description.")
     return smiles
 
 ## This function is to check if the provided SMILES string are valid    
 def check_if_smiles(smiles):
-    data=True
-    if rank==0:
+    data = True
+    if rank == 0:
         try:
-            mol= pybel.readstring("smi",smiles)
+            mol = pybel.readstring("smi",smiles)
         except:
-            data= False
+            data = False
     data = comm.bcast(data, root=0)
     
     return data
@@ -610,18 +612,18 @@ def check_if_smiles(smiles):
 ## This function is to check if the provided InChI string are valid    
 def check_if_inchi(inchi):
     try:
-        mol= pybel.readstring("inchi",inchi)
+        mol = pybel.readstring("inchi",inchi)
     except:
         return False
     return True
 
 def print_l(sentence):
-    if rank ==0:
+    if rank == 0:
         print sentence
         logfile.write(str(sentence)+"\n")
 
 def print_le(sentence,msg="Aborting the run"):
-    if rank ==0:
+    if rank == 0:
         print sentence
         logfile.write(sentence+"\n")
         error_file.write(sentence+"\n")
@@ -629,18 +631,18 @@ def print_le(sentence,msg="Aborting the run"):
     else:
         sys.exit()
 def print_e(sentence):
-    if rank ==0:
+    if rank == 0:
         print sentence
         error_file.write(sentence+"\n")
         
         
 
 def get_rules(rulesFile):
-    rules_l=[]
+    rules_l = []
     print_l('Provided rules')
 
     for i,lines in enumerate(rulesFile):
-        if i==0:
+        if i == 0:
             continue
         print_l(lines[:-1])
 
@@ -648,14 +650,14 @@ def get_rules(rulesFile):
             tmp_str = "ERROR: Wrong generation rule provided for "+lines
             print_le(tmp_str,"Aborting due to wrong generation rule.")
 
-        words=lines.split('==')
-        value=words[1].strip()
-        if i==1:
-            in_frags=[]
+        words = lines.split('==')
+        value = words[1].strip()
+        if i == 1:
+            in_frags = []
             for item in words[1][:-1].split(','):
                 in_frags.append(item.strip())
             if 'F' not in words[1]:
-                in_frags=[]
+                in_frags = []
             rules_l.append(in_frags)
             #print words[1],rules_l,'rules_l'
             continue
@@ -673,75 +675,75 @@ def get_rules(rulesFile):
             # rules_l.append(ex_combis)
             # continue
 
-        if i==11:
-            atomsg=value
+        if i == 11:
+            atomsg = value
             #print atomsg,'atomsg'
-            atoms_l=[]
-            if atomsg=='None':
+            atoms_l = []
+            if atomsg == 'None':
                 pass
             else:
-                atoms=atomsg.split(',')
+                atoms = atomsg.split(',')
                 for atom in atoms:
-                    atomi=atom.split('-')
+                    atomi = atom.split('-')
                     atoms_l.append([atomi[0].strip(),int(atomi[1])])
             
             rules_l.append(atoms_l)
             continue
        
-        if i==12:
+        if i == 12:
             #print words,i
             rules_l.append(value)
             continue
 
-        if i==13: # This rule is for FP matching
+        if i == 13: # This rule is for FP matching
             #print words,i
-            smiles_to_comp=value
-            if smiles_to_comp=='None':
+            smiles_to_comp = value
+            if smiles_to_comp == 'None':
                 rules_l.append('None')            
                 continue
-            smiles_to_comp=smiles_to_comp.split(',')
-            smiles_to_comp_l=[]
+            smiles_to_comp = smiles_to_comp.split(',')
+            smiles_to_comp_l = []
 
             for item in smiles_to_comp:
                 if '-' not in item:
                     tmp_str = "ERROR: Wrong generation rule provided for "+lines
-                    tmp_str=tmp_str+"Privide the molecule as SMILES/InChI followed by the Tanimoto index. For example, 'c1ccccc1-20'. \n More molecules can be provided separated by a comma. \n"
+                    tmp_str = tmp_str+"Privide the molecule as SMILES/InChI followed by the Tanimoto index. For example, 'c1ccccc1-20'. \n More molecules can be provided separated by a comma. \n"
                     print_le(tmp_str,"Aborting due to wrong fingerprint rule.")
-                item_split=item.split('-')
-                smiles=check_if_mol(item_split[0][2:-1],i+1,rule_file)
+                item_split = item.split('-')
+                smiles = check_if_mol(item_split[0][2:-1],i+1,rule_file)
                 smiles_to_comp_l.append([smiles,item_split[1][:-1]])
             rules_l.append(smiles_to_comp_l)            
             continue
 
-        if i==14 or i==15:  # This rule for substructure inclusion and exclusion
-            if value=='None':
+        if i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
+            if value == 'None':
                 rules_l.append('None')            
                 continue
-            smiles_l=[]
+            smiles_l = []
             for item in value.split(','):
-                smiles=check_if_mol(item[1:-1],i+1,rule_file)
+                smiles = check_if_mol(item[1:-1],i+1,rule_file)
                 smiles_l.append(smiles)
             rules_l.append(smiles_l)
             print value.split(',')
             continue
 
-        if i==16: # This rule is for inclusion of building blocks in the final library
-            if value!='True' and value!='False':
+        if i == 16: # This rule is for inclusion of building blocks in the final library
+            if value != 'True' and value != 'False':
                 tmp_str = "ERROR: Wrong generation rule provided for "+lines
-                tmp_str=tmp_str+"Provide either True or False. \n"
+                tmp_str = tmp_str+"Provide either True or False. \n"
                 print_le(tmp_str,"Aborting due to wrong generation rule.")
             
-            if value=='False':
+            if value == 'False':
                 rules_l.append('False')
             continue
         
-        if value!='None':
+        if value != 'None':
             if '-' not in words[1]:
                 tmp_str = "ERROR: Wrong generation rule provided for "+lines
-                tmp_str=tmp_str+"Privide the range of number required. For example, 10-20. \n"
+                tmp_str = tmp_str+"Privide the range of number required. For example, 10-20. \n"
                 print_le(tmp_str,"Aborting due to wrong generation rule.")
             
-            values=words[1].split('-')
+            values = words[1].split('-')
             
             try:
                 val_l = int(values[0])
@@ -749,10 +751,10 @@ def get_rules(rulesFile):
 
             except ValueError:
                 tmp_str = "ERROR: Wrong generation rule provided for "+lines
-                tmp_str=tmp_str+"Please provide either a number or None as input.\n"
-                tmp_str=tmp_str+"Use - to separate the range of numbers. For example, 10-20.\n"
+                tmp_str = tmp_str+"Please provide either a number or None as input.\n"
+                tmp_str = tmp_str+"Use - to separate the range of numbers. For example, 10-20.\n"
                 print_le(tmp_str,"Aborting due to wrong generation rule.")
-            val=[val_l,val_u]
+            val = [val_l,val_u]
             rules_l.append(val)
             
         else:
@@ -788,20 +790,20 @@ if __name__ == "__main__":
     mpisize = comm.Get_size()
 
 
-    if rank==0:
+    if rank == 0:
         logfile = open('logfile.txt','a',0)
         error_file = open('error_file.txt','a',0)
         
         libgen_classes.banner(logfile, _SCRIPT_NAME, _SCRIPT_VERSION, _REVISION_DATE, _AUTHOR, _DESCRIPTION)
 
     ##Initializing number of generations value
-    gen_len=1
+    gen_len = 1
     
     ## Defining Ra atom and Francium atom
-    myRa=pybel.readstring('smi',"[Ra]")
-    Raatom=myRa.OBMol.GetAtom(1)
-    myFr=pybel.readstring('smi',"[Fr]")
-    Fratom=myFr.OBMol.GetAtom(1)
+    myRa = pybel.readstring('smi',"[Ra]")
+    Raatom = myRa.OBMol.GetAtom(1)
+    myFr = pybel.readstring('smi',"[Fr]")
+    Fratom = myFr.OBMol.GetAtom(1)
     
     ## Argument parser desription
     parser = argparse.ArgumentParser(description='This is a pacakge to generate a combinatorial library of molecules based on the building blocks provided. Please provide the building blocks in the a file in either SMILES form or InChi.')
@@ -826,13 +828,13 @@ if __name__ == "__main__":
 
     ## defining arguments
     args = parser.parse_args()
-    mol_type=args.mol_type.lower()
-    combi_type=args.combi_type.lower()
-    max_fpf=int(args.max_fpf)
-    gen_len=int(args.gen_len)
-    rule_file=args.rule_file
-    BB_file=args.file_name
-    oft=args.oft.lower()
+    mol_type = args.mol_type.lower()
+    combi_type = args.combi_type.lower()
+    max_fpf = int(args.max_fpf)
+    gen_len = int(args.gen_len)
+    rule_file = args.rule_file
+    BB_file = args.file_name
+    oft = args.oft.lower()
 
     ## setting output directory
     if args.chemhtps:
@@ -846,17 +848,17 @@ if __name__ == "__main__":
     print_l("Output molecule type is "+str(args.oft).upper()+'\n')
 
     
-    smiles_list=[]
+    smiles_list = []
     
     
     ## Reading the building rules from generation_rules.dat
     print_l("Reading generation rules from the file \'"+rule_file+'\'\n')
 
     try :
-        rulesFile=open(rule_file)
+        rulesFile = open(rule_file)
     except:
         tmp_str = "Generation rules file "+rule_file+" does not exist. "
-        tmp_str=tmp_str+"Please provide correct generation rule file.\n"
+        tmp_str = tmp_str+"Please provide correct generation rule file.\n"
         print_le(tmp_str,"Aborting due to wrong file.")
         
     # rules list order
@@ -878,33 +880,33 @@ if __name__ == "__main__":
 
     '''
 
-    rules_l=get_rules(rulesFile)
+    rules_l = get_rules(rulesFile)
 
 
     ## Reading the building blocks from the input file
     print_l("Reading building blocks from the file \'"+BB_file+'\'\n')
 
     try :
-        infile=open(BB_file)
+        infile = open(BB_file)
     except:
         tmp_str = "Building blocks file "+BB_file+" does not exist. "
-        tmp_str=tmp_str+"Please provide correct building blocks file.\n"
+        tmp_str = tmp_str+"Please provide correct building blocks file.\n"
         print_le(tmp_str,"Aborting due to wrong file.")
 
     
     ## Read molecules provided in the input 
     for i,line in enumerate(infile):
-        smiles= line.strip()
+        smiles = line.strip()
         if smiles.isspace() or len(smiles)==0 or smiles[0]=='#':
             continue
         ## if the input is InChI, then convert all into SMILES
         # if mol_type == 'inchi':
         #     continue
         if 'X' in smiles:
-            smiles=smiles.replace('[x]','[Ra]')
-            smiles=smiles.replace('[X]','[Ra]')
+            smiles = smiles.replace('[x]','[Ra]')
+            smiles = smiles.replace('[X]','[Ra]')
 
-        smiles=check_if_mol(smiles,i+1,args.file_name)
+        smiles = check_if_mol(smiles,i+1,args.file_name)
             #kill_me=comm.gather(tmp_str,root=0)
 
         #if check_if_smiles(smiles):
@@ -919,49 +921,48 @@ if __name__ == "__main__":
     
     ##assigning the code for each building block
     
-    smiles_list_c=[]
-    for i,item in enumerate(smiles_list):
+    smiles_list_c = []
+    for i, item in enumerate(smiles_list):
         
         smiles_list_c.append([smiles_list[i],'F'+str(i+1)])
 
-    Global_list=[]
+    Global_list = []
     ## generation_test funtion generates combinatorial molecules
-    final_list=generation_test(combi_type)
+    final_list = generation_test(combi_type)
 
     ## Removing the molecules according to the lower limit in generation rules
     
-    final_list=lower_limit(final_list,rules_l)
+    final_list = lower_limit(final_list,rules_l)
     
 
     final_list_len=len(final_list)
 
-    
     print_l('Total number of molecules generated = '+str(final_list_len)+'\n')
 
     #if rank==0:
-    F_smi=output_dest + "Final_smiles_output.dat"
+    F_smi = output_dest + "Final_smiles_output.dat"
     outfile = open(F_smi, "w")
 
     print_l('Writing molecules SMILES to file \''+F_smi+'\' along with corresponding code.\n')
 
 
-    if rank==0:
+    if rank == 0:
         outfile.write('Sl.No,Molecule_Smiles,Combination_Code\n')
     
     for i, smiles in enumerate(final_list):
         outfile.write(str(i+1)+','+smiles[0]+','+smiles[2]+'\n')
               
 
-    if oft=='smi':
-        if rank ==0:
+    if oft == 'smi':
+        if rank == 0:
             if not os.path.exists(output_dest + args.lib_name + oft):
                 os.makedirs(output_dest + args.lib_name + oft)
-        outdata=output_dest + args.lib_name + oft + "/Final_smiles_output.smi"
+        outdata = output_dest + args.lib_name + oft + "/Final_smiles_output.smi"
         outfile = open(outdata, "w")
         
         print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
         
-        if rank ==0:
+        if rank == 0:
             for i, smiles in enumerate(final_list):
                 outfile.write(smiles[0]+'\n')
 	    os.system('cp '+BB_file+' '+rule_file+' '+F_smi+' '+output_dest+args.lib_name+oft+'/.')
@@ -969,51 +970,51 @@ if __name__ == "__main__":
     ## Creating a seperate output file for each Molecule.
     ## The files are written to folder with specified no. of files per folder.
 
-    if oft!='smi':
+    if oft != 'smi':
         
         print_l('Writing molecules with molecule type '+str(oft)+'\n')
     
-        smiles_to_scatter=[]
-        if rank ==0:
+        smiles_to_scatter = []
+        if rank == 0:
             if not os.path.exists(output_dest + args.lib_name + oft):
                 os.makedirs(output_dest + args.lib_name + oft)
             smiles_to_scatter=[]
             for i in xrange(mpisize):
-                start=int(i*(final_list_len)/mpisize)
-                end=int((i+1)*(final_list_len)/mpisize)-1
-                list_to_add=final_list[start:end+1]
-                list_to_add=list_to_add+[final_list_len,start,end]
+                start = int(i*(final_list_len)/mpisize)
+                end = int((i+1)*(final_list_len)/mpisize)-1
+                list_to_add = final_list[start:end+1]
+                list_to_add = list_to_add+[final_list_len,start,end]
                 smiles_to_scatter.append(list_to_add)
         else:
-            smiles_to_scatter=[]
+            smiles_to_scatter = []
     
         ## Dividing the list into processors
-        smiles_list=comm.scatter(smiles_to_scatter,root=0)
+        smiles_list = comm.scatter(smiles_to_scatter,root=0)
         
-        final_list_len=smiles_list[-3]
-        start=smiles_list[-2]
-        end=smiles_list[-1]
-        smiles_list=smiles_list[0:-3]
+        final_list_len = smiles_list[-3]
+        start = smiles_list[-2]
+        end = smiles_list[-1]
+        smiles_list = smiles_list[0:-3]
         
-        ratio_s=int(start/max_fpf)
-        ratio_e=int(end/max_fpf)
+        ratio_s = int(start/max_fpf)
+        ratio_e = int(end/max_fpf)
         
-        if end+1==final_list_len:
-            ratio_e=ratio_e+1
+        if end+1 == final_list_len:
+            ratio_e = ratio_e+1
         
         for i in xrange(ratio_s,ratio_e):
             
             if not os.path.exists(output_dest + args.lib_name + oft+"/"+str(i+1)+"_"+str(max_fpf)):
                 os.makedirs(output_dest + args.lib_name + oft+"/"+str(i+1)+"_"+str(max_fpf))
 
-        folder_no=ratio_s+1
-        for i,val in enumerate(xrange(start,end+1)):
-            mymol= pybel.readstring("smi",smiles_list[i][0])
+        folder_no = ratio_s+1
+        for i, val in enumerate(xrange(start,end+1)):
+            mymol = pybel.readstring("smi",smiles_list[i][0])
             mymol.make3D(forcefield='mmff94', steps=50)
             mymol.write(oft, output_dest + args.lib_name +oft+"/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+oft,overwrite=True)
 
-            if (val+1)%max_fpf==0:
-                folder_no=folder_no+1
+            if (val+1)%max_fpf == 0:
+                folder_no = folder_no+1
 	if rank == 0:
 	    os.system('cp '+BB_file+' '+rule_file+' '+F_smi+' '+output_dest+args.lib_name+oft+'/.')
             
