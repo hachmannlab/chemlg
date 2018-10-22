@@ -62,62 +62,29 @@ class OutputGrabber(object):
 
 out = OutputGrabber(sys.stderr)
 
-# class molecule(object):                                           class doesnt work because openbabel object in C++ cant be pickled
-#     """Set docstring here.
-
-#     Parameters
-#     ----------
-#     smiles: string
-#         smiles string of the building block
-    
-#     code: string
-#         building block code
-
-#     Returns
-#     -------
-
-#     """
-
-#     def __init__(self, smiles, code):
-
-#         self.smiles = smiles
-#         self.code = code
-
-#         mol = pybel.readstring("smi", smiles)                       # create openbabel object
-#         self.can_smiles = mol.write("can")                          # canonical smiles of openbabel object
-#         mol = pybel.readstring("smi", self.can_smiles)              # openbabel object with canonical smiles
-#         self.can_atoms = list(mol.atoms)
-#         self.reverse_smiles = reverse_mol(mol, self.can_atoms)      # reversed smiles of canonical openbabel object
-#         self.mol_ob = pybel.readstring("smi", self.reverse_smiles)  # reversed openbabel object
-#         self.atoms = list(self.mol_ob.atoms)                        # atoms of reversed openbabel object
-#         self.size = len(self.atoms)
-        
-#         # self.smiles_struct = code
-#         # self.spaces = self.smiles.count('([Au])')
-#         self.mol_wt = int(mol.OBMol.GetMolWt())                     # mol wt of canonical openbabel object
-
 def molecule(smiles, code):
     """Set docstring here.
 
     Parameters
     ----------
-    smiles: 
-    code: 
+    smiles: string,
+                smiles string of molecule
+    code: string, 
+                code for molecule
 
     Returns
     -------
     mol: dict, 
-            dict with keys - smiles, code, can_smiles, reverse_smiles, mol_ob 
+                dict with keys - smiles, code, can_smiles, reverse_smiles, mol_ob 
     """
     mol = {'smiles': smiles, 'code': code}
     obm = pybel.readstring("smi", smiles)
     mol['can_smiles'] = obm.write("can")
     obm_can = pybel.readstring("smi", mol['can_smiles'])
     mol['reverse_smiles'] = reverse_mol(obm_can, list(obm_can.atoms))
-    # mol['mol_ob'] = pybel.readstring("smi", mol['reverse_smiles'])
     return mol
 
-def get_atom_pair_list(smiles,type1or2):
+def get_atom_pair_list(smiles, type1or2):
     mol=pybel.readstring('smi',smiles)
     atoms=list(mol)
     atom_pair_list=[]
@@ -177,8 +144,8 @@ def get_atom_pair_list(smiles,type1or2):
                             
     return atom_pair_list, len(atoms)
 
-def get_fused(mol1,mol2,rules):
-    """Set docstring here.
+def get_fused(mol1, mol2, rules):
+    """Fusion
 
     Parameters
     ----------
@@ -190,14 +157,9 @@ def get_fused(mol1,mol2,rules):
     -------
 
     """
-    #smiles1=smiles1[:-2]
-    #smiles2=smiles2[:-2]
-    #print smiles1,smiles2
-    list1, size1 = get_atom_pair_list(mol1.can_smiles,1)
-    #print list1,'list1'
-    list2, size2 = get_atom_pair_list(mol2.can_smiles,2)
-    #print list2,'list2'
-    smiles_combi = mol1.can_smiles + '.' + mol2.can_smiles
+    list1, size1 = get_atom_pair_list(mol1['can_smiles'],1)
+    list2, size2 = get_atom_pair_list(mol2['can_smiles'],2)
+    smiles_combi = mol1['can_smiles'] + '.' + mol2['can_smiles']
     lib_can, lib_can_nRa = [], []
     code = mol1.code + ':' + mol2.code
     for item1 in list1:
@@ -310,14 +272,21 @@ def get_fused(mol1,mol2,rules):
                     lib_can_nRa.append(str(can_mol_combi))
     lib_can_c=[]
     for item in lib_can:
-        lib_can_c.append([item[0][:-2],item[1],smiles1[1]+':'+smiles2[1]])
+        lib_can_c.append([item[0][:-2], item[1], mol1['code'] + ':' + mol2[['code']]])
             
     return lib_can
 
 def lipinski(mol):
+    """Return the values of the Lipinski descriptors.
 
-   """Return the values of the Lipinski descriptors."""
+    Parameters
+    ----------
+    mol: 
 
+    Returns
+    -------
+
+    """
    desc = {'molwt': mol.molwt,
 
       'HBD': len(HBD.findall(mol)),
@@ -333,9 +302,12 @@ def if_add(molc, rules, code):
 
     Parameters
     ----------
-    molc: string, reversed canonical smiles of molecule whose validity is to be determined
-    rules: dict of rules for library generation 
-    code:
+    molc: string, 
+            reversed canonical smiles of molecule whose validity is to be determined
+    rules: dict, 
+            dict of rules for library generation 
+    code: string,
+            molecule code
 
     Returns
     -------
@@ -484,7 +456,7 @@ def if_add(molc, rules, code):
     del mol
     return add
 
-def create_link(mol1,mol2,rules):
+def create_link(mol1, mol2, rules):
     """This function creates all possible links between two given molecules.
 
     Parameters
@@ -584,8 +556,7 @@ def get_rules(config_file):
     rules_dict: dict
     lib_args: list
     """
-    rules_dict = {}
-    lib_args = []
+    rules_dict, lib_args = {}, []
     print_l('Provided rules')
 
     for i,line in enumerate(config_file):
@@ -681,10 +652,9 @@ def get_rules(config_file):
             value = words[1].strip()
             lib_args.append(value)
 
-    # print_l("\nRules list \n"+str(rules_dict) )
     return rules_dict, lib_args
 
-def check_building_blocks(smiles,line,file_name):
+def check_building_blocks(smiles, line, file_name):
     """Validate the building blocks input (smiles or inchi) and return the smiles of the molecule
 
     Parameters
@@ -722,22 +692,7 @@ def check_building_blocks(smiles,line,file_name):
 
     return smiles
 
-def remove_stereochemistry(smiles):
-    """
-    This is to remove the stereo chemistry information from smiles provided.
-
-
-    Parameters
-    ----------
-    smiles: 
-
-    Returns
-    -------
-
-    """
-    return smiles.replace("@", "").replace("/", "-").replace("\\", "-")
-
-def unique_structs(mol,smarts):
+def unique_structs(mol, smarts):
     smarts = pybel.Smarts(smarts)
     smarts.obsmarts.Match(mol.OBMol)
     num_unique_matches = len(smarts.findall(mol))
@@ -751,7 +706,8 @@ def generator(combi_type, init_mol_list):
     ----------
     init_mol_list: list, 
                     input molecules with duplicates removed
-    combi_type: 
+    combi_type: string, 
+                    link/fusion
     
     Returns
     -------
@@ -880,7 +836,7 @@ def print_l(sentence):
         print(sentence)
         logfile.write(str(sentence)+"\n")
 
-def print_le(sentence,msg="Aborting the run"):
+def print_le(sentence, msg="Aborting the run"):
     if rank == 0:
         print(sentence)
         logfile.write(sentence+"\n")
@@ -894,7 +850,7 @@ def print_e(sentence):
         print(sentence)
         error_file.write(sentence+"\n")
         
-# def library_generator():
+# def library_generator():              # for import calls from other files
 if __name__ == "__main__":
 
     ## initializing MPI to time, to check the MPI efficiency
@@ -902,9 +858,7 @@ if __name__ == "__main__":
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     mpisize = comm.Get_size()
-    # MPI.pickle.dumps = dill.dumps
-    # MPI.pickle.loads = dill.loads
-
+    
     if rank == 0:
         logfile = open('logfile.txt','a')
         error_file = open('error_file.txt','a')
@@ -914,8 +868,6 @@ if __name__ == "__main__":
     Raatom = myRa.OBMol.GetAtom(1)
     myFr = pybel.readstring('smi',"[Fr]")
     Fratom = myFr.OBMol.GetAtom(1)
-    
-    initial_mols = []
     
     try :
         rulesFile = open("config.dat")
@@ -931,6 +883,7 @@ if __name__ == "__main__":
     gen_len, max_fpf = int(gen_len), int(max_fpf)
 
     ## Reading the building blocks from the input file
+    initial_mols = []
     print_l("Reading building blocks from the file \'"+BB_file+'\'\n')
 
     try :
@@ -941,7 +894,6 @@ if __name__ == "__main__":
         print_le(tmp_str,"Aborting due to wrong file.")
 
     i_smi_list = []
-    ## Read molecules provided in the input 
     for i,line in enumerate(infile):
         smiles = line.strip()
         if smiles.isspace() or len(smiles)==0 or smiles[0]=='#':
@@ -951,7 +903,6 @@ if __name__ == "__main__":
             smiles = smiles.replace('[X]','[Ra]')
 
         smiles = check_building_blocks(smiles,i+1,BB_file)
-        # initial_mols is a list of class objects
         # removing duplicates in the input list based on canonical smiles
         temp = molecule(smiles, 'F'+str(len(initial_mols)+1))
         is_duplicate = False
@@ -973,29 +924,16 @@ if __name__ == "__main__":
     final_list = generator(combi_type, initial_mols)
     print_l('Total number of molecules generated = '+str(len(final_list))+'\n')
 
-    #if rank==0:
-    ## setting output directory
-    # output_dest = os.getcwd() + '/screeninglib/'
     output_dest = os.getcwd() + '/'
     outfile_name = output_dest + "Final_smiles_output.dat"
     outfile = open(outfile_name, "w")
     print_l('Writing SMILES to file \''+outfile_name+'\' along with corresponding molecule code.\n')
 
     if rank == 0:
-        outfile.write('Molecule_Smiles,Combination_Code\n')
+        outfile.write('Molecule_Smiles, Combination_Code\n')
         for i in final_list:
             mol_ob = pybel.readstring("smi", i['reverse_smiles'])
-            outfile.write(mol_ob.write("can") + ',' + i['code']+'\n')
-        
-        # if outfile_type.lower() == 'smiles':
-        #     if not os.path.exists(output_dest + lib_name + outfile_type):
-        #         os.makedirs(output_dest + lib_name + outfile_type)
-        #     outdata = output_dest + lib_name + outfile_type + "/Final_smiles_output.smi"
-        #     outfile = open(outdata, "w")
-        #     print_l('Writing SMILES to file \''+outdata+'\'\n')
-        # for i, smiles in enumerate(final_list):
-        #         outfile.write(smiles[0]+'\n')
-        # os.system('cp '+ BB_file + ' ' + 'config.dat' + ' ' + outfile_name + ' ' + output_dest + lib_name + outfile_type + '/.')
+            outfile.write(mol_ob.write("can") + ',' + i['code'] + '\n')
         
     ## Creating a seperate output file for each Molecule.
     ## The files are written to folder with specified no. of files per folder.
@@ -1046,18 +984,9 @@ if __name__ == "__main__":
 
             if (val+1)%max_fpf == 0:
                 folder_no = folder_no+1
-        # if rank == 0:
-        #     os.system('cp '+ BB_file + ' ' + 'config.dat' + ' ' + outfile_name + ' ' + output_dest + lib_name + outfile_type + '/.')
-            
-            
-
+        
     print_l('File writing terminated successfully'+'\n')
-                
     wt2 = MPI.Wtime()
-    
     print_l('Total time_taken '+str('%.3g'%(wt2-wt1))+'\n')
-    
-    
     sys.stderr.close()
     sys.exit()
-    
