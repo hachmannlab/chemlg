@@ -618,14 +618,14 @@ def get_rules(config_file):
 
             elif i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
                 smiles_l = []
-                if not isinstance(value, tuple):
+                if not isinstance(eval(value), tuple):
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
                     tmp_str = tmp_str+"Provide molecule(s) as a list. \n"
                     print_le(tmp_str,"Aborting due to wrong substructure rule.")
                 for item in eval(value):
                     smiles = check_building_blocks(item,i+1,rulesFile)
                     smiles_l.append(smiles)
-                rules_dict[str(i)] = smiles_l
+                rules_dict[str(i)] = tuple(smiles_l)
                 continue
 
             elif i == 16: # This rule is for inclusion of building blocks in the final library
