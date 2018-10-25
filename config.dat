@@ -10,7 +10,7 @@ Please input generation rules below. Do not change the order of the options.
 9. Min and max no. of double bonds          == None
 10. Min and max no. of triple bonds         == None
 11. Max no. of specific atoms               == None
-12. Lipinski's rule                         == False
+12. Lipinski rule                           == False
 13. Fingerprint matching                    == None
 14. Substructure                            == None
 15. Substructure exclusion                  == None
@@ -20,7 +20,7 @@ Please input generation rules below. Do not change the order of the options.
 Building blocks file            :: building_blocks.dat
 Combination type for molecules  :: Link
 Number of generations           :: 3
-Molecule format in output file  :: SMILES
+Molecule format in output file  :: smi
 Maximum files per folder        :: 10000
 Library name                    :: new_library_
 
@@ -77,13 +77,13 @@ Generation rules:
         Fingerprint Matching: Molecular fingerprints encode molecular structure in a series of binary
         digits that represent the presence or absence of particular substructures in the molecule. Comparing
         fingerprints will allow you to determine the similarity between two molecules. Type the target molecule
-        and the Tanimoto index. expected type: tuple of tuples (('c1ccccc1', 0.1), ('C1CCCC1', 0.1))
+        and the Tanimoto index. expected type: comma-separated target molecules c1ccccc1-0.1, C1CCCC1-0.1
 
         Substructure Inclusion: Enter substructures in SMARTS format which must be included in all
-        molecules in the final library. expected type: tuple
+        molecules in the final library. expected type: comma separated Smiles/SMARTS
 
         Substructure Exclusion: Enter substructures in SMARTS format which must be excluded in all
-        molecules in the final library. expected type: tuple
+        molecules in the final library. expected type: comma separated Smiles/SMARTS
 
         Include initial Building Blocks: Should the initial building blocks be included in the final library. Expected type: string (True or False)
 
