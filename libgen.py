@@ -12,6 +12,7 @@ from mpi4py import MPI
 import os
 import threading
 from itertools import islice,chain
+import pandas as pd
 
 
 ###################################################################################################
@@ -75,7 +76,7 @@ def molecule(smiles, code):
     Returns
     -------
     mol: dict, 
-                dict with keys - smiles, code, can_smiles, reverse_smiles, mol_ob 
+                dict with keys - smiles, code, can_smiles, reverse_smiles
     """
     mol = {'smiles': smiles, 'code': code}
     obm = pybel.readstring("smi", smiles)
@@ -287,7 +288,7 @@ def lipinski(mol):
     -------
 
     """
-   desc = {'molwt': mol.molwt,
+    desc = {'molwt': mol.molwt,
 
       'HBD': len(HBD.findall(mol)),
 
@@ -295,7 +296,7 @@ def lipinski(mol):
 
       'logP': mol.calcdesc(['logP']) ['logP']}
 
-   return desc
+    return desc
 
 def if_add(molc, rules, code):
     """Determines if a molecule should be included in the library based on the generation rules given.
@@ -317,7 +318,7 @@ def if_add(molc, rules, code):
     # pybel returns true even for wrong molecules by converting them to the correct strings.
     if molc == '':  return False
     if not pybel.readstring("smi", molc):
-        print("invalid", pybel.readstring("smi", molc))
+        print("invalid smiles", pybel.readstring("smi", molc))
         return False
     # create a new copy of the dict to avoid changing the original dict    
     mol = molecule(molc, code)
@@ -604,13 +605,10 @@ def get_rules(config_file):
                 continue
 
             elif i == 13: # This rule is for fingerprint matching
-                target_mols = eval(value)
+                target_mols = value.split(',')
                 smiles_to_comp = []
-                if not isinstance(target_mols, tuple) or scipy.shape(target_mols)[1] != 2:
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    tmp_str = tmp_str+"Provide the molecule as SMILES/InChI followed by the Tanimoto index. For example, '[(c1ccccc1, 20), ]'. \n"
-                    print_le(tmp_str,"Aborting due to wrong fingerprint rule.")
-                for target_smiles, tanimoto_index in target_mols:
+                for j in target_mols:
+                    target_smiles, tanimoto_index = j.split('-')[0].strip(), j.split('-')[1].strip()
                     smiles = check_building_blocks(target_smiles,i+1,rulesFile)
                     smiles_to_comp.append([smiles,tanimoto_index])
                 rules_dict['fingerprint'] = smiles_to_comp            
@@ -618,14 +616,10 @@ def get_rules(config_file):
 
             elif i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
                 smiles_l = []
-                if not isinstance(eval(value), tuple):
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    tmp_str = tmp_str+"Provide molecule(s) as a list. \n"
-                    print_le(tmp_str,"Aborting due to wrong substructure rule.")
-                for item in eval(value):
-                    smiles = check_building_blocks(item,i+1,rulesFile)
+                for item in value.split(','):
+                    smiles = check_building_blocks(item.strip(),i+1,rulesFile)
                     smiles_l.append(smiles)
-                rules_dict[str(i)] = tuple(smiles_l)
+                rules_dict[str(i)] = smiles_l
                 continue
 
             elif i == 16: # This rule is for inclusion of building blocks in the final library
@@ -717,13 +711,11 @@ def generator(combi_type, init_mol_list):
     library = []
     library.append(init_mol_list)
     for gen in range(gen_len):
-        print("library length: ", len(library), "gen: ", gen)
         prev_gen_mol_list = library[gen]
         lib_temp, new_gen_mol_list = [], []
         
         ## Now individual processors will generate molecules based on the list of molecules in that processor list.
         chunks_list = scipy.array_split(range(len(prev_gen_mol_list)), mpisize)
-        # chunks = comm.scatter(chunks_list,root=0)
         if chunks_list[rank].any():
             for i in chunks_list[rank]:                       
                 for mol2 in init_mol_list:
@@ -741,7 +733,6 @@ def generator(combi_type, init_mol_list):
             list_to_scatter = list(chain.from_iterable(library))            # flatten out the list
             new_gen_mol_list = list_to_scatter + new_gen_mol_list           # add the last generation to library
             chunks_list = scipy.array_split(range(len(new_gen_mol_list)), mpisize)
-            # chunks = comm.scatter(chunks_list,root=0)
             for i in chunks_list[rank]:
                 mol_ob = pybel.readstring("smi", new_gen_mol_list[i]['reverse_smiles'])
                 for atom in list(mol_ob.atoms):
@@ -749,17 +740,17 @@ def generator(combi_type, init_mol_list):
                     if atom.OBAtom.GetAtomicNum() == 87 or atom.OBAtom.GetAtomicNum() == 88:
                         atom.OBAtom.SetAtomicNum(1)
                 new_gen_mol_list[i]['reverse_smiles'] = reverse_mol(mol_ob, list(mol_ob.atoms))
-        # Creating a dictionary of molecules. This is a faster way to prevent duplicates
-        ## SMILES dictionary might have duplicates. Since the duplicates will only be in one Mol Wt
-        ## list of the dictionary, we can divide Mol Wts into available processors.
+        
+        # Creating a dictionary of molecules. This is a faster way to prevent duplicates. SMILES dictionary might have duplicates. 
+        # Since the duplicates will only be in one Mol Wt list of the dictionary, we can divide Mol Wts into available processors.
         
         smiles_dict = defaultdict(list) 
+        duplicates = 0
         for l2 in new_gen_mol_list:
             mol_ob = pybel.readstring("smi", l2['reverse_smiles'])
             smiles_dict[int(mol_ob.OBMol.GetMolWt())].append(l2)                 # appending dicts of molecule in dictionary
         items = list(smiles_dict.items())
         chunks_list = scipy.array_split(range(len(items)), mpisize)
-        # chunks = comm.scatter(chunks_list,root=0)
         for items_ind in chunks_list[rank]:
             mol_wt, mols = items[items_ind][0], items[items_ind][1]                     # mols --> list of molecules in that mol_wt category
             tmp_list = []
@@ -768,11 +759,14 @@ def generator(combi_type, init_mol_list):
                 if mol_ob.write("can") not in tmp_list:
                     tmp_list.append(mol_ob.write("can"))
                     lib_temp.append(i)
+                else: duplicates += 1
         lib_temp = comm.gather(lib_temp, root=0)
+        duplicates = comm.gather(duplicates, root=0)
         if rank == 0:
             lib_temp = list(chain.from_iterable(lib_temp))
             library.append(lib_temp)
             print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(library[gen+1])))
+            print_l('Total duplicates removed in generation number '+str(gen+1)+' is '+str(sum(duplicates)))
         library = comm.bcast(library, root=0)
     
     
@@ -921,27 +915,29 @@ if __name__ == "__main__":
     print_l(i_smi_list)
     print_l('=============================================================================\n')
     
+    # Generate molecules
     final_list = generator(combi_type, initial_mols)
     print_l('Total number of molecules generated = '+str(len(final_list))+'\n')
 
-    output_dest = os.getcwd() + '/'
-    outfile_name = output_dest + "Final_smiles_output.dat"
-    outfile = open(outfile_name, "w")
-    print_l('Writing SMILES to file \''+outfile_name+'\' along with corresponding molecule code.\n')
-
+    # Generating csv file of final library
+    df_final_list = pd.DataFrame(final_list)
     if rank == 0:
-        outfile.write('Molecule_Smiles, Combination_Code\n')
-        for i in final_list:
-            mol_ob = pybel.readstring("smi", i['reverse_smiles'])
-            outfile.write(mol_ob.write("can") + ',' + i['code'] + '\n')
-        
-    ## Creating a seperate output file for each Molecule.
-    ## The files are written to folder with specified no. of files per folder.
+        df_final_list.drop(['smiles', 'can_smiles'], axis=1).to_csv('final_library.csv', index=None)
 
-    else:
+    # Generating files based on output file type
+    output_dest = os.getcwd() + '/'
+    if outfile_type == 'smi':
+        if rank == 0:
+            if not os.path.exists(output_dest + lib_name + outfile_type):
+                os.makedirs(output_dest + lib_name + outfile_type)
+            outdata = output_dest + lib_name + outfile_type + "/Final_smiles_output.smi"
+            outfile = open(outdata, "w")
+            print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
+            scipy.savetxt(outfile, df_final_list['reverse_smiles'].values, fmt='%s')
         
+    # Creating a seperate output file for each molecule. Files are written to folder with specified no. of files per folder.
+    else:
         print_l('Writing molecules with molecule type '+str(outfile_type)+'\n')
-    
         smiles_to_scatter = []
         if rank == 0:
             if not os.path.exists(output_dest + lib_name + outfile_type):
