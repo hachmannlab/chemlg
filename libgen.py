@@ -14,12 +14,26 @@ import threading
 from itertools import islice,chain
 import pandas as pd
 
-
-###################################################################################################
+## initializing MPI to time, to check the MPI efficiency
+wt1 = MPI.Wtime()
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+mpisize = comm.Get_size()
 
 class OutputGrabber(object):
-    """
-    Class used to grab standard output or another stream.
+    """""
+    Class used to grab standard output/another stream/system errors from any program (including C). 
+    Openbabel sometimes prints out a warning which is usually the case when the molecule does not have any stereochemistry information. 
+    Because this error is from OpenBabel which is written in C, it is quite challenging to capture error statements. 
+    The class suppresses these warning messages but it might also capture system errors not related to stereochemistry and we would never know what the 
+    system error was. 
+
+    Parameters
+    ----------
+    
+    Returns
+    -------
+
     """
     def __init__(self, stream=None, threaded=False):
         self.origstream = stream
@@ -53,273 +67,94 @@ class OutputGrabber(object):
         os.close(self.pipe_out)
         pass
 
-## Openbabel sometime prints out an error related to sterochemistry. 
-## This is usully the case when the molecule do not have any sterechemistry information.
-## Because this error is from OpenBabel which is written in C, it is quite challenging 
-## to capture error statements. 
-## OutputGrabber is a class which capture system errors from any program (including C0. 
-## We will have to be careful with this class because it might also capture system errors
-## not related to stereochemistry and we would never know what the system error was. 
-
 out = OutputGrabber(sys.stderr)
 
 def molecule(smiles, code):
-    """Set docstring here.
+    """
+    Function to create a dictionary for each molecule. 
+    The dictionary has the following keys:
+        smiles:         smiles code of the molecule
+        code:           serial number/code assigned to each molecule that contains information about the building blocks used to construct that molecule
+        can_smiles:     canonical smiles of the molecule, which are used to remove duplicates
+        reverse_smiles: smiles of the molecule returned from the reverse_mol function
 
     Parameters
     ----------
-    smiles: string,
-                smiles string of molecule
-    code: string, 
-                code for molecule
+    smiles: str
+        smiles string of molecule
+    code: str 
+        code for molecule (F1, F2 ...) generated automatically
 
     Returns
     -------
-    mol: dict, 
-                dict with keys - smiles, code, can_smiles, reverse_smiles
+    mol: dict
+        dictionary with keys - smiles, code, can_smiles, reverse_smiles
     """
     mol = {'smiles': smiles, 'code': code}
     obm = pybel.readstring("smi", smiles)
     mol['can_smiles'] = obm.write("can")
     obm_can = pybel.readstring("smi", mol['can_smiles'])
     mol['reverse_smiles'] = reverse_mol(obm_can, list(obm_can.atoms))
+
     return mol
 
-def get_atom_pair_list(smiles, type1or2):
-    mol=pybel.readstring('smi',smiles)
-    atoms=list(mol)
-    atom_pair_list=[]
-    for atom in atoms:
-        if atom.OBAtom.GetAtomicNum() ==88:            
-            index=atom.OBAtom.GetIdx()
-            # OBAtomAtomIter for iterating over neighboring atoms
-            for atom1 in OBAtomAtomIter(mol.OBMol.GetAtom(index)):
-                if atom1.GetAtomicNum() !=6: 
-                    continue
-                atom1_idx=atom1.GetIdx()
-                atom_atoms=[]
-                if type1or2==1:
-                    # iterate over C's neighboring atoms (other C's in ring)
-                    for atom2 in OBAtomAtomIter(atom1):
-                        if atom2.GetAtomicNum() !=6 or atom2.IsInRing()==False: 
-                            continue
-                        hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
-                        if hcount==0:
-                            continue
-                        atom_atoms.append(atom2.GetIdx())
-                    if len(atom_atoms)==2:
-                        for aa in atom_atoms:
-                            atom_pair=[atom1_idx,aa,index]      # [a1-index, a2-index, Ra-index]
-                            atom_pair_list.append(atom_pair)
-                    if len(atom_atoms)==1:
-                        atom_pair_list.append([atom1_idx,atom_atoms[0],index])
-                if type1or2==2:
-                    # iterate over C's neighboring atoms (other C's in ring)
-                    for atom2 in OBAtomAtomIter(atom1):
-                        if atom2.GetAtomicNum() ==88 or atom2.IsInRing()==False: 
-                            continue
-                        hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
-                        if hcount==0:
-                            continue
-                        atom_atoms.append(atom2.GetIdx())
-                    for idx in atom_atoms:
-                        for atom2 in OBAtomAtomIter(atom1):
-                            In_ring=False
-                            atom_pair_list_tmp=[]
-                            atom2_idx=atom2.GetIdx()
-                            if atom2.GetAtomicNum()!=6 or atom2_idx==idx: 
-                                continue
-                            for atom3 in OBAtomAtomIter(atom2):
-                                atom3_idx=atom3.GetIdx()
-                                if atom3_idx==atom1_idx:
-                                    continue
-                                if atom3.IsInRing()==False:
-                                    In_ring=True
-                                    continue
-                                hcount = atom3.ExplicitHydrogenCount() + atom3.ImplicitHydrogenCount()
-                                if hcount!=0:
-                                    atom_pair_list_tmp.append([atom1_idx,atom2_idx,idx,atom3_idx,index])
-                            if In_ring==False:
-                                atom_pair_list += atom_pair_list_tmp
-                        
-                            
-    return atom_pair_list, len(atoms)
-
-def get_fused(mol1, mol2, rules):
-    """Fusion
-
-    Parameters
-    ----------
-    mol1: molecule class object
-    mol2: molecule class object
-    rules: 
-
-    Returns
-    -------
-
-    """
-    list1, size1 = get_atom_pair_list(mol1['can_smiles'],1)
-    list2, size2 = get_atom_pair_list(mol2['can_smiles'],2)
-    smiles_combi = mol1['can_smiles'] + '.' + mol2['can_smiles']
-    lib_can, lib_can_nRa = [], []
-    code = mol1.code + ':' + mol2.code
-    for item1 in list1:
-        for item2 in list2:
-            mol_combi= pybel.readstring("smi",smiles_combi)
-            a1_to_set=mol_combi.OBMol.GetAtom(item1[0])
-            a2_to_set=mol_combi.OBMol.GetAtom(item1[1])
-            a3_to_set=mol_combi.OBMol.GetAtom(size1+item2[2])
-            a4_to_set=mol_combi.OBMol.GetAtom(size1+item2[3])
-
-            chng_arom=False
-            if a3_to_set.IsAromatic()==True and a4_to_set.IsAromatic()==True:
-                chng_arom=True
-            bond_to_del=mol_combi.OBMol.GetBond(size1+item2[4],size1+item2[0])
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item1[0],item1[2])
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[1]+size1)
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[2]+size1)
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item2[1]+size1,item2[3]+size1)
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            atoms=list(mol_combi.atoms)
-            
-            mol_combi.OBMol.AddBond(item1[1],item2[2]+size1,1,0,-1)
-            mol_combi.OBMol.AddBond(item1[0],item2[3]+size1,1,0,-1)
-            
-            
-            mol_combi_new= pybel.readstring("smi",str(mol_combi))
-            atoms_new=list(mol_combi_new)
-            
-            for atoms in atoms_new:
-                index=atoms.OBAtom.GetIdx()
-                neigh_atm=False
-                for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
-                    neigh_atm=True
-                if neigh_atm==False:
-                    mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
-            
-            if a1_to_set.GetHeteroValence()==1 or a2_to_set.GetHeteroValence()==1:
-                continue
-                
-            can_mol_combi = mol_combi_new.write("can")
-            
-            if can_mol_combi not in lib_can_nRa:
-                mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
-                atoms=list(mol_combi_new.atoms)
-                shd_add=True
-                for atom in atoms:                
-                    a =atom.OBAtom.CountBondsOfOrder(3)
-                    b =atom.OBAtom.CountBondsOfOrder(2)
-                    c =atom.OBAtom.CountBondsOfOrder(1)
-                    tot_bnds= a*3+b*2+c*1
-                    
-                    if tot_bnds>4:
-                        shd_add=False
-                        
-                if if_add(mol_combi_new,rules,code)==True and shd_add==True:
-                    lib_can.append([str(can_mol_combi),mol_wt])
-
-                for atom in atoms:
-                    if atom.OBAtom.GetAtomicNum()==88:
-                        atom.OBAtom.SetAtomicNum(1)
-                
-                lib_can_nRa.append(str(can_mol_combi))
-    
-                
-            if chng_arom==True:
-                
-                if not a1_to_set.IsAromatic():
-                    a1_to_set.SetAromatic()
-                    a2_to_set.SetAromatic()
-                mol_combi_new= pybel.readstring("smi",str(mol_combi))
-                atoms_new=list(mol_combi_new)
-                
-                for atoms in atoms_new:
-                    index=atoms.OBAtom.GetIdx()
-                    neigh_atm=False
-                    for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
-                        neigh_atm=True
-                    if neigh_atm==False:
-                        mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
-
-                can_mol_combi = mol_combi_new.write("can")
-
-                if can_mol_combi not in lib_can_nRa:
-                    mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
-                    
-                    atoms=list(mol_combi_new.atoms)
-                    #print mol_combi_new,'before'
-                    shd_add=True
-                    for atom in atoms:
-                        a =atom.OBAtom.CountBondsOfOrder(3)
-                        b =atom.OBAtom.CountBondsOfOrder(2)
-                        c =atom.OBAtom.CountBondsOfOrder(1)
-                        tot_bnds= a*3+b*2+c*1
-                        
-                        if tot_bnds>4:
-                            shd_add=False
-                    #print if_add(mol_combi_new,mol_wt,rules,code,'f')
-                    if if_add(mol_combi_new,rules,code)==True and shd_add==True:
-                        lib_can.append([str(can_mol_combi),mol_wt])
-
-                        #print mol_combi_new,'after'
-                    for atom in atoms:
-                        if atom.OBAtom.GetAtomicNum()==88:
-                            atom.OBAtom.SetAtomicNum(1)
-                    
-                    lib_can_nRa.append(str(can_mol_combi))
-    lib_can_c=[]
-    for item in lib_can:
-        lib_can_c.append([item[0][:-2], item[1], mol1['code'] + ':' + mol2[['code']]])
-            
-    return lib_can
-
 def lipinski(mol):
-    """Return the values of the Lipinski descriptors.
+    """
+    Function that returns the values of the Lipinski descriptors.
 
     Parameters
     ----------
-    mol: 
+    mol: object
+        openbabel object of the molecule
 
     Returns
     -------
-
+    desc: dict
+        dictionary of Lipinski descriptors
     """
+    HBD = pybel.Smarts("[#7,#8;!H0]")
+    HBA = pybel.Smarts("[#7,#8]")
+
     desc = {'molwt': mol.molwt,
 
       'HBD': len(HBD.findall(mol)),
 
       'HBA': len(HBA.findall(mol)),
 
-      'logP': mol.calcdesc(['logP']) ['logP']}
+      'logP': mol.calcdesc(['logP'])}
 
     return desc
 
+passes_all_rules = lambda desc: (desc ['molwt'] <= 500 and
+
+         desc ['HBD'] <= 5 and desc ['HBA'] <= 10 and
+
+         desc ['logP'] <= 5)
+
 def if_add(molc, rules, code):
-    """Determines if a molecule should be included in the library based on the generation rules given.
+    """
+    Determines if a molecule should be included in the library based on the generation rules given.
 
     Parameters
     ----------
-    molc: string, 
+    molc: str 
             reversed canonical smiles of molecule whose validity is to be determined
-    rules: dict, 
-            dict of rules for library generation 
-    code: string,
-            molecule code
+    rules: dict 
+            dictionary of rules for library generation 
+    code: str
+            code for molecule (F1, F2 ...)
 
     Returns
     -------
-    boolean: True/False
+    add: bool 
+        True/False
     """
-    # check validity of molecule
-    # pybel returns true even for wrong molecules by converting them to the correct strings.
+    # check validity of molecule. pybel returns true even for wrong molecules by converting them to the correct strings.
     if molc == '':  return False
     if not pybel.readstring("smi", molc):
         print("invalid smiles", pybel.readstring("smi", molc))
         return False
+
     # create a new copy of the dict to avoid changing the original dict    
     mol = molecule(molc, code)
     mol_ob = pybel.readstring("smi", mol['reverse_smiles'])
@@ -458,17 +293,22 @@ def if_add(molc, rules, code):
     return add
 
 def create_link(mol1, mol2, rules):
-    """This function creates all possible links between two given molecules.
+    """
+    This function creates all possible links between two given molecules.
 
     Parameters
     ----------
-    mol1: molecule dict
-    mol2: molecule dict
-    rules: rules dict
+    mol1: dict
+        dictionary object of first molecule
+    mol2: dict
+        dictionary object of second molecule
+    rules: dict
+        dictionary of rules for library generation 
 
     Returns
     -------
-    library_two: list, list of molecule class objects
+    library_two: list 
+        list of molecule dict objects
     """
     library_two = []
     mol1_ob = pybel.readstring("smi", mol1['reverse_smiles'])
@@ -490,37 +330,39 @@ def create_link(mol1, mol2, rules):
     return library_two
 
 def get_index_list(mol, atoms):
-    """Returns the list of index numbers of atoms that can be reacted in a molecule while making sure no duplicate sites are returned.
+    """
+    Returns the list of index numbers of atoms that can be reacted in a molecule while making sure no duplicate sites are returned.
 
     Parameters
     ----------
-    mol: molecule dict
-    atoms: 
+    mol: dict
+        dictionary object of molecule
+    atoms: list
+        list of atoms in the molecule
 
     Returns
     -------
     atoms_index: list
+        list of atom indices in the molecule that can be reacted
     """
     
     can_smiles_list=[]
     atoms_index=[]
 
     for atom in atoms:
-        
-        # Counting the number of hydrogens attached to the atom
+        # Counting the number of hydrogens attached to the atom. Do not do anything if there are no hydrogens attached
         hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
         if hcount==0:
-            continue # Do not do anything if there are no hydrogens attached
+            continue 
         
         newmol = pybel.readstring("smi", mol['reverse_smiles'])
-
         # Attach Francium atom. Makes it easy to remove duplicates
+        myFr = pybel.readstring('smi',"[Fr]")
+        Fratom = myFr.OBMol.GetAtom(1)
         newmol.OBMol.InsertAtom(Fratom) 
-        # Get index of atom
         index=atom.OBAtom.GetIdx() 
         # Create a bond between Fr atom and the curent atom
         newmol.OBMol.AddBond(index, len(atoms)+1, 1, 0, -1) 
-        
         out.start() # Capturing stderr from openbabel (C program) 
         # Making use of canonical smiles to remove duplicates
         can_smiles = newmol.write("can")
@@ -533,29 +375,20 @@ def get_index_list(mol, atoms):
     
     return atoms_index
 
-
-passes_all_rules = lambda desc: (desc ['molwt'] <= 500 and
-
-         desc ['HBD'] <= 5 and desc ['HBA'] <= 10 and
-
-         desc ['logP'] <= 5)
-
-HBD = pybel.Smarts("[#7,#8;!H0]")
-
-HBA = pybel.Smarts("[#7,#8]")
-
-
 def get_rules(config_file):
-    """ Library generator config.
+    """ 
+    Function to read generation rules provided in the config file.
         
     Parameters
     ----------
-    config_file: 
+    config_file: file handle
 
     Returns
     -------
     rules_dict: dict
+        dictionary of generation rules provided by the user. if the user provides default values for any rule, it is not added to the dictionary.
     lib_args: list
+        list of other input arguments to the library generator
     """
     rules_dict, lib_args = {}, []
     print_l('Provided rules')
@@ -609,7 +442,7 @@ def get_rules(config_file):
                 smiles_to_comp = []
                 for j in target_mols:
                     target_smiles, tanimoto_index = j.split('-')[0].strip(), j.split('-')[1].strip()
-                    smiles = check_building_blocks(target_smiles,i+1,rulesFile)
+                    smiles = check_building_blocks(target_smiles,i+1,config_file)
                     smiles_to_comp.append([smiles,tanimoto_index])
                 rules_dict['fingerprint'] = smiles_to_comp            
                 continue
@@ -617,7 +450,7 @@ def get_rules(config_file):
             elif i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
                 smiles_l = []
                 for item in value.split(','):
-                    smiles = check_building_blocks(item.strip(),i+1,rulesFile)
+                    smiles = check_building_blocks(item.strip(),i+1,config_file)
                     smiles_l.append(smiles)
                 rules_dict[str(i)] = smiles_l
                 continue
@@ -653,17 +486,17 @@ def check_building_blocks(smiles, line, file_name):
 
     Parameters
     ----------
-    smiles: string
-        one molecule in 2d format (smiles/inchi)
-    line: integer 
+    smiles: str
+        molecule representation in 2d format (smiles/inchi)
+    line: int
         line number in input file
-    file_name: string 
-        file name
+    file_name: str
+        file handle
 
     Returns
     -------
-    smiles: string
-        molecule in smiles format
+    smiles: str
+        smiles representation of molecule
     """
     inchi_bb, smiles_bb = True, True
     try:
@@ -687,26 +520,45 @@ def check_building_blocks(smiles, line, file_name):
     return smiles
 
 def unique_structs(mol, smarts):
+    """
+    Function to calculate the number of given sub-structures (SMARTS) in molecule provided. 
+
+    Parameters
+    ----------
+    mol: object
+        openbabel object of molecule
+    smarts: str
+        smarts representation of sub-structure
+
+    Returns
+    -------
+    num_unique_matches: int
+        number of unique matches found for the given sub-structure in the molecule
+    """
     smarts = pybel.Smarts(smarts)
     smarts.obsmarts.Match(mol.OBMol)
     num_unique_matches = len(smarts.findall(mol))
     return num_unique_matches
     
-def generator(combi_type, init_mol_list):
+def generator(combi_type, init_mol_list, gen_len, rules_dict):
     """
-    This function creates a new generation with the initial building blocks provided and the current generation of molecules
+    Function that creates a new generation of molecules with the initial building blocks provided and the current generation of molecules.
 
     Parameters
     ----------
-    init_mol_list: list, 
-                    input molecules with duplicates removed
-    combi_type: string, 
-                    link/fusion
+    init_mol_list: list
+        list of input molecules (dict objects) with duplicates removed
+    combi_type: str
+        combination type - link/fusion
+    gen_len: int
+        total number of generations for which to run the library
+    rules_dict: dict
+        dictionary of generation rules
     
     Returns
     -------
-    library[-1]: list,
-                    Final molecular library of dict objects after all the generations
+    library[-1]: list
+        Final molecular library of dict objects after all the generations
     """
     library = []
     library.append(init_mol_list)
@@ -776,21 +628,27 @@ def generator(combi_type, init_mol_list):
     
 def reverse_mol(mol, atoms):
     """
-    If a molecule has no Ra atom, all available H atom sites are considered for reaction.
-    If a molecule has Ra atoms, only those sites will be considered for reaction. For the reaction, the H atoms 
-    are replaced with Fr atoms so that they are not considered as potential sites, and the Ra atoms are converted to H atoms. 
+    Function that converts a molecule's potential reactive sites into H atoms. New molecules are generated at only those sites which have H atoms.
+    If user does not provide any [Ra] handles in the molecule, all available H atom sites are considered for reaction.
+    If user provides specific handles for reaction by replacing H atoms with [Ra] atoms, only those sites will be considered for reaction. For the 
+    reaction, the H atoms are replaced with Fr atoms so that they are not considered as potential sites, and the Ra atoms are converted to H atoms. 
 
     Parameters
     ----------
-    mol: OpenBabel object of a molecule
-    atoms: list of atoms in mol 
+    mol: object
+        OpenBabel object of a molecule
+    atoms: list
+        list of atoms in the molecule
 
     Returns
     -------
-    smiles: string, canonical smiles
+    smiles: str
+        canonical smiles of transformed molecule
     """
     
     atom_num = [] # to append atomic number of atoms present in molecule
+    myFr = pybel.readstring('smi',"[Fr]")
+    Fratom = myFr.OBMol.GetAtom(1)
 
     ## Make a list of atomic numbers for all atoms that are in the molecule
     for atom in atoms:
@@ -826,12 +684,37 @@ def reverse_mol(mol, atoms):
     return smiles
 
 def print_l(sentence):
+    """Print to logfile.
+
+    Parameters
+    ----------
+    sentence: str
+        string to be printed to logfile
+
+    Returns
+    -------
+
+    """
     if rank == 0:
+        logfile = open('logfile.txt','a')
         print(sentence)
         logfile.write(str(sentence)+"\n")
 
 def print_le(sentence, msg="Aborting the run"):
+    """Print to both error file and logfile and then exit code.
+
+    Parameters
+    ----------
+    sentence: str
+        string to be printed to error file and logfile
+
+    Returns
+    -------
+
+    """
     if rank == 0:
+        logfile = open('logfile.txt','a')
+        error_file = open('error_file.txt','a')
         print(sentence)
         logfile.write(sentence+"\n")
         error_file.write(sentence+"\n")
@@ -839,32 +722,238 @@ def print_le(sentence, msg="Aborting the run"):
     else:
         sys.exit()
 
-def print_e(sentence):
-    if rank == 0:
-        print(sentence)
-        error_file.write(sentence+"\n")
-        
-# def library_generator():              # for import calls from other files
-if __name__ == "__main__":
+def get_atom_pair_list(smiles, type1or2):
+    """
+    Function that returns the list of atom pairs in a molecule that are potential sites for fusion.
 
-    ## initializing MPI to time, to check the MPI efficiency
-    wt1 = MPI.Wtime()
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    mpisize = comm.Get_size()
+    Parameters
+    ----------
+    smiles: str
+        smiles of molecule
+    type1or2: int
+        integer (1 or 2):
+            1 - if molecule is base molecule onto which other molecule will be fused
+            2 - if molecule is to be fused onto other molecule
+
+    Returns
+    -------
+
+    """
+    mol=pybel.readstring('smi',smiles)
+    atoms=list(mol)
+    atom_pair_list=[]
+    for atom in atoms:
+        if atom.OBAtom.GetAtomicNum() ==88:            
+            index=atom.OBAtom.GetIdx()
+            # OBAtomAtomIter for iterating over neighboring atoms
+            for atom1 in OBAtomAtomIter(mol.OBMol.GetAtom(index)):
+                if atom1.GetAtomicNum() !=6: 
+                    continue
+                atom1_idx=atom1.GetIdx()
+                atom_atoms=[]
+                if type1or2==1:
+                    # iterate over C's neighboring atoms (other C's in ring)
+                    for atom2 in OBAtomAtomIter(atom1):
+                        if atom2.GetAtomicNum() !=6 or atom2.IsInRing()==False: 
+                            continue
+                        hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
+                        if hcount==0:
+                            continue
+                        atom_atoms.append(atom2.GetIdx())
+                    if len(atom_atoms)==2:
+                        for aa in atom_atoms:
+                            atom_pair=[atom1_idx,aa,index]      # [a1-index, a2-index, Ra-index]
+                            atom_pair_list.append(atom_pair)
+                    if len(atom_atoms)==1:
+                        atom_pair_list.append([atom1_idx,atom_atoms[0],index])
+                if type1or2==2:
+                    # iterate over C's neighboring atoms (other C's in ring)
+                    for atom2 in OBAtomAtomIter(atom1):
+                        if atom2.GetAtomicNum() ==88 or atom2.IsInRing()==False: 
+                            continue
+                        hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
+                        if hcount==0:
+                            continue
+                        atom_atoms.append(atom2.GetIdx())
+                    for idx in atom_atoms:
+                        for atom2 in OBAtomAtomIter(atom1):
+                            In_ring=False
+                            atom_pair_list_tmp=[]
+                            atom2_idx=atom2.GetIdx()
+                            if atom2.GetAtomicNum()!=6 or atom2_idx==idx: 
+                                continue
+                            for atom3 in OBAtomAtomIter(atom2):
+                                atom3_idx=atom3.GetIdx()
+                                if atom3_idx==atom1_idx:
+                                    continue
+                                if atom3.IsInRing()==False:
+                                    In_ring=True
+                                    continue
+                                hcount = atom3.ExplicitHydrogenCount() + atom3.ImplicitHydrogenCount()
+                                if hcount!=0:
+                                    atom_pair_list_tmp.append([atom1_idx,atom2_idx,idx,atom3_idx,index])
+                            if In_ring==False:
+                                atom_pair_list += atom_pair_list_tmp
+                        
+                            
+    return atom_pair_list, len(atoms)
+
+def get_fused(mol1, mol2, rules):
+    """Function that returns the list of all molecules resulting from fusion of two molecules.
+
+    Parameters
+    ----------
+    mol1: dict
+        molecule dictionary object
+    mol2: dict
+        molecule dictionary object
+    rules: dict
+        dictionary of generation rules
+
+    Returns
+    -------
+    lib_can: list
+        list of all possible fused molecules obtained from the two given molecules 
+    """
+    list1, size1 = get_atom_pair_list(mol1['can_smiles'],1)
+    list2, size2 = get_atom_pair_list(mol2['can_smiles'],2)
+    smiles_combi = mol1['can_smiles'] + '.' + mol2['can_smiles']
+    lib_can, lib_can_nRa = [], []
+    code = mol1.code + ':' + mol2.code
+    for item1 in list1:
+        for item2 in list2:
+            mol_combi= pybel.readstring("smi",smiles_combi)
+            a1_to_set=mol_combi.OBMol.GetAtom(item1[0])
+            a2_to_set=mol_combi.OBMol.GetAtom(item1[1])
+            a3_to_set=mol_combi.OBMol.GetAtom(size1+item2[2])
+            a4_to_set=mol_combi.OBMol.GetAtom(size1+item2[3])
+
+            chng_arom=False
+            if a3_to_set.IsAromatic()==True and a4_to_set.IsAromatic()==True:
+                chng_arom=True
+            bond_to_del=mol_combi.OBMol.GetBond(size1+item2[4],size1+item2[0])
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item1[0],item1[2])
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[1]+size1)
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[2]+size1)
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            bond_to_del=mol_combi.OBMol.GetBond(item2[1]+size1,item2[3]+size1)
+            mol_combi.OBMol.DeleteBond(bond_to_del)
+            atoms=list(mol_combi.atoms)
+            
+            mol_combi.OBMol.AddBond(item1[1],item2[2]+size1,1,0,-1)
+            mol_combi.OBMol.AddBond(item1[0],item2[3]+size1,1,0,-1)
+            
+            
+            mol_combi_new= pybel.readstring("smi",str(mol_combi))
+            atoms_new=list(mol_combi_new)
+            
+            for atoms in atoms_new:
+                index=atoms.OBAtom.GetIdx()
+                neigh_atm=False
+                for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
+                    neigh_atm=True
+                if neigh_atm==False:
+                    mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
+            
+            if a1_to_set.GetHeteroValence()==1 or a2_to_set.GetHeteroValence()==1:
+                continue
+                
+            can_mol_combi = mol_combi_new.write("can")
+            
+            if can_mol_combi not in lib_can_nRa:
+                mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
+                atoms=list(mol_combi_new.atoms)
+                shd_add=True
+                for atom in atoms:                
+                    a =atom.OBAtom.CountBondsOfOrder(3)
+                    b =atom.OBAtom.CountBondsOfOrder(2)
+                    c =atom.OBAtom.CountBondsOfOrder(1)
+                    tot_bnds= a*3+b*2+c*1
+                    
+                    if tot_bnds>4:
+                        shd_add=False
+                        
+                if if_add(mol_combi_new,rules,code)==True and shd_add==True:
+                    lib_can.append([str(can_mol_combi),mol_wt])
+
+                for atom in atoms:
+                    if atom.OBAtom.GetAtomicNum()==88:
+                        atom.OBAtom.SetAtomicNum(1)
+                
+                lib_can_nRa.append(str(can_mol_combi))
     
-    if rank == 0:
-        logfile = open('logfile.txt','a')
-        error_file = open('error_file.txt','a')
-        
-    ## Defining Ra atom and Francium atom
-    myRa = pybel.readstring('smi',"[Ra]")
-    Raatom = myRa.OBMol.GetAtom(1)
-    myFr = pybel.readstring('smi',"[Fr]")
-    Fratom = myFr.OBMol.GetAtom(1)
-    
+                
+            if chng_arom==True:
+                
+                if not a1_to_set.IsAromatic():
+                    a1_to_set.SetAromatic()
+                    a2_to_set.SetAromatic()
+                mol_combi_new= pybel.readstring("smi",str(mol_combi))
+                atoms_new=list(mol_combi_new)
+                
+                for atoms in atoms_new:
+                    index=atoms.OBAtom.GetIdx()
+                    neigh_atm=False
+                    for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
+                        neigh_atm=True
+                    if neigh_atm==False:
+                        mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
+
+                can_mol_combi = mol_combi_new.write("can")
+
+                if can_mol_combi not in lib_can_nRa:
+                    mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
+                    
+                    atoms=list(mol_combi_new.atoms)
+                    #print mol_combi_new,'before'
+                    shd_add=True
+                    for atom in atoms:
+                        a =atom.OBAtom.CountBondsOfOrder(3)
+                        b =atom.OBAtom.CountBondsOfOrder(2)
+                        c =atom.OBAtom.CountBondsOfOrder(1)
+                        tot_bnds= a*3+b*2+c*1
+                        
+                        if tot_bnds>4:
+                            shd_add=False
+                    #print if_add(mol_combi_new,mol_wt,rules,code,'f')
+                    if if_add(mol_combi_new,rules,code)==True and shd_add==True:
+                        lib_can.append([str(can_mol_combi),mol_wt])
+
+                        #print mol_combi_new,'after'
+                    for atom in atoms:
+                        if atom.OBAtom.GetAtomicNum()==88:
+                            atom.OBAtom.SetAtomicNum(1)
+                    
+                    lib_can_nRa.append(str(can_mol_combi))
+    lib_can_c=[]
+    for item in lib_can:
+        lib_can_c.append([item[0][:-2], item[1], mol1['code'] + ':' + mol2[['code']]])
+            
+    return lib_can
+
+def library_generator(config_file='config.dat', output_dir='./'):
+    """Main wrapper function for library generation.
+    Generates the library based on the two input files: building_blocks.dat and config.dat
+    Output: 
+        Creates a csv file containing the smiles and the corresponding molecule codes.
+        Creates separate files based on the output format.
+
+    Parameters
+    ----------
+    config_file: str, default = 'config.dat'
+        Name of the config file for generating the library
+    output_dir: str, default = './'
+        Path to the output directory.
+
+    Returns
+    -------
+
+    """
     try :
-        rulesFile = open("config.dat")
+        rulesFile = open(config_file)
     except:
         tmp_str = "Generation rules file "+rulesFile+" does not exist. "
         tmp_str = tmp_str+"Please provide correct generation rule file.\n"
@@ -872,30 +961,25 @@ if __name__ == "__main__":
     
     print_l("Reading generation rules \n")
     rules_dict, args = get_rules(rulesFile)
-    print_l(rules_dict)
     BB_file, combi_type, gen_len, outfile_type, max_fpf, lib_name = args
     gen_len, max_fpf = int(gen_len), int(max_fpf)
 
     ## Reading the building blocks from the input file
     initial_mols = []
     print_l("Reading building blocks from the file \'"+BB_file+'\'\n')
-
     try :
         infile = open(BB_file)
     except:
         tmp_str = "Building blocks file "+BB_file+" does not exist. "
         tmp_str = tmp_str+"Please provide correct building blocks file.\n"
         print_le(tmp_str,"Aborting due to wrong file.")
-
     i_smi_list = []
     for i,line in enumerate(infile):
         smiles = line.strip()
         if smiles.isspace() or len(smiles)==0 or smiles[0]=='#':
             continue
-        
         if '[X]' in smiles:
             smiles = smiles.replace('[X]','[Ra]')
-
         smiles = check_building_blocks(smiles,i+1,BB_file)
         # removing duplicates in the input list based on canonical smiles
         temp = molecule(smiles, 'F'+str(len(initial_mols)+1))
@@ -909,23 +993,27 @@ if __name__ == "__main__":
             i_smi_list.append(temp['can_smiles'])
 
     print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n')
-    
     print_l('unique SMILES: \n')
-    
     print_l(i_smi_list)
     print_l('=============================================================================\n')
     
     # Generate molecules
-    final_list = generator(combi_type, initial_mols)
+    final_list = generator(combi_type, initial_mols, gen_len, rules_dict)
     print_l('Total number of molecules generated = '+str(len(final_list))+'\n')
 
+    # Generating output files based on output file type
+    if output_dir is not './':
+        output_dest = output_dir
+    else:
+        output_dest = os.getcwd() + '/'
+    
     # Generating csv file of final library
     df_final_list = pd.DataFrame(final_list)
     if rank == 0:
-        df_final_list.drop(['smiles', 'can_smiles'], axis=1).to_csv('final_library.csv', index=None)
+        if not os.path.exists(output_dest):
+            os.makedirs(output_dest)
+        df_final_list.drop(['smiles', 'can_smiles'], axis=1).to_csv(os.path.join(output_dir+'final_library.csv'), index=None)
 
-    # Generating files based on output file type
-    output_dest = os.getcwd() + '/'
     if outfile_type == 'smi':
         if rank == 0:
             if not os.path.exists(output_dest + lib_name + outfile_type):
@@ -954,20 +1042,15 @@ if __name__ == "__main__":
     
         ## Dividing the list into processors
         smiles_list = comm.scatter(smiles_to_scatter,root=0)
-        
         final_list_len = smiles_list[-3]
         start = smiles_list[-2]
         end = smiles_list[-1]
         smiles_list = smiles_list[0:-3]
-        
         ratio_s = int(start/max_fpf)
         ratio_e = int(end/max_fpf)
-        
         if end+1 == final_list_len:
             ratio_e = ratio_e+1
-        
         for i in range(ratio_s,ratio_e):
-            
             if not os.path.exists(output_dest + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf)):
                 os.makedirs(output_dest + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf))
 
