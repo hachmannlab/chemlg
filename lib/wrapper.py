@@ -1,4 +1,4 @@
-from libgen import library_generator
+from chemlg import library_generator
 import argparse
 
 ## Argument parser desription
