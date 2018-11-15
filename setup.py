@@ -22,7 +22,7 @@ if __name__ == "__main__":
         description=
         'ChemLG is a smart and massive parallel molecular library generator for  chemical and materials sciences.',
         long_description=long_description,
-        scripts=['lib/chemlg'],
+        scripts=['lib/chemlgshell'],
         keywords=[
             'Library Generator', 'Molecular Library',
             'Materials Science', 'Drug Discovery'
