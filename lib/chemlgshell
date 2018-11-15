@@ -1,0 +1,30 @@
+#! /usr/bin/env python
+
+from chemlg import library_generator
+import argparse
+
+## Argument parser desription
+
+parser = argparse.ArgumentParser(
+    description=
+    'This is a pacakge to generate a combinatorial library of molecules based on the building blocks provided. Please provide the building blocks in the a file in either SMILES form or InChi.'
+)
+parser.add_argument(
+    '-i',
+    "--input_file",
+    type=str,
+    required=True,
+    help="path to the config file for chemlg.")
+parser.add_argument(
+    '-o',
+    "--output_dir",
+    type=str,
+    required=True,
+    help="Path to the output directory.")
+
+## defining arguments
+args = parser.parse_args()
+input_file = args.config_file
+output_dir = args.output_dir
+
+library_generator(config_file=input_file, output_dir=output_dir)
