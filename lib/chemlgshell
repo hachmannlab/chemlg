@@ -24,7 +24,7 @@ parser.add_argument(
 
 ## defining arguments
 args = parser.parse_args()
-input_file = args.config_file
+input_file = args.input_file
 output_dir = args.output_dir
 
 library_generator(config_file=input_file, output_dir=output_dir)
