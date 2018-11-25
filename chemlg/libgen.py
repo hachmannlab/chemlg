@@ -1,7 +1,7 @@
 from __future__ import print_function
 import sys
-import pybel
 from openbabel import OBAtomAtomIter
+import pybel
 #import subprocess
 import time
 import scipy

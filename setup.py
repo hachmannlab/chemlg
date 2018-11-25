@@ -31,8 +31,9 @@ if __name__ == "__main__":
         packages=setuptools.find_packages(),
 
         install_requires=[
-            'future', 'six', 'numpy', 'pandas',
-            'scipy',
+            'future', 'six',
+            'numpy', 'pandas',
+            'scipy'
         ],
         extras_require={
             'docs': [
