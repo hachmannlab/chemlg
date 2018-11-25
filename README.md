@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hachmannlab/chemlg.svg?branch=master)](https://travis-ci.org/hachmannlab/chemlg)
+[![codecov](https://codecov.io/gh/hachmannlab/chemlg/branch/master/graph/badge.svg)](https://codecov.io/gh/hachmannlab/chemlg)
 # ChemLG
 ChemLG is a smart and massive parallel molecular library generator for  chemical and materials sciences.
 
