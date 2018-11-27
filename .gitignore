@@ -7,6 +7,11 @@ __pycache__/
 # C extensions
 *.so
 
+
+# after run files
+error_file.txt
+logfile.txt
+
 # Pycharm files
 ../.idea
 **/../.idea
