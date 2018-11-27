@@ -8,6 +8,7 @@ from mpi4py import MPI
 import os
 from itertools import islice,chain
 import pandas as pd
+import inspect
 
 ## initializing MPI to time, to check the MPI efficiency
 wt1 = MPI.Wtime()
@@ -119,7 +120,6 @@ def lipinski(mol):
       'logP': mol.calcdesc(['logP'])['logP']}
 
     return desc
-
 
 def if_add(molc, rules, code):
     """
@@ -926,7 +926,7 @@ def get_fused(mol1, mol2, rules):
             
     return lib_can
 
-def library_generator(config_file='config.dat', output_dir='./'):
+def library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./'):
     """Main wrapper function for library generation.
     Generates the library based on the two input files: building_blocks.dat and config.dat
     Output: 
@@ -953,7 +953,8 @@ def library_generator(config_file='config.dat', output_dir='./'):
     
     print_l("Reading generation rules \n")
     rules_dict, args = get_rules(rulesFile)
-    BB_file, combi_type, gen_len, outfile_type, max_fpf, lib_name = args
+    BB_file = building_blocks_file
+    combi_type, gen_len, outfile_type, max_fpf, lib_name = args
     gen_len, max_fpf = int(gen_len), int(max_fpf)
 
     ## Reading the building blocks from the input file
@@ -1059,5 +1060,6 @@ def library_generator(config_file='config.dat', output_dir='./'):
     print_l('File writing terminated successfully'+'\n')
     wt2 = MPI.Wtime()
     print_l('Total time_taken '+str('%.3g'%(wt2-wt1))+'\n')
+    os.system('mv logfile.txt errorfile.txt '+ output_dest)
     sys.stderr.close()
     sys.exit()
