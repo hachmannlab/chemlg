@@ -1,23 +1,42 @@
 [![Build Status](https://travis-ci.org/hachmannlab/chemlg.svg?branch=master)](https://travis-ci.org/hachmannlab/chemlg)
 [![codecov](https://codecov.io/gh/hachmannlab/chemlg/branch/master/graph/badge.svg)](https://codecov.io/gh/hachmannlab/chemlg)
 # ChemLG
-ChemLG is a smart and massive parallel molecular library generator for  chemical and materials sciences.
+ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.
 
 
 ## Code Design:
-ChemLG is developed in the Python 2 programming language and makes use of OpenBabel solftware for reading and writing molecules.
+ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
 
+## Installation and Dependencies:
+The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. They can be installed via the conda installer:
+
+
+    conda create --name my_chemlg_env python=3.6
+    source activate my_chemlg_env
+    conda install -c openbabel openbabel
+    conda install -c anaconda mpi4py
+
+
+You can download ChemML from Python Package Index (PyPI) via pip. 
+
+    pip install chemlg
+
+
+You can test the installation with:
+
+    pytest -v
 
 ## Contributors:
 
-- Mohammad Atif Faiz Afzal, CBE department, SUNY Buffalo
-- Johannes Hachmann, CBE department, SUNY Buffalo
+- Mohammad Atif Faiz Afzal, CBE Department, SUNY Buffalo
+- Gaurav Vishwakarma, CBE Department, SUNY Buffalo
+- Janhavi Dudwadkar, CBE Department, SUNY Buffalo
+- Mojtaba Haghighatlari, CBE Department, SUNY Buffalo
+- Johannes Hachmann, CBE Department, SUNY Buffalo
 
 - We encourage any contributions and feedback. Feel free to fork and make pull-request to the "development" branch.
 
 
-## Dependencies:
-The only dependency of ChemLG is OpenBabel. MPI4Py library is required for parallel implementation of the code.
 
 ## Citation:
 Please cite the use of ChemLG as:
@@ -27,4 +46,5 @@ Please cite the use of ChemLG as:
 
 
 ## License:
-ChemLG is open and freely shared with the community under 3-clause BSD license.
+ChemLG is copyright (C) 2014-2018 Johannes Hachmann, all rights reserved.
+ChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause).
