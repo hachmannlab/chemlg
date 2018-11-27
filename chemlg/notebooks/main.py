@@ -13,74 +13,6 @@ style = {'description_width': 'initial'}
 count =0
 BB_list=[]
 
-"""def GUI_1():
-    global BB_list
-    style = {'description_width': 'initial'}
-
-    BB = widgets.Text(
-        placeholder='Type the SMILES of building block',
-        description='Building block:',style=style,
-         )
-    display(BB)
-    button = widgets.Button(description="Add the building block")
-    display(button)
-    BB_dis = widgets.HTML(
-        description='Building blocks added:',style=style,
-        )
-    display(BB_dis)
-    
-    button_BB_dis = widgets.Button(description="Visualize building block")
-    display(button_BB_dis)
-
-    def on_button_clicked(b):
-        global count, BB_list
-        count=count+1
-        display(Javascript('IPython.notebook.execute_cells([3])'))
-        if count>0:
-            BB_list.append(BB.value)
-            building_blocks2=open("building_blocks.txt","a+")
-            building_blocks2.write(BB.value + '\n')
-            building_blocks2.close()
-            BB_dis.value = str(BB_list)
-
-        else:
-            building_blocks1 = open("building_blocks.txt", "w+")
-            building_blocks1.write('Building blocks are:' + '\n' + BB.value + '\n')
-            building_blocks1.close()
-            count=2
-
-    def on_dis_bb_clicked(b):
-
-        global BB_list
-        mol_list = [Chem.MolFromSmiles(smiles) for smiles in BB_list]
-        [mol.SetProp('_Name', 'B'+str(i)) for i,mol in enumerate(mol_list)]
-        ibu=Chem.Draw.MolsToGridImage(mol_list,legends=[mol.GetProp('_Name') for mol in mol_list])
-        display(ibu)
-        #BB_viz()
-
-                        
-            
-    button.on_click(on_button_clicked)
-    button_BB_dis.on_click(on_dis_bb_clicked)
-
-def BB_viz():
-    
-    global BB_list
-    button_BB_dis = widgets.Button(description="Visualize building block")
-    display(button_BB_dis)
-
-    def on_dis_bb_clicked(b):
-
-        global BB_list
-        clear_output()
-        button_BB_dis = widgets.Button(description="Visualize building block")
-        display(button_BB_dis)
-        mol_list = [Chem.MolFromSmiles(smiles) for smiles in BB_list]
-        [mol.SetProp('_Name', 'B'+str(i)) for i,mol in enumerate(mol_list)]
-        ibu=Chem.Draw.MolsToGridImage(mol_list,legends=[mol.GetProp('_Name') for mol in mol_list])
-        display(ibu)
-            
-    button_BB_dis.on_click(on_dis_bb_clicked)"""
 
 def GUI_2():
     style = {'description_width': 'initial','font_weight':'bold'}
@@ -228,7 +160,7 @@ def GUI_2():
             placeholder='Type the substructure SMILES',
             description='Substructure:',
             style=style)
-        sub_intro=widgets.HTML("""Enter substructural in SMARTS format which must be included in all molecules in the final library
+        sub_intro=widgets.HTML("""Enter substructures in SMARTS format which must be included in all molecules in the final library
         """,
         layout = widgets.Layout(height = '45px', width = '90%',
                     size = '20'))
@@ -246,8 +178,8 @@ def GUI_2():
         sube=widgets.VBox(children=[sube_intro,space_box,substructure_exclusion])
 
         Include_BB = widgets.RadioButtons(
-            options=['Yes', 'No'],
-            value='No',
+            options=['True', 'False'],
+            value='True',
             description='Include BB:', style=style,
             disabled=False
         )
@@ -263,10 +195,91 @@ def GUI_2():
             description='Symmetry:', style=style,
             disabled=False
         )"""
+        input_file = widgets.Text(value='building_blocks.dat',
+                              placeholder='Type the name of input file',
+                              description='Enter building blocks file name:',
+                              style=style,layout = widgets.Layout(height = '45px', width = '40%',
+                    size = '20')
+                              )
+        input_intro=widgets.HTML("""Type the name of the input file""",
+        layout = widgets.Layout(height = '45px', width = '90%',
+                    size = '20'))
+        i_f=widgets.VBox(children=[input_file])
+
+        """molecule_type = widgets.Dropdown(
+            options=['SMILES', 'SMARTS', 'INCHI'],
+            value='SMILES',
+            description='Molecule Type:',
+            style=style,
+            disabled=False)
+        mt_intro=widgets.HTML('Enter the type of representation of the molecule',
+        layout = widgets.Layout(height = '45px', width = '90%',
+                    size = '20'))
+        mt=widgets.VBox(children=[mt_intro,space_box,molecule_type])"""
+        
+        combination_type = widgets.RadioButtons(
+            options=['Fusion', 'Link'],
+            value='Link',
+            description='Combination type:',
+            style=style,
+            disabled=False
+        )
+        comb_intro=widgets.HTML("""Select the combination type for generating the molecules""",
+        layout = widgets.Layout(height = '50px', width = '90%',
+                    size = '20'))
+        comb=widgets.VBox(children=[comb_intro,combination_type])
+        
+        generation_level = widgets.BoundedIntText(
+            value=1,
+            min=1,
+            max=100,
+            step=1,
+            description='Generation level:',
+            style=style,
+            disabled=False)
+        gl_intro=widgets.HTML("""Enter the number of generations to run the library generator""",
+        layout = widgets.Layout(height = '50px', width = '90%',
+                    size = '20'))
+        gl=widgets.VBox(children=[gl_intro,generation_level])
+        
+
+        output_type = widgets.Dropdown(
+            options=['smi', 'xyz',],
+            value='smi',
+            description='Output Type:',
+            style=style,
+            disabled=False, )
+        op_intro=widgets.HTML("""Specify the output file format""",
+        layout = widgets.Layout(height = '50px', width = '90%',
+                    size = '20'))
+        op=widgets.VBox(children=[op_intro,output_type])
+        
+
+        max_files = widgets.IntText(
+            value=10000,
+            description='Maximum files per folder:',
+            style=style,
+            disabled=False)
+        """mf_intro=widgets.HTML('Enter the maximum number of files required in one folder',
+        layout = widgets.Layout(height = '45px', width = 'auto',
+                    size = '20'))"""
+        mf=widgets.VBox(children=[max_files])
+        
+
+        library_name = widgets.Text(
+            value='new_library_',
+            placeholder='Type the nameof the library',
+            description='Library Name:',
+            style=style)
+        """ln_intro=widgets.HTML('Type the name of the library',
+        layout = widgets.Layout(height = '45px', width = '90%',
+                    size = '20'))"""
+        ln=widgets.VBox(children=[library_name])
+        
         accordion = widgets.Accordion(
             children=[bb, no_bonds, atom, mol, ring, aring, naring, sbond, dbond, tbond, satom, lr, fm,
-                      sub, sube, ibb])
-        accordion.set_title(0, 'Building Blocks')
+                      sub, sube, ibb, i_f, comb, gl, op, mf, ln])
+        accordion.set_title(0, 'Include Building Blocks')
         accordion.set_title(1, 'Number of Bonds')
         accordion.set_title(2, 'Number of Atoms')
         accordion.set_title(3, 'Molecular Weight Range')
@@ -282,6 +295,14 @@ def GUI_2():
         accordion.set_title(13, 'Substructure Inclusion')
         accordion.set_title(14, 'Substructure Exclusion')
         accordion.set_title(15, 'Include initial Building Blocks')
+        accordion.set_title(16, 'Building Blocks')
+        accordion.set_title(17, 'Combination Type')
+        accordion.set_title(18, 'No of generations')
+        accordion.set_title(19, 'Output File Format')
+        accordion.set_title(20, 'Maximum No of Files')
+        accordion.set_title(21, 'Library Name')
+        
+        
         #accordion.set_title(16, 'Symmetry')
         display(accordion)
         def generation_file():
@@ -331,23 +352,30 @@ def GUI_2():
                 substructure.value='None'
             elif substructure_exclusion.value=="":
                 substructure_exclusion.value=='None'
-            display(widgets.HTML(value="""<font size=3>Generation rules file created""",layout = widgets.Layout(height = '60px', width = '90%',size = '20')))   
+            
+            display(widgets.HTML(value="""<font size=3>Configuration file created""",layout = widgets.Layout(height = '60px', width = '90%',size = '20')))   
                
             
-            generation = open("generation_rules.dat", "w+")
+            generation = open("config.dat", "w+")
             generation.write(
-                "Please input generation rules below. Do not change the order of the options" + '\n' + "1. Include building blocks ==" + building_blocks.value + '\n' +
+                "Please input generation rules below. Do not change the order of the options" + '\n' + "1. Include building blocks == " + building_blocks.value + '\n' +
                 "2. Min and max no. of bonds == " + bondmin.value + "," + bondmax.value + '\n' + "3. Min and max no. of atoms == " + atommin.value + "," + atommax.value + '\n' +
                 "4. Min and max mol. weight == " + molmin.value + "," + molmax.value + '\n' + "5. Min and max no. of rings == " + ringmin.value + "," + ringmax.value + '\n' +
-                "6. Min and max no. of aromatic rings == " + armin.value + "," + armax.value + '\n' + "7. Min and max no. of non aromatic rings ==" + narmin.value + "," + narmax.value + '\n' +
+                "6. Min and max no. of aromatic rings == " + armin.value + "," + armax.value + '\n' + "7. Min and max no. of non aromatic rings == " + narmin.value + "," + narmax.value + '\n' +
                 "8. Min and max no. of single bonds == " + smin.value + "," + smax.value + '\n' + "9. Min and max no. of double bonds == " + dmin.value + "," + dmax.value + '\n' +
                 "10. Min and max no. of triple bonds == " + tmin.value + "," + tmax.value + '\n' + "11. Max no. of specific atoms == " + "[(C,"+specific_atoms.value+"),(S," +sulphur.value+"),(O,"+oxygen.value+"),(N,"+nitrogen.value+")]"+ '\n' +
                 "12. Lipinski's rule == " + lipinski_rule.value + '\n' + "13. Fingerprint matching ('c1ccccc1'-0.1), ('C1CCCC1'-0.1) == " + fingerprint_matching.value + '\n'
                                                                                                                                                                          "14. Substructure == " + substructure.value + '\n' + "15. Substructure exclusion == " + substructure_exclusion.value + '\n' +
-                "15. Include_BB == " + Include_BB.value + '\n')
+                "15. Include_BB == " + Include_BB.value + '\n'+'\n'+'\n'+'\n'+'\n'+'\n'+
+                "Building blocks file :: "+input_file.value+'\n'+
+                "Combination type for molecules :: "+combination_type.value+'\n'+
+                "Number of generations :: "+str(generation_level.value)+'\n'+
+                "Molecule format in output file ::"+output_type.value+'\n'+
+                "Maximum files per folder :: "+str(max_files.value)+'\n'+"Library name :: "+library_name.value+'\n' )
+                 
             generation.close()
             
-        button1 = widgets.Button(description="Generate rules file",layout=widgets.Layout(border='solid 1px black'),style=style)
+        button1 = widgets.Button(description="Generate configuration file",layout=widgets.Layout(border='solid 1px black'),style=style)
         
         display(button1)
         
@@ -355,130 +383,8 @@ def GUI_2():
             generation_file()
            
              
-        display(third)    
+            
         button1.on_click(on_button_clicked)
     second.on_click(second_section)
     
-    def third_section(v):
-        style = {'description_width': 'initial','font_weight':'bold'}
-        display(widgets.HTML(value="<font color=crimson><font size=5><b><u>GENERATION OF COMMAND LINE</font>"))
-
-        input_file = widgets.Text(value='building_blocks.dat',
-                              placeholder='Type the name of input file',
-                              description='Enter building blocks file name:',
-                              style=style,layout = widgets.Layout(height = '45px', width = '40%',
-                    size = '20')
-                              )
-        input_intro=widgets.HTML("""Type the name of the input file""",
-        layout = widgets.Layout(height = '45px', width = '90%',
-                    size = '20'))
-        i_f=widgets.VBox(children=[input_file])
-
-        """molecule_type = widgets.Dropdown(
-            options=['SMILES', 'SMARTS', 'INCHI'],
-            value='SMILES',
-            description='Molecule Type:',
-            style=style,
-            disabled=False)
-        mt_intro=widgets.HTML('Enter the type of representation of the molecule',
-        layout = widgets.Layout(height = '45px', width = '90%',
-                    size = '20'))
-        mt=widgets.VBox(children=[mt_intro,space_box,molecule_type])"""
-        
-        combination_type = widgets.RadioButtons(
-            options=['Fuse', 'Link'],
-            value='Link',
-            description='Combination type:',
-            style=style,
-            disabled=False
-        )
-        comb_intro=widgets.HTML("""Select the combination type for generating the molecules""",
-        layout = widgets.Layout(height = '50px', width = '90%',
-                    size = '20'))
-        comb=widgets.VBox(children=[comb_intro,combination_type])
-        
-        generation_level = widgets.BoundedIntText(
-            value=1,
-            min=1,
-            max=100,
-            step=1,
-            description='Generation level:',
-            style=style,
-            disabled=False)
-        gl_intro=widgets.HTML("""Enter the number of generations to run the library generator""",
-        layout = widgets.Layout(height = '50px', width = '90%',
-                    size = '20'))
-        gl=widgets.VBox(children=[gl_intro,generation_level])
-        
-
-        output_type = widgets.Dropdown(
-            options=['SMILES', 'SMARTS', 'INCHI'],
-            value='SMILES',
-            description='Output Type:',
-            style=style,
-            disabled=False, )
-        op_intro=widgets.HTML("""Select the representation of molecules in the output file""",
-        layout = widgets.Layout(height = '50px', width = '90%',
-                    size = '20'))
-        op=widgets.VBox(children=[op_intro,output_type])
-        
-
-        max_files = widgets.IntText(
-            value=10000,
-            description='Maximum files per folder:',
-            style=style,
-            disabled=False)
-        """mf_intro=widgets.HTML('Enter the maximum number of files required in one folder',
-        layout = widgets.Layout(height = '45px', width = 'auto',
-                    size = '20'))"""
-        mf=widgets.VBox(children=[max_files])
-        
-
-        library_name = widgets.Text(
-            value='new_library_',
-            placeholder='Type the nameof the library',
-            description='Library Name:',
-            style=style)
-        """ln_intro=widgets.HTML('Type the name of the library',
-        layout = widgets.Layout(height = '45px', width = '90%',
-                    size = '20'))"""
-        ln=widgets.VBox(children=[library_name])
-        
-
-        style = {'description_width': 'initial', }
-        chemHTPS = widgets.RadioButtons(
-            options=['True', 'False'],
-            value='False',
-            description='Run with ChemHTPS:', style=style,
-            disabled=False
-        )
-        ch_intro=widgets.HTML("""Run library generator through ChemHTPS infrastructure""",
-        layout = widgets.Layout(height = '50px', width = '90%',
-                    size = '20'))
-        cH=widgets.VBox(children=[ch_intro,chemHTPS])
-        
-        children = [i_f, comb, gl, op, mf, ln,
-                    cH]
-        tab = widgets.Tab(style=style)
-        tab.children = children
-        tab.set_title(0, 'Building Blocks')
-        tab.set_title(1, 'Combination Type')
-        tab.set_title(2, 'Generation Level')
-        tab.set_title(3, 'Output File')
-        tab.set_title(4, 'Maximum No of Files')
-        tab.set_title(5, 'Library Name')
-        tab.set_title(6, 'ChemHTPS')
-        
-
-        display(tab)
-        button = widgets.Button(description="Generate Command line", layout= Layout(width= 'auto',border='solid 1px black'),style=style)
-        display(button)
-
-        def on_button_clicked(b):
-            opt = "--input_file %s --combination_type %s --generation_levels %s --output_type %s--max_files_per_folder %s --rule_file generation.dat --lib_name %s --ChemHTPS %s" % (
-            input_file.value, combination_type.value, generation_level.value, output_type.value,
-            max_files.value, library_name.value, chemHTPS.value)
-            print(opt)
-
-        button.on_click(on_button_clicked)
-    third.on_click(third_section)
+    

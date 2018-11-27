@@ -18,6 +18,6 @@ def test_general(smiles_code):
     assert mol['smiles'] == 'CcC'
     assert mol['reverse_smiles'] == 'C[CH]C'
 
-# def test_exceptions(smiles_code):
-#     with pytest.raises(OSError):
-#         molecule('asdf', 'F1-F2')
+def test_exceptions(smiles_code):
+    with pytest.raises(OSError):
+        molecule('asdf', 'F1-F2')

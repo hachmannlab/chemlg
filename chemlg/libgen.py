@@ -1,16 +1,11 @@
 from __future__ import print_function
 import sys
-from openbabel import OBAtomAtomIter
 import pybel
-#import subprocess
-import time
+from openbabel import OBAtomAtomIter
 import scipy
 from collections import defaultdict
-import operator
-#import cStringIO
 from mpi4py import MPI
 import os
-import threading
 from itertools import islice,chain
 import pandas as pd
 
@@ -121,15 +116,10 @@ def lipinski(mol):
 
       'HBA': len(HBA.findall(mol)),
 
-      'logP': mol.calcdesc(['logP'])}
+      'logP': mol.calcdesc(['logP'])['logP']}
 
     return desc
 
-passes_all_rules = lambda desc: (desc ['molwt'] <= 500 and
-
-         desc ['HBD'] <= 5 and desc ['HBA'] <= 10 and
-
-         desc ['logP'] <= 5)
 
 def if_add(molc, rules, code):
     """
@@ -151,8 +141,10 @@ def if_add(molc, rules, code):
     """
     # check validity of molecule. pybel returns true even for wrong molecules by converting them to the correct strings.
     if molc == '':  return False
-    if not pybel.readstring("smi", molc):
-        print("invalid smiles", pybel.readstring("smi", molc))
+    try:
+        pybel.readstring("smi", molc)
+    except:
+        print("invalid smiles: ", molc)
         return False
 
     # create a new copy of the dict to avoid changing the original dict    
@@ -174,19 +166,19 @@ def if_add(molc, rules, code):
     
     if '2' in rules:
         bonds = mol_ob.OBMol.NumBonds()
-        if not rules['2'][0] < bonds < rules['2'][1]:
+        if not rules['2'][0] <= bonds <= rules['2'][1]:
             add = False
             del mol
             return add
     
     if '3' in rules:
-        if not rules['3'][0] < len(list(mol_ob.atoms)) < rules['3'][1]:
+        if not rules['3'][0] <= len(list(mol_ob.atoms)) <= rules['3'][1]:
             add = False
             del mol
             return add
 
     if '4' in rules:
-        if not rules['4'][0] < int(mol_ob.OBMol.GetMolWt()) < rules['4'][1]:
+        if not rules['4'][0] <= int(mol_ob.OBMol.GetMolWt()) <= rules['4'][1]:
             add = False
             del mol
             return add
@@ -194,7 +186,7 @@ def if_add(molc, rules, code):
     # Calculating no.of rings
     if '5' in rules:
         rings = len(mol_ob.OBMol.GetSSSR())
-        if not rules['5'][0] < rings < rules['5'][1]:
+        if not rules['5'][0] <= rings <= rules['5'][1]:
             add = False
             del mol
             return add
@@ -208,33 +200,33 @@ def if_add(molc, rules, code):
             else:
                 no_non_ar += 1
         if '6' in rules:
-            if not rules['6'][0] < no_ar < rules['6'][1]:
+            if not rules['6'][0] <= no_ar <= rules['6'][1]:
                 add = False
                 del mol
                 return add
         if '7' in rules:
-            if not rules['7'][0] < no_non_ar < rules['7'][1]:
+            if not rules['7'][0] <= no_non_ar <= rules['7'][1]:
                 add = False
                 del mol
                 return add
 
     if '8' in rules:
         no_s_bonds=unique_structs(mol_ob,"*-*")
-        if not rules['8'][0] < no_s_bonds < rules['8'][1]:
+        if not rules['8'][0] <= no_s_bonds <= rules['8'][1]:
             add = False
             del mol
             return add
 
     if '9' in rules:
         no_d_bonds=unique_structs(mol_ob,"*=*")
-        if not rules['9'][0] < no_d_bonds < rules['9'][1]:
+        if not rules['9'][0] <= no_d_bonds <= rules['9'][1]:
             add = False
             del mol
             return add
 
     if '10' in rules:
         no_t_bonds=unique_structs(mol_ob,"*#*")
-        if not rules['10'][0] < no_t_bonds < rules['10'][1]:
+        if not rules['10'][0] <= no_t_bonds <= rules['10'][1]:
             add = False
             del mol
             return add
@@ -253,7 +245,7 @@ def if_add(molc, rules, code):
     
     if 'lipinski' in rules:
         descriptors = lipinski(mol_ob)
-        if not passes_all_rules(descriptors):
+        if not ((descriptors['molwt'] <= 500) and (descriptors['HBD'] <= 5) and (descriptors['HBA'] <= 10) and (descriptors['logP'] <= 5)):
             add = False
             del mol
             return add
@@ -262,7 +254,7 @@ def if_add(molc, rules, code):
         for mol_to_comp in rules['fingerprint']:
             mol2 = pybel.readstring('smi',mol_to_comp[0])
             tanimoto = mol_ob.calcfp()|mol2.calcfp()            
-            if tanimoto < float(mol_to_comp[1]):
+            if tanimoto <= float(mol_to_comp[1]):
                 add = False
                 del mol
                 return add
@@ -270,7 +262,7 @@ def if_add(molc, rules, code):
     if '14' in rules:
         for item in rules['14']:
             no_occ=unique_structs(mol_ob,item)
-            if no_occ == 0 :
+            if no_occ == 0:
                 add = False
                 del mol
                 return add 
@@ -283,7 +275,7 @@ def if_add(molc, rules, code):
                 del mol
                 return add    
 
-    if 'bb_final_lib' in rules:                             # if this is present, then the value is false. 
+    if 'bb_final_lib' in rules:              # if this is present, then the value is false. 
         if mol['code'].count('-') == 0 and mol['code'].count(':') == 0:
             add = False
             del mol
@@ -955,8 +947,8 @@ def library_generator(config_file='config.dat', output_dir='./'):
     try :
         rulesFile = open(config_file)
     except:
-        tmp_str = "Generation rules file "+rulesFile+" does not exist. "
-        tmp_str = tmp_str+"Please provide correct generation rule file.\n"
+        tmp_str = "Config file does not exist. "
+        tmp_str = tmp_str+"Please provide correct config file.\n"
         print_le(tmp_str,"Aborting due to wrong file.")
     
     print_l("Reading generation rules \n")
