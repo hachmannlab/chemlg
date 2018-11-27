@@ -18,7 +18,7 @@ Please input generation rules below. Do not change the order of the options.
 
 
 Combination type for molecules  :: Link
-Number of generations           :: 3
+Number of generations           :: 2
 Molecule format in output file  :: smi
 Maximum files per folder        :: 10000
 Library name                    :: new_library_
