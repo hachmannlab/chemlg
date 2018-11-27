@@ -17,7 +17,6 @@ Please input generation rules below. Do not change the order of the options.
 16. Include_BB                              == True
 
 
-Building blocks file            :: building_blocks.dat
 Combination type for molecules  :: Link
 Number of generations           :: 3
 Molecule format in output file  :: smi
