@@ -44,11 +44,11 @@
 C
 S
 O
-[X]S(=O)(=O)([X])
-# c1ccccc1
+# [X]S(=O)(=O)([X])
+c1ccccc1
 # C1SCC(SC1)
 # c1ccc(s1)
-# c1nnc(s1)
+c1nnc(s1)
 # C1NCNC(N1)
 # c1ccc(c1)
 # c1ccc(cn1)
@@ -56,7 +56,7 @@ O
 # c1nsnc1
 # c1sc(nc1)
 # c1oc(cc1)
-# c1ccc2c(c1)ccc(c2)
+c1ccc2c(c1)ccc(c2)
 # c1ccc2c(c1)Sc3c(S2)cc(cc3)
 # c1cc2c(cc1)Sc3c2cc(cc3)
 # c1ccc2c(c1)S(=O)(=O)c3c(S2(=O)(=O))cc(cc3)
