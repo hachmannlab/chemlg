@@ -15,8 +15,7 @@ The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that the
     source activate my_chemlg_env
     conda install -c openbabel openbabel
     conda install -c anaconda mpi4py
-
-
+    
 You can download ChemML from Python Package Index (PyPI) via pip. 
 
     pip install chemlg
@@ -25,6 +24,25 @@ You can download ChemML from Python Package Index (PyPI) via pip.
 You can test the installation with:
 
     pytest -v
+
+
+Following additional (optional) packages are required (within the environment) to unlock some of the other functionalities of ChemLG:
+
+ChemLG graphical config file builder:
+
+    conda install –c conda-forge rdkit
+    conda install ipykernel
+    conda install -c conda-forge ipywidgets
+    python -m ipykernel install --name my_chemlg_env --display-name "chemlg"
+
+
+ChemLG genetic algorithm module:
+
+    pip install deap
+
+
+
+
 
 ## Contributors:
 
