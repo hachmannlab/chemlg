@@ -7,7 +7,7 @@ import argparse
 
 parser = argparse.ArgumentParser(
     description=
-    'This is a pacakge to generate a combinatorial library of molecules based on the building blocks provided. Please provide the building blocks in the a file in either SMILES form or InChi.'
+    'This is a pacakge to generate a combinatorial library of molecules based on the building blocks provided. Please provide the building blocks in a file in either SMILES form or InChi, and the constraints in the config file.'
 )
 parser.add_argument(
     '-i',

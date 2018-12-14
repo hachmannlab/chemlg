@@ -10,9 +10,9 @@ def objective(mol_ob):
     tanimoto = mol_ob.calcfp()|mol2.calcfp() 
     return tanimoto
 
-# def cf_path():
-#     return pkg_resources.resource_filename(
-#         'chemlg', os.path.join('templates', 'config.dat'))
+def cf_path():
+    return pkg_resources.resource_filename(
+        'chemlg', os.path.join('templates', 'config.dat'))
 
 
 def bb_path():
@@ -22,8 +22,11 @@ def bb_path():
 
 def test_genetic_algorithm():
     bb_loc = bb_path()
+    cf_loc = cf_path()
     ga_test = GeneticAlgorithm(evaluate=objective,
                                 bb_file=bb_loc,
+                                config_file=cf_loc,
+                                output_dir='./',
                                 max_indi_len = 20,
                                 weights=(-1.0, ), 
                                 pop_size=30, 

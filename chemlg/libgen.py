@@ -367,7 +367,7 @@ def get_index_list(mol, atoms):
     
     return atoms_index
 
-def get_rules(config_file):
+def get_rules(config_file, output_dir):
     """ 
     Function to read generation rules provided in the config file.
         
@@ -383,12 +383,12 @@ def get_rules(config_file):
         list of other input arguments to the library generator
     """
     rules_dict, lib_args = {}, []
-    print_l('Provided rules')
+    print_l('Provided rules', output_dir)
 
     for i,line in enumerate(config_file):
         if i == 0:
             continue
-        print_l(line[:-1])
+        print_l(line[:-1], output_dir)
 
         if '==' in line:
             words = line.split('==')
@@ -401,13 +401,13 @@ def get_rules(config_file):
                 in_frags = []
                 if not isinstance(eval(value), tuple):
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str,"Aborting due to wrong generation rule.")
+                    print_le(tmp_str, output_dir, "Aborting due to wrong generation rule.")
                 for item in eval(value):
                     if 'F' in item:
                         in_frags.append(item.strip())
                     else:
                         tmp_str = "ERROR: Wrong generation rule provided for "+line
-                        print_le(tmp_str,"Aborting due to wrong generation rule.")
+                        print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
                 rules_dict['include_bb'] = in_frags
                 continue
                 
@@ -416,7 +416,7 @@ def get_rules(config_file):
                     rules_dict['heteroatoms'] = eval(value)
                 else:
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str,"Aborting due to wrong generation rule.")
+                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
                 continue
         
             elif i == 12:
@@ -426,7 +426,7 @@ def get_rules(config_file):
                     continue
                 else:
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str,"Aborting due to wrong generation rule.")
+                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
                 continue
 
             elif i == 13: # This rule is for fingerprint matching
@@ -434,7 +434,7 @@ def get_rules(config_file):
                 smiles_to_comp = []
                 for j in target_mols:
                     target_smiles, tanimoto_index = j.split('-')[0].strip(), j.split('-')[1].strip()
-                    smiles = check_building_blocks(target_smiles,i+1,config_file)
+                    smiles = check_building_blocks(target_smiles,i+1,config_file, output_dir)
                     smiles_to_comp.append([smiles,tanimoto_index])
                 rules_dict['fingerprint'] = smiles_to_comp            
                 continue
@@ -442,7 +442,7 @@ def get_rules(config_file):
             elif i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
                 smiles_l = []
                 for item in value.split(','):
-                    smiles = check_building_blocks(item.strip(),i+1,config_file)
+                    smiles = check_building_blocks(item.strip(),i+1,config_file, output_dir)
                     smiles_l.append(smiles)
                 rules_dict[str(i)] = smiles_l
                 continue
@@ -451,7 +451,7 @@ def get_rules(config_file):
                 if value != 'True' and value != 'False':
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
                     tmp_str = tmp_str+"Provide either True or False. \n"
-                    print_le(tmp_str,"Aborting due to wrong generation rule.")
+                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
                 
                 if value == 'False':
                     rules_dict['bb_final_lib'] = False
@@ -461,7 +461,7 @@ def get_rules(config_file):
                 if not isinstance(eval(value), tuple) or len(eval(value)) != 2:
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
                     tmp_str = tmp_str+"Provide the range in tuple format (min, max). \n"
-                    print_le(tmp_str,"Aborting due to wrong generation rule.")
+                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
                 
                 else:
                     rules_dict[str(i)] = eval(value)
@@ -473,7 +473,7 @@ def get_rules(config_file):
 
     return rules_dict, lib_args
 
-def check_building_blocks(smiles, line, file_name):
+def check_building_blocks(smiles, line, file_name, output_dir):
     """Validate the building blocks input (smiles or inchi) and return the smiles of the molecule
 
     Parameters
@@ -505,7 +505,7 @@ def check_building_blocks(smiles, line, file_name):
 
     if inchi_bb == False and smiles_bb == False:
         tmp_str = 'Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
-        print_le(tmp_str,"Aborting due to wrong molecule description.")
+        print_le(tmp_str, output_dir,"Aborting due to wrong molecule description.")
     else:
         return smiles
 
@@ -532,7 +532,7 @@ def unique_structs(mol, smarts):
     num_unique_matches = len(smarts.findall(mol))
     return num_unique_matches
     
-def generator(combi_type, init_mol_list, gen_len, rules_dict):
+def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
     """
     Function that creates a new generation of molecules with the initial building blocks provided and the current generation of molecules.
 
@@ -609,13 +609,13 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict):
         if rank == 0:
             lib_temp = list(chain.from_iterable(lib_temp))
             library.append(lib_temp)
-            print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(library[gen+1])))
-            print_l('Total duplicates removed in generation number '+str(gen+1)+' is '+str(sum(duplicates)))
+            print_l('Total molecules generated in generation number '+str(gen+1)+' is '+str(len(library[gen+1])), output_dir)
+            print_l('Total duplicates removed in generation number '+str(gen+1)+' is '+str(sum(duplicates)), output_dir)
         library = comm.bcast(library, root=0)
     
     
     wt2 = MPI.Wtime()
-    print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt2-wt1))+'\n')
+    print_l('Total time taken in generation number '+str(gen+1)+' is '+str('%.3g'%(wt2-wt1))+'\n', output_dir)
     return library[-1]
     
 def reverse_mol(mol, atoms):
@@ -675,7 +675,7 @@ def reverse_mol(mol, atoms):
     smiles = mol.write("can")[:-2]
     return smiles
 
-def print_l(sentence):
+def print_l(sentence, output_dir):
     """Print to logfile.
 
     Parameters
@@ -688,11 +688,13 @@ def print_l(sentence):
 
     """
     if rank == 0:
-        logfile = open('logfile.txt','a')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logfile = open(os.path.join(output_dir+'logfile.txt'),'a')
         print(sentence)
         logfile.write(str(sentence)+"\n")
 
-def print_le(sentence, msg="Aborting the run"):
+def print_le(sentence, output_dir, msg="Aborting the run"):
     """Print to both error file and logfile and then exit code.
 
     Parameters
@@ -705,8 +707,10 @@ def print_le(sentence, msg="Aborting the run"):
 
     """
     if rank == 0:
-        logfile = open('logfile.txt','a')
-        error_file = open('error_file.txt','a')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logfile = open(os.path.join(output_dir+'logfile.txt'),'a')
+        error_file = open(os.path.join(output_dir+'error_file.txt'),'a')
         print(sentence)
         logfile.write(sentence+"\n")
         error_file.write(sentence+"\n")
@@ -949,23 +953,23 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     except:
         tmp_str = "Config file does not exist. "
         tmp_str = tmp_str+"Please provide correct config file.\n"
-        print_le(tmp_str,"Aborting due to wrong file.")
+        print_le(tmp_str, output_dir,"Aborting due to wrong file.")
     
-    print_l("Reading generation rules \n")
-    rules_dict, args = get_rules(rulesFile)
+    print_l("Reading generation rules \n", output_dir)
+    rules_dict, args = get_rules(rulesFile, output_dir)
     BB_file = building_blocks_file
     combi_type, gen_len, outfile_type, max_fpf, lib_name = args
     gen_len, max_fpf = int(gen_len), int(max_fpf)
 
     ## Reading the building blocks from the input file
     initial_mols = []
-    print_l("Reading building blocks from the file \'"+BB_file+'\'\n')
+    print_l("Reading building blocks from the file \'"+BB_file+'\'\n', output_dir)
     try :
         infile = open(BB_file)
     except:
         tmp_str = "Building blocks file "+BB_file+" does not exist. "
         tmp_str = tmp_str+"Please provide correct building blocks file.\n"
-        print_le(tmp_str,"Aborting due to wrong file.")
+        print_le(tmp_str, output_dir,"Aborting due to wrong file.")
     i_smi_list = []
     for i,line in enumerate(infile):
         smiles = line.strip()
@@ -973,7 +977,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             continue
         if '[X]' in smiles:
             smiles = smiles.replace('[X]','[Ra]')
-        smiles = check_building_blocks(smiles,i+1,BB_file)
+        smiles = check_building_blocks(smiles,i+1,BB_file, output_dir)
         # removing duplicates in the input list based on canonical smiles
         temp = molecule(smiles, 'F'+str(len(initial_mols)+1))
         is_duplicate = False
@@ -985,14 +989,14 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             initial_mols.append(temp)
             i_smi_list.append(temp['can_smiles'])
 
-    print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n')
-    print_l('unique SMILES: \n')
-    print_l(i_smi_list)
-    print_l('=============================================================================\n')
+    print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', output_dir)
+    print_l('unique SMILES: \n', output_dir)
+    print_l(i_smi_list, output_dir)
+    print_l('=============================================================================\n', output_dir)
     
     # Generate molecules
-    final_list = generator(combi_type, initial_mols, gen_len, rules_dict)
-    print_l('Total number of molecules generated = '+str(len(final_list))+'\n')
+    final_list = generator(combi_type, initial_mols, gen_len, rules_dict, output_dir)
+    print_l('Total number of molecules generated = '+str(len(final_list))+'\n', output_dir)
 
     # Generating output files based on output file type
     if output_dir is not './':
@@ -1013,12 +1017,12 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
                 os.makedirs(output_dest + lib_name + outfile_type)
             outdata = output_dest + lib_name + outfile_type + "/Final_smiles_output.smi"
             outfile = open(outdata, "w")
-            print_l('Writing molecules SMILES to file \''+outdata+'\'\n')
+            print_l('Writing molecules SMILES to file \''+outdata+'\'\n', output_dir)
             scipy.savetxt(outfile, df_final_list['reverse_smiles'].values, fmt='%s')
         
     # Creating a seperate output file for each molecule. Files are written to folder with specified no. of files per folder.
     else:
-        print_l('Writing molecules with molecule type '+str(outfile_type)+'\n')
+        print_l('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir)
         smiles_to_scatter = []
         if rank == 0:
             if not os.path.exists(output_dest + lib_name + outfile_type):
@@ -1057,9 +1061,8 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             if (val+1)%max_fpf == 0:
                 folder_no = folder_no+1
         
-    print_l('File writing terminated successfully'+'\n')
+    print_l('File writing terminated successfully'+'\n', output_dir)
     wt2 = MPI.Wtime()
-    print_l('Total time_taken '+str('%.3g'%(wt2-wt1))+'\n')
-    os.system('mv logfile.txt errorfile.txt '+ output_dest)
+    print_l('Total time_taken '+str('%.3g'%(wt2-wt1))+'\n', output_dir)
     sys.stderr.close()
     sys.exit()
