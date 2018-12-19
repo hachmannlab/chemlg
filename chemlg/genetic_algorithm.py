@@ -158,8 +158,8 @@ class GeneticAlgorithm(object):
                 if len(avl_pos) <= 0:
                     return chromosome
                 r = random.randint(0, len(avl_pos) - 1)                 # random number for selecting handle of 1st bb
-                s = random.randint(0, len(self.bb) - 1)             # random number for selecting bb
-                t = random.randint(1, self.bb[s].spaces)            # random number for selecting handle of 2nd bb
+                s = random.randint(0, len(self.bb) - 1)                 # random number for selecting bb
+                t = random.randint(1, self.bb[s].spaces)                # random number for selecting handle of 2nd bb
                 nested_lookup(chromosome, avl_pos[r]).append(self.bb[s].smiles_struct)
                 for j in range(self.bb[s].spaces):
                     if (j+1) != t:
@@ -184,62 +184,73 @@ class GeneticAlgorithm(object):
         mol_combi: str,
             canonical smiles of the molecule
         """   
-        indi_list = tuple(indi_list)
-        mol_code_list, parent_list, handle_list, mol_combi = [], [], [], ''
+        mol_code_list, parent_list, handle_list, mol_combi, mol_len = [], [], [], '', 0
         f_lists = count_list(indi_list)[1]
 
         parent_list.append([indi_list, indi_list, -1])
         while len(parent_list)!= 0:
             iterate_over = parent_list[-1][1]
-            while len(iterate_over) != 0:
-                for k_ind, k in enumerate(iterate_over):
-                    # continue for loop if item already traversed
-                    if k_ind <= parent_list[-1][2]:
-                        continue
+            new_item = False
+            for k_ind, k in enumerate(iterate_over):
+                # continue for loop if item already traversed
+                if k_ind <= parent_list[-1][2]:
+                    continue
 
-                    # track molecule smiles, its length and the list's nested index in the given list
-                    if not isinstance(k, list):
-                        for mol_objs in self.bb:
-                            if mol_objs.smiles_struct == k:
-                                new_mol_smi = mol_objs.smiles
-                                mol_len = mol_objs.atom_len
-                                break
-                        mol_combi = mol_combi + new_mol_smi + '.'
+                # track molecule smiles, its length and the list's nested index in the given list
+                if not isinstance(k, list):
+                    for mol_objs in self.bb:
+                        if mol_objs.smiles_struct == k:
+                            new_mol_smi = mol_objs.smiles
+                            mol_len += mol_objs.atom_len
+                            break
+                    mol_combi = mol_combi + new_mol_smi + '.'
+                    if iterate_over == indi_list: nested_ind = -1
+                    else:
+                        iterate_over.insert(0, 'AB')
                         for fl in f_lists:
                             if nested_lookup(indi_list, fl) == iterate_over:
-                                l_ind = fl
+                                nested_ind = fl
                                 break
-                        if iterate_over == indi_list: l_ind = -1
-                        mol_code_list.append((k, mol_len, l_ind))
-                        
-                    else:
-                        if k:
-                            if k[0] == 'C':
-                                handle_2 = k_ind
-                                handle_1 = parent_list[-2][2]
-                                for mol_objs in self.bb:
-                                    if mol_objs.smiles_struct == parent_list[-1][0][0]:
-                                        handle_1 = mol_objs.index_list[handle_1]
-                                    if mol_objs.smiles_struct == parent_list[-1][1][0]:
-                                        handle_2 = mol_objs.index_list[handle_2]
-                                ci_size = 0
-                                # get the index numbers for both handles by checking the molecule codes and their list indices.
-                                for mcl in mol_code_list:
-                                    if mcl[0] == parent_list[-1][0][0] and nested_lookup(indi_list, mcl[2]) == parent_list[-1][0]:
-                                        handle_1 += ci_size
-                                    if mcl[0] == parent_list[-1][1][0] and nested_lookup(indi_list, mcl[2]) == parent_list[-1][1]:
-                                        handle_2 += ci_size
-                                        break
-                                    ci_size += mcl[1]
-                                # append the handle indices to a list
-                                handle_list.append([handle_1, handle_2])
-                            else:
-                                parent_list[-1][2] = k_ind
-                                parent_list.append([iterate_over, k, -1])
-                                break
-                if len(iterate_over) != 0:
-                    del parent_list[-1]
-                    break
+                        del iterate_over[0]
+                    mol_code_list.append((k, mol_len, nested_ind))
+                    
+                else:
+                    if k:
+                        if k[0] == 'C':
+                            handle_2 = k_ind
+                            handle_1 = parent_list[-2][2]
+                            for mol_objs in self.bb:
+                                if mol_objs.smiles_struct == parent_list[-1][0][0]:
+                                    handle_1 = mol_objs.index_list[handle_1 - 1]
+                                if mol_objs.smiles_struct == parent_list[-1][1][0]:
+                                    handle_2 = mol_objs.index_list[handle_2 - 1]
+                            
+                            # get the index numbers for both handles by checking the molecule codes and their list indices.
+                            for ind, mcl in enumerate(mol_code_list):
+                                if mcl[2] == -1:
+                                    continue
+                                if mcl[0] == parent_list[-1][0][0]:
+                                    parent_list[-1][0][0] += 'WW'
+                                    if 'WW' in nested_lookup(indi_list, mcl[2])[0]: 
+                                        handle_1 += mol_code_list[ind-1][1]
+                                    parent_list[-1][0][0] = parent_list[-1][0][0][:-2]
+                                
+                                if mcl[0] == parent_list[-1][1][0]:
+                                    parent_list[-1][1][0] += 'XX'
+                                    if 'XX' in nested_lookup(indi_list, mcl[2])[0]: 
+                                        handle_2 += mol_code_list[ind-1][1]
+                                    parent_list[-1][1][0] = parent_list[-1][1][0][:-2]
+                                    
+                            # append the handle indices to a list
+                            handle_list.append([handle_1, handle_2])
+                        else:
+                            parent_list[-1][2] = k_ind
+                            parent_list.append([iterate_over, k, -1])
+                            new_item = True
+                            break
+            if not new_item:
+                del parent_list[-1]
+                
         # read the collected smiles into pybel
         mol_combi = pybel.readstring('smi', mol_combi)
         # create bonds for each of the handles in handle_list
