@@ -14,7 +14,7 @@ Please input generation rules below. Do not change the order of the options.
 13. Fingerprint matching                    == None
 14. Substructure                            == None
 15. Substructure exclusion                  == None
-16. Include_BB                              == True
+16. Include_BB                              == False
 
 
 Combination type for molecules  :: Link
