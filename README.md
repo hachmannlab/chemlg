@@ -36,12 +36,6 @@ ChemLG graphical config file builder:
     python -m ipykernel install --name my_chemlg_env --display-name "chemlg"
 
 
-ChemLG genetic algorithm module:
-
-    pip install deap
-
-
-
 
 
 ## Contributors:
