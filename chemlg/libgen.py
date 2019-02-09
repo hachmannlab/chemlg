@@ -568,8 +568,8 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
                 for mol2 in init_mol_list:
                     if combi_type.lower() == 'link':
                         new_gen_mol_list += create_link(prev_gen_mol_list[i],mol2,rules_dict)
-                    if combi_type.lower() == 'fusion':
-                        new_gen_mol_list += get_fused(prev_gen_mol_list[i],mol2,rules_dict)
+                    # if combi_type.lower() == 'fusion':
+                        # new_gen_mol_list += get_fused(prev_gen_mol_list[i],mol2,rules_dict)
         new_gen_mol_list = comm.gather(new_gen_mol_list, root=0)
         if rank == 0:
             new_gen_mol_list = list(chain.from_iterable(new_gen_mol_list))      # flatten out the list
@@ -721,217 +721,217 @@ def print_le(sentence, output_dir, msg="Aborting the run"):
     else:
         sys.exit()
 
-def get_atom_pair_list(smiles, type1or2):
-    """
-    Function that returns the list of atom pairs in a molecule that are potential sites for fusion.
+# def get_atom_pair_list(smiles, type1or2):
+#     """
+#     Function that returns the list of atom pairs in a molecule that are potential sites for fusion.
 
-    Parameters
-    ----------
-    smiles: str
-        smiles of molecule
-    type1or2: int
-        integer (1 or 2):
-            1 - if molecule is base molecule onto which other molecule will be fused
-            2 - if molecule is to be fused onto other molecule
+#     Parameters
+#     ----------
+#     smiles: str
+#         smiles of molecule
+#     type1or2: int
+#         integer (1 or 2):
+#             1 - if molecule is base molecule onto which other molecule will be fused
+#             2 - if molecule is to be fused onto other molecule
 
-    Returns
-    -------
+#     Returns
+#     -------
 
-    """
-    mol=pybel.readstring('smi',smiles)
-    atoms=list(mol)
-    atom_pair_list=[]
-    for atom in atoms:
-        if atom.OBAtom.GetAtomicNum() ==88:            
-            index=atom.OBAtom.GetIdx()
-            # OBAtomAtomIter for iterating over neighboring atoms
-            for atom1 in OBAtomAtomIter(mol.OBMol.GetAtom(index)):
-                if atom1.GetAtomicNum() !=6: 
-                    continue
-                atom1_idx=atom1.GetIdx()
-                atom_atoms=[]
-                if type1or2==1:
-                    # iterate over C's neighboring atoms (other C's in ring)
-                    for atom2 in OBAtomAtomIter(atom1):
-                        if atom2.GetAtomicNum() !=6 or atom2.IsInRing()==False: 
-                            continue
-                        hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
-                        if hcount==0:
-                            continue
-                        atom_atoms.append(atom2.GetIdx())
-                    if len(atom_atoms)==2:
-                        for aa in atom_atoms:
-                            atom_pair=[atom1_idx,aa,index]      # [a1-index, a2-index, Ra-index]
-                            atom_pair_list.append(atom_pair)
-                    if len(atom_atoms)==1:
-                        atom_pair_list.append([atom1_idx,atom_atoms[0],index])
-                if type1or2==2:
-                    # iterate over C's neighboring atoms (other C's in ring)
-                    for atom2 in OBAtomAtomIter(atom1):
-                        if atom2.GetAtomicNum() ==88 or atom2.IsInRing()==False: 
-                            continue
-                        hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
-                        if hcount==0:
-                            continue
-                        atom_atoms.append(atom2.GetIdx())
-                    for idx in atom_atoms:
-                        for atom2 in OBAtomAtomIter(atom1):
-                            In_ring=False
-                            atom_pair_list_tmp=[]
-                            atom2_idx=atom2.GetIdx()
-                            if atom2.GetAtomicNum()!=6 or atom2_idx==idx: 
-                                continue
-                            for atom3 in OBAtomAtomIter(atom2):
-                                atom3_idx=atom3.GetIdx()
-                                if atom3_idx==atom1_idx:
-                                    continue
-                                if atom3.IsInRing()==False:
-                                    In_ring=True
-                                    continue
-                                hcount = atom3.ExplicitHydrogenCount() + atom3.ImplicitHydrogenCount()
-                                if hcount!=0:
-                                    atom_pair_list_tmp.append([atom1_idx,atom2_idx,idx,atom3_idx,index])
-                            if In_ring==False:
-                                atom_pair_list += atom_pair_list_tmp
+#     """
+#     mol=pybel.readstring('smi',smiles)
+#     atoms=list(mol)
+#     atom_pair_list=[]
+#     for atom in atoms:
+#         if atom.OBAtom.GetAtomicNum() ==88:            
+#             index=atom.OBAtom.GetIdx()
+#             # OBAtomAtomIter for iterating over neighboring atoms
+#             for atom1 in OBAtomAtomIter(mol.OBMol.GetAtom(index)):
+#                 if atom1.GetAtomicNum() !=6: 
+#                     continue
+#                 atom1_idx=atom1.GetIdx()
+#                 atom_atoms=[]
+#                 if type1or2==1:
+#                     # iterate over C's neighboring atoms (other C's in ring)
+#                     for atom2 in OBAtomAtomIter(atom1):
+#                         if atom2.GetAtomicNum() !=6 or atom2.IsInRing()==False: 
+#                             continue
+#                         hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
+#                         if hcount==0:
+#                             continue
+#                         atom_atoms.append(atom2.GetIdx())
+#                     if len(atom_atoms)==2:
+#                         for aa in atom_atoms:
+#                             atom_pair=[atom1_idx,aa,index]      # [a1-index, a2-index, Ra-index]
+#                             atom_pair_list.append(atom_pair)
+#                     if len(atom_atoms)==1:
+#                         atom_pair_list.append([atom1_idx,atom_atoms[0],index])
+#                 if type1or2==2:
+#                     # iterate over C's neighboring atoms (other C's in ring)
+#                     for atom2 in OBAtomAtomIter(atom1):
+#                         if atom2.GetAtomicNum() ==88 or atom2.IsInRing()==False: 
+#                             continue
+#                         hcount = atom2.ExplicitHydrogenCount() + atom2.ImplicitHydrogenCount()
+#                         if hcount==0:
+#                             continue
+#                         atom_atoms.append(atom2.GetIdx())
+#                     for idx in atom_atoms:
+#                         for atom2 in OBAtomAtomIter(atom1):
+#                             In_ring=False
+#                             atom_pair_list_tmp=[]
+#                             atom2_idx=atom2.GetIdx()
+#                             if atom2.GetAtomicNum()!=6 or atom2_idx==idx: 
+#                                 continue
+#                             for atom3 in OBAtomAtomIter(atom2):
+#                                 atom3_idx=atom3.GetIdx()
+#                                 if atom3_idx==atom1_idx:
+#                                     continue
+#                                 if atom3.IsInRing()==False:
+#                                     In_ring=True
+#                                     continue
+#                                 hcount = atom3.ExplicitHydrogenCount() + atom3.ImplicitHydrogenCount()
+#                                 if hcount!=0:
+#                                     atom_pair_list_tmp.append([atom1_idx,atom2_idx,idx,atom3_idx,index])
+#                             if In_ring==False:
+#                                 atom_pair_list += atom_pair_list_tmp
                         
                             
-    return atom_pair_list, len(atoms)
+#     return atom_pair_list, len(atoms)
 
-def get_fused(mol1, mol2, rules):
-    """Function that returns the list of all molecules resulting from fusion of two molecules.
+# def get_fused(mol1, mol2, rules):
+#     """Function that returns the list of all molecules resulting from fusion of two molecules.
 
-    Parameters
-    ----------
-    mol1: dict
-        molecule dictionary object
-    mol2: dict
-        molecule dictionary object
-    rules: dict
-        dictionary of generation rules
+#     Parameters
+#     ----------
+#     mol1: dict
+#         molecule dictionary object
+#     mol2: dict
+#         molecule dictionary object
+#     rules: dict
+#         dictionary of generation rules
 
-    Returns
-    -------
-    lib_can: list
-        list of all possible fused molecules obtained from the two given molecules 
-    """
-    list1, size1 = get_atom_pair_list(mol1['can_smiles'],1)
-    list2, size2 = get_atom_pair_list(mol2['can_smiles'],2)
-    smiles_combi = mol1['can_smiles'] + '.' + mol2['can_smiles']
-    lib_can, lib_can_nRa = [], []
-    code = mol1.code + ':' + mol2.code
-    for item1 in list1:
-        for item2 in list2:
-            mol_combi= pybel.readstring("smi",smiles_combi)
-            a1_to_set=mol_combi.OBMol.GetAtom(item1[0])
-            a2_to_set=mol_combi.OBMol.GetAtom(item1[1])
-            a3_to_set=mol_combi.OBMol.GetAtom(size1+item2[2])
-            a4_to_set=mol_combi.OBMol.GetAtom(size1+item2[3])
+#     Returns
+#     -------
+#     lib_can: list
+#         list of all possible fused molecules obtained from the two given molecules 
+#     """
+#     list1, size1 = get_atom_pair_list(mol1['can_smiles'],1)
+#     list2, size2 = get_atom_pair_list(mol2['can_smiles'],2)
+#     smiles_combi = mol1['can_smiles'] + '.' + mol2['can_smiles']
+#     lib_can, lib_can_nRa = [], []
+#     code = mol1.code + ':' + mol2.code
+#     for item1 in list1:
+#         for item2 in list2:
+#             mol_combi= pybel.readstring("smi",smiles_combi)
+#             a1_to_set=mol_combi.OBMol.GetAtom(item1[0])
+#             a2_to_set=mol_combi.OBMol.GetAtom(item1[1])
+#             a3_to_set=mol_combi.OBMol.GetAtom(size1+item2[2])
+#             a4_to_set=mol_combi.OBMol.GetAtom(size1+item2[3])
 
-            chng_arom=False
-            if a3_to_set.IsAromatic()==True and a4_to_set.IsAromatic()==True:
-                chng_arom=True
-            bond_to_del=mol_combi.OBMol.GetBond(size1+item2[4],size1+item2[0])
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item1[0],item1[2])
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[1]+size1)
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[2]+size1)
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            bond_to_del=mol_combi.OBMol.GetBond(item2[1]+size1,item2[3]+size1)
-            mol_combi.OBMol.DeleteBond(bond_to_del)
-            atoms=list(mol_combi.atoms)
+#             chng_arom=False
+#             if a3_to_set.IsAromatic()==True and a4_to_set.IsAromatic()==True:
+#                 chng_arom=True
+#             bond_to_del=mol_combi.OBMol.GetBond(size1+item2[4],size1+item2[0])
+#             mol_combi.OBMol.DeleteBond(bond_to_del)
+#             bond_to_del=mol_combi.OBMol.GetBond(item1[0],item1[2])
+#             mol_combi.OBMol.DeleteBond(bond_to_del)
+#             bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[1]+size1)
+#             mol_combi.OBMol.DeleteBond(bond_to_del)
+#             bond_to_del=mol_combi.OBMol.GetBond(item2[0]+size1,item2[2]+size1)
+#             mol_combi.OBMol.DeleteBond(bond_to_del)
+#             bond_to_del=mol_combi.OBMol.GetBond(item2[1]+size1,item2[3]+size1)
+#             mol_combi.OBMol.DeleteBond(bond_to_del)
+#             atoms=list(mol_combi.atoms)
             
-            mol_combi.OBMol.AddBond(item1[1],item2[2]+size1,1,0,-1)
-            mol_combi.OBMol.AddBond(item1[0],item2[3]+size1,1,0,-1)
+#             mol_combi.OBMol.AddBond(item1[1],item2[2]+size1,1,0,-1)
+#             mol_combi.OBMol.AddBond(item1[0],item2[3]+size1,1,0,-1)
             
             
-            mol_combi_new= pybel.readstring("smi",str(mol_combi))
-            atoms_new=list(mol_combi_new)
+#             mol_combi_new= pybel.readstring("smi",str(mol_combi))
+#             atoms_new=list(mol_combi_new)
             
-            for atoms in atoms_new:
-                index=atoms.OBAtom.GetIdx()
-                neigh_atm=False
-                for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
-                    neigh_atm=True
-                if neigh_atm==False:
-                    mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
+#             for atoms in atoms_new:
+#                 index=atoms.OBAtom.GetIdx()
+#                 neigh_atm=False
+#                 for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
+#                     neigh_atm=True
+#                 if neigh_atm==False:
+#                     mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
             
-            if a1_to_set.GetHeteroValence()==1 or a2_to_set.GetHeteroValence()==1:
-                continue
+#             if a1_to_set.GetHeteroValence()==1 or a2_to_set.GetHeteroValence()==1:
+#                 continue
                 
-            can_mol_combi = mol_combi_new.write("can")
+#             can_mol_combi = mol_combi_new.write("can")
             
-            if can_mol_combi not in lib_can_nRa:
-                mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
-                atoms=list(mol_combi_new.atoms)
-                shd_add=True
-                for atom in atoms:                
-                    a =atom.OBAtom.CountBondsOfOrder(3)
-                    b =atom.OBAtom.CountBondsOfOrder(2)
-                    c =atom.OBAtom.CountBondsOfOrder(1)
-                    tot_bnds= a*3+b*2+c*1
+#             if can_mol_combi not in lib_can_nRa:
+#                 mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
+#                 atoms=list(mol_combi_new.atoms)
+#                 shd_add=True
+#                 for atom in atoms:                
+#                     a =atom.OBAtom.CountBondsOfOrder(3)
+#                     b =atom.OBAtom.CountBondsOfOrder(2)
+#                     c =atom.OBAtom.CountBondsOfOrder(1)
+#                     tot_bnds= a*3+b*2+c*1
                     
-                    if tot_bnds>4:
-                        shd_add=False
+#                     if tot_bnds>4:
+#                         shd_add=False
                         
-                if if_add(mol_combi_new,rules,code)==True and shd_add==True:
-                    lib_can.append([str(can_mol_combi),mol_wt])
+#                 if if_add(mol_combi_new,rules,code)==True and shd_add==True:
+#                     lib_can.append([str(can_mol_combi),mol_wt])
 
-                for atom in atoms:
-                    if atom.OBAtom.GetAtomicNum()==88:
-                        atom.OBAtom.SetAtomicNum(1)
+#                 for atom in atoms:
+#                     if atom.OBAtom.GetAtomicNum()==88:
+#                         atom.OBAtom.SetAtomicNum(1)
                 
-                lib_can_nRa.append(str(can_mol_combi))
+#                 lib_can_nRa.append(str(can_mol_combi))
     
                 
-            if chng_arom==True:
+#             if chng_arom==True:
                 
-                if not a1_to_set.IsAromatic():
-                    a1_to_set.SetAromatic()
-                    a2_to_set.SetAromatic()
-                mol_combi_new= pybel.readstring("smi",str(mol_combi))
-                atoms_new=list(mol_combi_new)
+#                 if not a1_to_set.IsAromatic():
+#                     a1_to_set.SetAromatic()
+#                     a2_to_set.SetAromatic()
+#                 mol_combi_new= pybel.readstring("smi",str(mol_combi))
+#                 atoms_new=list(mol_combi_new)
                 
-                for atoms in atoms_new:
-                    index=atoms.OBAtom.GetIdx()
-                    neigh_atm=False
-                    for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
-                        neigh_atm=True
-                    if neigh_atm==False:
-                        mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
+#                 for atoms in atoms_new:
+#                     index=atoms.OBAtom.GetIdx()
+#                     neigh_atm=False
+#                     for atom in OBAtomAtomIter(mol_combi_new.OBMol.GetAtom(index)):
+#                         neigh_atm=True
+#                     if neigh_atm==False:
+#                         mol_combi_new.OBMol.DeleteAtom(mol_combi_new.OBMol.GetAtom(index))
 
-                can_mol_combi = mol_combi_new.write("can")
+#                 can_mol_combi = mol_combi_new.write("can")
 
-                if can_mol_combi not in lib_can_nRa:
-                    mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
+#                 if can_mol_combi not in lib_can_nRa:
+#                     mol_wt=str(int(mol_combi_new.OBMol.GetMolWt()))
                     
-                    atoms=list(mol_combi_new.atoms)
-                    #print mol_combi_new,'before'
-                    shd_add=True
-                    for atom in atoms:
-                        a =atom.OBAtom.CountBondsOfOrder(3)
-                        b =atom.OBAtom.CountBondsOfOrder(2)
-                        c =atom.OBAtom.CountBondsOfOrder(1)
-                        tot_bnds= a*3+b*2+c*1
+#                     atoms=list(mol_combi_new.atoms)
+#                     #print mol_combi_new,'before'
+#                     shd_add=True
+#                     for atom in atoms:
+#                         a =atom.OBAtom.CountBondsOfOrder(3)
+#                         b =atom.OBAtom.CountBondsOfOrder(2)
+#                         c =atom.OBAtom.CountBondsOfOrder(1)
+#                         tot_bnds= a*3+b*2+c*1
                         
-                        if tot_bnds>4:
-                            shd_add=False
-                    #print if_add(mol_combi_new,mol_wt,rules,code,'f')
-                    if if_add(mol_combi_new,rules,code)==True and shd_add==True:
-                        lib_can.append([str(can_mol_combi),mol_wt])
+#                         if tot_bnds>4:
+#                             shd_add=False
+#                     #print if_add(mol_combi_new,mol_wt,rules,code,'f')
+#                     if if_add(mol_combi_new,rules,code)==True and shd_add==True:
+#                         lib_can.append([str(can_mol_combi),mol_wt])
 
-                        #print mol_combi_new,'after'
-                    for atom in atoms:
-                        if atom.OBAtom.GetAtomicNum()==88:
-                            atom.OBAtom.SetAtomicNum(1)
+#                         #print mol_combi_new,'after'
+#                     for atom in atoms:
+#                         if atom.OBAtom.GetAtomicNum()==88:
+#                             atom.OBAtom.SetAtomicNum(1)
                     
-                    lib_can_nRa.append(str(can_mol_combi))
-    lib_can_c=[]
-    for item in lib_can:
-        lib_can_c.append([item[0][:-2], item[1], mol1['code'] + ':' + mol2[['code']]])
+#                     lib_can_nRa.append(str(can_mol_combi))
+#     lib_can_c=[]
+#     for item in lib_can:
+#         lib_can_c.append([item[0][:-2], item[1], mol1['code'] + ':' + mol2[['code']]])
             
-    return lib_can
+#     return lib_can
 
 def library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./'):
     """Main wrapper function for library generation.
