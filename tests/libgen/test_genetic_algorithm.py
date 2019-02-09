@@ -28,10 +28,8 @@ def test_genetic_algorithm():
                                 config_file=cf_loc,
                                 output_dir='./',
                                 max_indi_len = 20,
-                                weights=(-1.0, ), 
-                                pop_size=30, 
-                                n_generations=20)
-    ga_test.fit()
-    best_ind_df, best_individual = ga_test.search()
+                                pop_size=30)
+    
+    best_ind_df, best_individual = ga_test.search(n_generations=20)
     assert best_ind_df is not None
     assert best_individual is not None
