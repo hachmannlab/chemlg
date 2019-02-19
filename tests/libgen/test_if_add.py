@@ -56,7 +56,7 @@ def test_exceptions():
     val = if_add( '', {'bb_final_lib':False}, 'F1')
     assert not val
 
-    val = if_add( 'smiles', {, 'bb_final_lib':False}, 'F1')
+    val = if_add( 'smiles', {'bb_final_lib':False}, 'F1')
     assert not val
 
     val = if_add( 'CC', {'include_bb': ['O'], 'bb_final_lib':False}, 'F1-F3')

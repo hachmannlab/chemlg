@@ -18,7 +18,7 @@ Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 ## Code Design:
 ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
 
-## Documentation
+## Documentation:
 ChemLG documentation can be found here https://hachmannlab.github.io/chemlg
 
 ## Installation and Dependencies:
