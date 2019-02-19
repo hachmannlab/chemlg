@@ -11,7 +11,7 @@ Config File
 The config.dat file should closely follow the template file provided in the library. The rules for library generation are to be specified as.
 
 Building Blocks:
-Specify the building blocks which must be present in all the molecules in the final library. Expected type: tuple of building block codes
+Specify the building blocks which must be present in all the molecules in the final library. Expected type: tuple of smiles of corresponding building blocks
 
 Number of Bonds:
 Enter the minimum and maximum values of the total number of bonds for all the molecules in the final library (integers). Expected type: tuple (min, max)
