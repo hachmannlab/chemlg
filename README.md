@@ -18,6 +18,9 @@ Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 ## Code Design:
 ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
 
+## Documentation
+ChemLG documentation can be found here https://hachmannlab.github.io/chemlg
+
 ## Installation and Dependencies:
 The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. They can be installed via the conda installer:
 
@@ -27,7 +30,7 @@ The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that the
     conda install -c openbabel openbabel
     conda install -c anaconda mpi4py
     
-You can download ChemML from Python Package Index (PyPI) via pip. 
+You can download ChemLG from Python Package Index (PyPI) via pip. 
 
     pip install chemlg
 
