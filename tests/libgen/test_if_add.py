@@ -105,4 +105,4 @@ def test_exceptions():
     # assert val
 
     # val = if_add( 'CCCC', {'bb_final_lib': False}, 'F1')
-    assert not val 
+    # assert not val 
