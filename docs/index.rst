@@ -1,6 +1,5 @@
 .. ChemLG documentation master file, created by
    sphinx-quickstart on Wed Feb  6 14:34:02 2019.
-   
 
 ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space
 ==========================================================================================================
@@ -10,9 +9,11 @@ ChemLG – A Molecular and Materials Library Generator for the Enumeration and E
    :caption: Contents:
 
 
+
 ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.
 
 
+Github Repository: https://github.com/hachmannlab/chemlg
 
 Program Version: 0.2
 
@@ -22,6 +23,7 @@ Release Date: Feb 20, 2019
 
 (C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
 University at Buffalo - The State University of New York (UB)
+
 Contact: hachmann@buffalo.edu, m27@buffalo.edu
 http://hachmannlab.cbe.buffalo.edu
 
@@ -47,7 +49,7 @@ The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that the
     conda install -c openbabel openbabel
     conda install -c anaconda mpi4py
     
-You can download ChemML from Python Package Index (PyPI) via pip. 
+You can download ChemLG from Python Package Index (PyPI) via pip. 
 
 .. code:: bash
 
@@ -64,7 +66,7 @@ You can test the installation with:
 
 .. toctree::
    :maxdepth: 4
-   :caption: ChemLG documentation
+   :caption: ChemLG Guide
 
    chemlg
 
@@ -77,11 +79,13 @@ Citation
 
 Please cite ChemLG as follows:
 
-    (1) M.A.F. Afzal, J.A. Dudwadkar, J. Hachmann, ChemLG – A Program Suite for the Generation of Compound Libraries and the Survey of Chemical Space, in preparation.
+- M.A.F. Afzal, J.A. Dudwadkar, J. Hachmann, ChemLG – A Program Suite for the Generation of Compound Libraries and the Survey of Chemical Space, in preparation.
 
-    (2) M.A.F. Afzal, J. Hachmann, ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space. Available from: https://hachmannlab.github.io/chemlg. 
+- M.A.F. Afzal, J. Hachmann, ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space. Available from: https://hachmannlab.github.io/chemlg
 
-    (3) J. Hachmann, M.A.F. Afzal, M. Haghighatlari, Y. Pal, Building and Deploying a Cyberinfrastructure for the Data-Driven Design of Chemical Systems and the Exploration of Chemical Space, Mol. Simul. 44 (2018), 921-929. DOI: 10.1080/08927022.2018.1471692
+- J. Hachmann, M.A.F. Afzal, M. Haghighatlari, Y. Pal, Building and Deploying a Cyberinfrastructure for the Data-Driven Design of Chemical Systems and the Exploration of Chemical Space, Mol. Simul. 44 (2018), 921-929. DOI: 10.1080/08927022.2018.1471692
+
+
 
 
 Acknowledgement
