@@ -1,43 +1,101 @@
-ChemLG Input Files
-==================
+Getting Started
+===============
+ChemLG generates molecules based on the following combinatorial 'linking' scheme:
+
+
+.. image:: images/combinatorial.jpg
+   :width: 70%
+   :align: center
+   :alt: Combinatorial linking of two molecules
+
+
+The ChemLG module is executed from the following command line:
+
+.. code:: bash
+
+    chemlgshell -i ./config.dat -b ./building_blocks.dat -o ./output/
+    
+The file names used above are the default values that the program looks for. The -o handle is used to specify the output directory where all the output files will be dumped. As seen from the command line above, the user should provide two input files:
+
+- a file with the configuration/rules for generating the library with the -i handle
+- a file with all the initial building blocks with the -b handle
+
+Templates for both the input files are located at https://github.com/hachmannlab/chemlg/tree/master/chemlg/templates
+
+It is recommended that the user substitutes the required values directly into the respective templates for the input files in order to avoid any conflicts later while executing the program. For more specifics into how to make the input files, look at:
 
 .. toctree::
 
     chemlg.inputs
 
+|
 ChemLG Graphical Input File Builder
 ====================================
+We also offer a way to build the input files via a graphical user interface through a jupyter notebook. The jupyter notebook is very convenient for a user who wishes to visualize the SMILES before entering them into the building blocks file.
 
-.. toctree::
+The following additional packages should be installed in the environment before running the GUI builder.
 
-    chemlg.gui
+.. code:: bash
 
-ChemLG Library
-==============
+    conda install –c conda-forge rdkit
+    conda install ipykernel
+    conda install -c conda-forge ipywidgets
+    python -m ipykernel install --name my_chemlg_env --display-name "chemlg"
 
+To use the GUI, launch jupyter notebook and enter:
 
-chemlg.genetic\_algorithm module
---------------------------------
+.. code:: python
 
-.. automodule:: chemlg.genetic_algorithm
-    :members:
-    :undoc-members:
-    :show-inheritance:
+    from chemlg.templates.main import config_builder
 
-chemlg.libgen module
---------------------
+When the user is done building the input files, there is an option at the end to run the code directly from the jupyter notebook. 
 
-.. automodule:: chemlg.libgen
-    :members:
-    :undoc-members:
-    :show-inheritance:
+|
 
-chemlg.libgen\_tracking module
-------------------------------
+Constrained library generation via Genetic Algorithm
+====================================================
+ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3.
 
-.. automodule:: chemlg.libgen_tracking
-    :members:
-    :undoc-members:
-    :show-inheritance:
+To generate this constrained library using Genetic Algorithm, the user has to specify the following: 
 
+- desired range of target property
+- an objective function
+- Genetic Algorithm parameters
 
+An example usage goes as:
+
+Define the objective function:
+
+.. code:: python
+
+    # File name: example_obj.py
+
+    import pybel
+
+    # This 'objective' function always receives an openbabel object of a molecule ('mol_ob' in the example).
+    def objective(mol_ob):
+        mol2 = pybel.readstring("smi", "c1ccccc1")
+        tanimoto = mol_ob.calcfp()|mol2.calcfp() 
+
+        # tanimoto is the desired property which is returned by the function
+        return tanimoto
+
+Execute ChemLG via Genetic Algorithm:
+
+.. code:: python
+
+    # File name: constrained_lib.py
+
+    from chemlg.genetic_algorithm import GeneticAlgorithm               # import genetic algorithm
+    from example_obj import objective                                   # import objective function
+
+    ga_library = GeneticAlgorithm(evaluate=objective,
+                                bb_file     =  <specify building block file handle here>,
+                                config_file =  <specify config file handle here>,
+                                output_dir  =  <specify output directory here>,
+                                max_indi_len = 20,
+                                pop_size=30)
+    
+    best_ind_df, best_individual = ga_library.search(n_generations=20)
+
+For more information on Genetic Algorithm parameters, refer to ...
