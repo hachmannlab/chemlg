@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Getting Started &mdash; ChemLG 0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Building Blocks File" href="chemlg.inputs.html" />
+    <link rel="prev" title="ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space" href="index.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> ChemLG
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">ChemLG Guide</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="chemlg.inputs.html">Building Blocks File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chemlg.inputs.html#config-file">Config File</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#chemlg-graphical-input-file-builder">ChemLG Graphical Input File Builder</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#constrained-library-generation-via-genetic-algorithm">Constrained library generation via Genetic Algorithm</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">ChemLG</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Getting Started</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/chemlg.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>ChemLG generates molecules based on the following combinatorial ‘linking’ scheme:</p>
+<a class="reference internal image-reference" href="_images/combinatorial.jpg"><img alt="Combinatorial linking of two molecules" class="align-center" src="_images/combinatorial.jpg" style="width: 70%;" /></a>
+<p>The ChemLG module is executed from the following command line:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">chemlgshell</span> <span class="o">-</span><span class="n">i</span> <span class="o">./</span><span class="n">config</span><span class="o">.</span><span class="n">dat</span> <span class="o">-</span><span class="n">b</span> <span class="o">./</span><span class="n">building_blocks</span><span class="o">.</span><span class="n">dat</span> <span class="o">-</span><span class="n">o</span> <span class="o">./</span><span class="n">output</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>The file names used above are the default values that the program looks for. The -o handle is used to specify the output directory where all the output files will be dumped. As seen from the command line above, the user should provide two input files:</p>
+<ul class="simple">
+<li>a file with the configuration/rules for generating the library with the -i handle</li>
+<li>a file with all the initial building blocks with the -b handle</li>
+</ul>
+<p>Templates for both the input files are located at <a class="reference external" href="https://github.com/hachmannlab/chemlg/tree/master/chemlg/templates">https://github.com/hachmannlab/chemlg/tree/master/chemlg/templates</a></p>
+<p>It is recommended that the user substitutes the required values directly into the respective templates for the input files in order to avoid any conflicts later while executing the program. For more specifics into how to make the input files, look at:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="chemlg.inputs.html">Building Blocks File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chemlg.inputs.html#config-file">Config File</a></li>
+</ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="chemlg-graphical-input-file-builder">
+<h1>ChemLG Graphical Input File Builder<a class="headerlink" href="#chemlg-graphical-input-file-builder" title="Permalink to this headline">¶</a></h1>
+<p>We also offer a way to build the input files via a graphical user interface through a jupyter notebook. The jupyter notebook is very convenient for a user who wishes to visualize the SMILES before entering them into the building blocks file.</p>
+<p>The following additional packages should be installed in the environment before running the GUI builder.</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>conda install –c conda-forge rdkit
+conda install ipykernel
+conda install -c conda-forge ipywidgets
+python -m ipykernel install --name my_chemlg_env --display-name &quot;chemlg&quot;
+</pre></div>
+</div>
+<p>To use the GUI, launch jupyter notebook and enter:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">chemlg.templates.main</span> <span class="k">import</span> <span class="n">config_builder</span>
+<span class="n">config_builder</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>When the user is done building the input files, there is an option at the end to run the code directly from the jupyter notebook.</p>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="constrained-library-generation-via-genetic-algorithm">
+<h1>Constrained library generation via Genetic Algorithm<a class="headerlink" href="#constrained-library-generation-via-genetic-algorithm" title="Permalink to this headline">¶</a></h1>
+<p>ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3.</p>
+<p>To generate this constrained library using Genetic Algorithm, the user has to specify the following:</p>
+<ul class="simple">
+<li>desired range of target property</li>
+<li>an objective function</li>
+<li>Genetic Algorithm parameters</li>
+</ul>
+<p>An example usage goes as:</p>
+<p>Define the objective function:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># File name: example_obj.py</span>
+
+<span class="kn">import</span> <span class="nn">pybel</span>
+
+<span class="c1"># This &#39;objective&#39; function always receives an openbabel object of a molecule (&#39;mol_ob&#39; in the example).</span>
+<span class="k">def</span> <span class="nf">objective</span><span class="p">(</span><span class="n">mol_ob</span><span class="p">):</span>
+    <span class="n">mol2</span> <span class="o">=</span> <span class="n">pybel</span><span class="o">.</span><span class="n">readstring</span><span class="p">(</span><span class="s2">&quot;smi&quot;</span><span class="p">,</span> <span class="s2">&quot;c1ccccc1&quot;</span><span class="p">)</span>
+    <span class="n">tanimoto</span> <span class="o">=</span> <span class="n">mol_ob</span><span class="o">.</span><span class="n">calcfp</span><span class="p">()</span><span class="o">|</span><span class="n">mol2</span><span class="o">.</span><span class="n">calcfp</span><span class="p">()</span>
+
+    <span class="c1"># tanimoto is the desired property which is returned by the function</span>
+    <span class="k">return</span> <span class="n">tanimoto</span>
+</pre></div>
+</div>
+<p>Execute ChemLG via Genetic Algorithm:</p>
+<div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># File name: constrained_lib.py</span>
+
+<span class="kn">from</span> <span class="nn">chemlg.genetic_algorithm</span> <span class="k">import</span> <span class="n">GeneticAlgorithm</span>               <span class="c1"># import genetic algorithm</span>
+<span class="kn">from</span> <span class="nn">example_obj</span> <span class="k">import</span> <span class="n">objective</span>                                   <span class="c1"># import objective function</span>
+
+<span class="n">ga_library</span> <span class="o">=</span> <span class="n">GeneticAlgorithm</span><span class="p">(</span><span class="n">evaluate</span><span class="o">=</span><span class="n">objective</span><span class="p">,</span>
+                            <span class="n">bb_file</span>     <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">building</span> <span class="n">block</span> <span class="n">file</span> <span class="n">handle</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">,</span>
+                            <span class="n">config_file</span> <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">config</span> <span class="n">file</span> <span class="n">handle</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">,</span>
+                            <span class="n">output_dir</span>  <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">output</span> <span class="n">directory</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">,</span>
+                            <span class="n">max_indi_len</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+                            <span class="n">pop_size</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+
+<span class="n">best_ind_df</span><span class="p">,</span> <span class="n">best_individual</span> <span class="o">=</span> <span class="n">ga_library</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">n_generations</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For more information on Genetic Algorithm parameters, refer to <a class="reference external" href="https://github.com/hachmannlab/chemlg/blob/master/chemlg/genetic_algorithm.py">https://github.com/hachmannlab/chemlg/blob/master/chemlg/genetic_algorithm.py</a></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="chemlg.inputs.html" class="btn btn-neutral float-right" title="Building Blocks File" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Gaurav Vishwakarma
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
