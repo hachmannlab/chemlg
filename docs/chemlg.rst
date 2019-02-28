@@ -47,6 +47,7 @@ To use the GUI, launch jupyter notebook and enter:
 .. code:: python
 
     from chemlg.templates.main import config_builder
+    config_builder()
 
 When the user is done building the input files, there is an option at the end to run the code directly from the jupyter notebook. 
 
@@ -98,4 +99,4 @@ Execute ChemLG via Genetic Algorithm:
     
     best_ind_df, best_individual = ga_library.search(n_generations=20)
 
-For more information on Genetic Algorithm parameters, refer to ...
+For more information on Genetic Algorithm parameters, refer to https://github.com/hachmannlab/chemlg/blob/master/chemlg/genetic_algorithm.py
