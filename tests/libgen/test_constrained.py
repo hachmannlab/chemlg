@@ -1,4 +1,4 @@
-from chemlg.genetic_algorithm import GeneticAlgorithm
+from chemlg.constrained import GeneticAlgorithm
 import pytest
 import pybel
 import os
