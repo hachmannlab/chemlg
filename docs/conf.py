@@ -22,13 +22,13 @@ import chemlg
 # -- Project information -----------------------------------------------------
 
 project = 'ChemLG'
-copyright = '2019, Gaurav Vishwakarma'
+copyright = '2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal'
 author = 'Gaurav Vishwakarma'
 
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------

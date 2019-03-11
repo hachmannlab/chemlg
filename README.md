@@ -4,6 +4,7 @@
 ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.
 
 Program Version: 0.2
+
 Release Date: Feb 20, 2019
 
 With contributions by:

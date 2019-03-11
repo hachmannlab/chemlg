@@ -21,12 +21,6 @@ Release Date: Feb 20, 2019
 
 
 
-(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
-University at Buffalo - The State University of New York (UB)
-
-Contact: hachmann@buffalo.edu, m27@buffalo.edu
-http://hachmannlab.cbe.buffalo.edu
-
 
 With contributions by:
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI
@@ -95,9 +89,14 @@ ChemLG is based upon work supported by the U.S. National Science Foundation unde
 
 
 
-License
-+++++++
-
-ChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
+License and Copyright
++++++++++++++++++++++
 
 ChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause).
+
+ChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
+(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
+University at Buffalo - The State University of New York (UB)
+
+Contact: hachmann@buffalo.edu, m27@buffalo.edu
+http://hachmannlab.cbe.buffalo.edu
