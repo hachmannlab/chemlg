@@ -684,7 +684,7 @@ def print_l(sentence, output_dir):
     if rank == 0:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        logfile = open(os.path.join(output_dir+'logfile.txt'),'a')
+        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
         print(sentence)
         logfile.write(str(sentence)+"\n")
 
@@ -703,8 +703,8 @@ def print_le(sentence, output_dir, msg="Aborting the run"):
     if rank == 0:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        logfile = open(os.path.join(output_dir+'logfile.txt'),'a')
-        error_file = open(os.path.join(output_dir+'error_file.txt'),'a')
+        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
+        error_file = open(os.path.join(output_dir+'/error_file.txt'),'a')
         print(sentence)
         logfile.write(sentence+"\n")
         error_file.write(sentence+"\n")
@@ -746,7 +746,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         rulesFile = open(config_file)
     except:
         tmp_str = "Config file does not exist. "
-        tmp_str = tmp_str+"Please provide correct config file.\n"
+        tmp_str += "Please provide correct config file.\n"
         print_le(tmp_str, output_dir,"Aborting due to wrong file.")
     print_l("Reading generation rules", output_dir)
     print_l("===================================================================================================", output_dir)
