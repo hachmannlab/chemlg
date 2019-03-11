@@ -6,12 +6,6 @@ ChemLG is a smart and massive parallel molecular library generator for chemical 
 Program Version: 0.2
 Release Date: Feb 20, 2019
 
-
-(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
-University at Buffalo - The State University of New York (UB)
-Contact: hachmann@buffalo.edu, m27@buffalo.edu
-http://hachmannlab.cbe.buffalo.edu
-
 With contributions by:
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 
@@ -22,7 +16,7 @@ ChemLG is developed in the Python 3 programming language and uses OpenBabel and 
 ChemLG documentation can be found here https://hachmannlab.github.io/chemlg
 
 ## Installation and Dependencies:
-The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. They can be installed via the conda installer:
+The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. We suggest the following conda installations:
 
 
     conda create --name my_chemlg_env python=3.6
@@ -40,16 +34,6 @@ You can test the installation with:
     pytest -v
 
 
-Following additional (optional) packages are required (within the environment) to unlock some of the other functionalities of ChemLG:
-
-ChemLG graphical config file builder:
-
-    conda install –c conda-forge rdkit
-    conda install ipykernel
-    conda install -c conda-forge ipywidgets
-    python -m ipykernel install --name my_chemlg_env --display-name "chemlg"
-
-
 
 ## Citation:
 Please cite the use of ChemLG as:
@@ -62,6 +46,11 @@ Please cite the use of ChemLG as:
 ## Acknowledgement
 ChemLG is based upon work supported by the U.S. National Science Foundation under grant #OAC-1751161. It was also supported by start-up funds provided by UB's School of Engineering and Applied Science and UB's Department of Chemical and Biological Engineering, the New York State Center of Excellence in Materials Informatics through seed grant #1140384-8-75163, and the U.S. Department of Energy under grant #DE-SC0017193.
 
-## License:
+## License and Copyright:
 ChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
 ChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause).
+
+(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
+University at Buffalo - The State University of New York (UB)
+Contact: hachmann@buffalo.edu, m27@buffalo.edu
+http://hachmannlab.cbe.buffalo.edu
