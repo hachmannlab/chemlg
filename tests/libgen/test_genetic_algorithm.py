@@ -24,12 +24,14 @@ def test_genetic_algorithm():
     bb_loc = bb_path()
     cf_loc = cf_path()
     ga_test = GeneticAlgorithm(evaluate=objective,
+                                fitness = (('max', 0.01),),
                                 bb_file=bb_loc,
                                 config_file=cf_loc,
-                                output_dir='./',
-                                max_indi_len = 20,
-                                pop_size=30)
+                                output_dir='./output',
+                                crossover_size=5,
+                                mutation_size=5,
+                                algorithm=2)
     
-    best_ind_df, best_individual = ga_test.search(n_generations=20)
-    assert best_ind_df is not None
-    assert best_individual is not None
+    ga_test.search(n_generations=20)
+    print(len(ga_test.population))
+    assert len(ga_test.population) >= 10
