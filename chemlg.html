@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Getting Started &mdash; ChemLG 0.1 documentation</title>
+  <title>Getting Started &mdash; ChemLG 0.2 documentation</title>
   
 
   
@@ -198,14 +198,14 @@ python -m ipykernel install --name my_chemlg_env --display-name &quot;chemlg&quo
 </div>
 <div class="section" id="constrained-library-generation-via-genetic-algorithm">
 <h1>Constrained library generation via Genetic Algorithm<a class="headerlink" href="#constrained-library-generation-via-genetic-algorithm" title="Permalink to this headline">¶</a></h1>
-<p>ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3.</p>
+<p>ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3. The constrained library can also be made to optimize multiple properties at once.</p>
 <p>To generate this constrained library using Genetic Algorithm, the user has to specify the following:</p>
 <ul class="simple">
-<li>desired range of target property</li>
+<li>desired range of target property/properties</li>
 <li>an objective function</li>
 <li>Genetic Algorithm parameters</li>
 </ul>
-<p>An example usage goes as:</p>
+<p>For example:</p>
 <p>Define the objective function:</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># File name: example_obj.py</span>
 
@@ -223,20 +223,19 @@ python -m ipykernel install --name my_chemlg_env --display-name &quot;chemlg&quo
 <p>Execute ChemLG via Genetic Algorithm:</p>
 <div class="code python highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># File name: constrained_lib.py</span>
 
-<span class="kn">from</span> <span class="nn">chemlg.genetic_algorithm</span> <span class="k">import</span> <span class="n">GeneticAlgorithm</span>               <span class="c1"># import genetic algorithm</span>
+<span class="kn">from</span> <span class="nn">chemlg.constrained</span> <span class="k">import</span> <span class="n">GeneticAlgorithm</span>                     <span class="c1"># import genetic algorithm</span>
 <span class="kn">from</span> <span class="nn">example_obj</span> <span class="k">import</span> <span class="n">objective</span>                                   <span class="c1"># import objective function</span>
 
 <span class="n">ga_library</span> <span class="o">=</span> <span class="n">GeneticAlgorithm</span><span class="p">(</span><span class="n">evaluate</span><span class="o">=</span><span class="n">objective</span><span class="p">,</span>
+                            <span class="n">fitness</span>     <span class="o">=</span>  <span class="p">((</span><span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">),</span> <span class="p">)</span>
                             <span class="n">bb_file</span>     <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">building</span> <span class="n">block</span> <span class="n">file</span> <span class="n">handle</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">,</span>
                             <span class="n">config_file</span> <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">config</span> <span class="n">file</span> <span class="n">handle</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">,</span>
-                            <span class="n">output_dir</span>  <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">output</span> <span class="n">directory</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">,</span>
-                            <span class="n">max_indi_len</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
-                            <span class="n">pop_size</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+                            <span class="n">output_dir</span>  <span class="o">=</span>  <span class="o">&lt;</span><span class="n">specify</span> <span class="n">output</span> <span class="n">directory</span> <span class="n">here</span><span class="o">&gt;</span><span class="p">)</span>
 
 <span class="n">best_ind_df</span><span class="p">,</span> <span class="n">best_individual</span> <span class="o">=</span> <span class="n">ga_library</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">n_generations</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>For more information on Genetic Algorithm parameters, refer to <a class="reference external" href="https://github.com/hachmannlab/chemlg/blob/master/chemlg/genetic_algorithm.py">https://github.com/hachmannlab/chemlg/blob/master/chemlg/genetic_algorithm.py</a></p>
+<p>For more information on Genetic Algorithm parameters, refer to <a class="reference external" href="https://github.com/hachmannlab/chemlg/blob/master/chemlg/constrained.py">https://github.com/hachmannlab/chemlg/blob/master/chemlg/constrained.py</a></p>
 </div>
 
 
@@ -259,7 +258,7 @@ python -m ipykernel install --name my_chemlg_env --display-name &quot;chemlg&quo
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, Gaurav Vishwakarma
+        &copy; Copyright 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
 
     </p>
   </div>

@@ -55,15 +55,15 @@ When the user is done building the input files, there is an option at the end to
 
 Constrained library generation via Genetic Algorithm
 ====================================================
-ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3.
+ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3. The constrained library can also be made to optimize multiple properties at once.
 
 To generate this constrained library using Genetic Algorithm, the user has to specify the following: 
 
-- desired range of target property
+- desired range of target property/properties
 - an objective function
 - Genetic Algorithm parameters
 
-An example usage goes as:
+For example:
 
 Define the objective function:
 
@@ -87,16 +87,15 @@ Execute ChemLG via Genetic Algorithm:
 
     # File name: constrained_lib.py
 
-    from chemlg.genetic_algorithm import GeneticAlgorithm               # import genetic algorithm
+    from chemlg.constrained import GeneticAlgorithm                     # import genetic algorithm
     from example_obj import objective                                   # import objective function
 
     ga_library = GeneticAlgorithm(evaluate=objective,
+                                fitness     =  (("max", 0.7), )
                                 bb_file     =  <specify building block file handle here>,
                                 config_file =  <specify config file handle here>,
-                                output_dir  =  <specify output directory here>,
-                                max_indi_len = 20,
-                                pop_size=30)
+                                output_dir  =  <specify output directory here>)
     
     best_ind_df, best_individual = ga_library.search(n_generations=20)
 
-For more information on Genetic Algorithm parameters, refer to https://github.com/hachmannlab/chemlg/blob/master/chemlg/genetic_algorithm.py
+For more information on Genetic Algorithm parameters, refer to https://github.com/hachmannlab/chemlg/blob/master/chemlg/constrained.py
