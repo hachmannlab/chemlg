@@ -1,5 +1,5 @@
 import rdkit
-from __future__ import print_function
+#from __future__ import print_function
 from ipywidgets import interact, Layout
 import ipywidgets as widgets
 from IPython.display import display
@@ -22,6 +22,35 @@ smiles=[]
 
 # run this function to start the GUI builder.
 def config_builder():
+        display(widgets.HTML(value="<font color=crimson><font size=5><b><u>CHEMLG</font>"))
+        """This function allows the user to provide the GA function required for library generation if the user wants to provide constraints in building the library"""
+        def constraints(x):
+            GA_func=widgets.Textarea(description="GA function",placeholder="Type the GA function to be incorporated for library selection", layout=Layout(width='80%', height='300px'))
+            if x== 'with constraints':
+                display(GA_func)
+                zero=widgets.Button(description="Next")
+                display(zero)
+                def on_button_click(a):
+                    if GA_func.value=="":
+                        print("GA function empty")
+                    else:
+                        gen_func = open("GA_script.txt", "w+")
+                        gen_func.write(GA_func.value)
+                        gen_func.close()
+                        building_blocks()
+                zero.on_click(on_button_click)
+            else:
+                building_blocks()
+
+
+        interact(constraints, x=widgets.RadioButtons(
+                        options=['with constraints', 'without constraints'],
+                        value='without constraints',
+                        description='Run ChemLG ',
+                        disabled=False))
+
+def building_blocks():
+    """This function allows the user to provide the building blocks required for library generation"""
     style = {"description_width": "initial","font_weight":"bold"}
     space_box = widgets.Box(layout=widgets.Layout(height ='20px', width='90%')) 
     display(widgets.HTML(value="<font color=crimson><font size=5><b><u>BUILDING BLOCKS</font>"))
@@ -44,17 +73,17 @@ def config_builder():
                         size = '20'))
 
     def on_proceed(e):
-        o=name.value
+        file_name=name.value
 
 
         try:
-            existing= open(o,"r")
-            if os.stat(o).st_size == 0:           
+            existing= open(file_name,"r")
+            if os.stat(file_name).st_size == 0:
                 print("Building blocks file is empty")
             else:
-                c=existing.readlines()[1:]
+                lines=existing.readlines()[1:]
 
-                for line in c:
+                for line in lines:
 
                     smiles.append(line)
 
@@ -74,6 +103,7 @@ def config_builder():
                             [mol.SetProp('_Name','B'+str(i)) for i,mol in enumerate(mol_lists)]
                             ibu1=Chem.Draw.MolsToGridImage(mol_lists)
                             display(ibu1)
+                            generation_rules()
         except:
             print("The building blocks file does not exist")
         #clear_output()
@@ -113,15 +143,16 @@ def config_builder():
         #display(Javascript('IPython.notebook.execute_cells([1])'))
         building_blocks= open("building_blocks.dat", "w")
 
-        building_blocks.write('Building blocks are:'+'\n')
+        
         for h in range(len(BB_list)):
 
             building_blocks.write(BB_list[h] +'\n')
 
         building_blocks.close()
-        GUI_2()
+        generation_rules()
 
     def on_visualization_clicked(t):
+        #This function visualizes the smiles provided by the user
         global f
         z=BB.value
         z=str(z)
@@ -152,7 +183,8 @@ def config_builder():
     display (tab1)
     
 
-def GUI_2():
+def generation_rules():
+    """This function is used to take input for the generation rules from user."""
     style = {'description_width': 'initial','font_weight':'bold'}
     space_box = widgets.Box(layout=widgets.Layout(height ='55px', width='90%')) 
     second=widgets.Button(description='Next section',layout= Layout(width= 'auto',border='solid 1px black'),style=style)    
@@ -160,7 +192,7 @@ def GUI_2():
     display (second)      
     def second_section(q):
         
-        if os.stat("building_blocks.dat").st_size <= 22:
+        if os.stat("building_blocks.dat").st_size <= 0:
             print("building blocks file is empty")
             
             
@@ -187,6 +219,7 @@ def GUI_2():
             x = widgets.HBox([bondmin, bondmax])
             no_bonds=widgets.VBox(children=[bonds_intro,space_box,x
                                     ])
+           
 
             atommin = widgets.Text(description='Minimum', value='None', style=style)
             atommax = widgets.Text(description='Maximum', value='None', style=style)
@@ -195,6 +228,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             atom=widgets.VBox(children=[atom_intro,space_box,y])
+           
 
             molmin = widgets.Text(description='Minimum', value='None', style=style)
             molmax = widgets.Text(description='Maximum', value='None', style=style)
@@ -203,6 +237,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             mol=widgets.VBox(children=[mol_intro,space_box,z])
+           
 
             ringmin = widgets.Text(description='Minimum', value='None', style=style)
             ringmax = widgets.Text(description='Maximum', value='None', style=style)
@@ -211,7 +246,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             ring=widgets.VBox(children=[ring_intro,space_box,a])
-
+           
             armin = widgets.Text(description='Minimum', value='None', style=style)
             armax = widgets.Text(description='Maximum', value='None', style=style)
             b = widgets.HBox([armin, armax])
@@ -219,6 +254,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             aring=widgets.VBox(children=[aring_intro,space_box,b])
+            
 
             narmin = widgets.Text(description='Minimum', value='None', style=style)
             narmax = widgets.Text(description='Maximum', value='None', style=style)
@@ -227,6 +263,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             naring=widgets.VBox(children=[naring_intro,space_box,c])
+            
 
             smin = widgets.Text(description='Minimum', value='None', style=style)
             smax = widgets.Text(description='Maximum', value='None', style=style)
@@ -235,6 +272,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             sbond=widgets.VBox(children=[smin_intro,space_box,d])
+            
 
             dmin = widgets.Text(description='Minimum', value='None', style=style)
             dmax = widgets.Text(description='Maximum', value='None', style=style)
@@ -243,6 +281,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             dbond=widgets.VBox(children=[dmin_intro,space_box,e])
+           
 
             tmin = widgets.Text(description='Minimum', value='None', style=style)
             tmax = widgets.Text(description='Maximum', value='None', style=style)
@@ -251,6 +290,7 @@ def GUI_2():
             layout = widgets.Layout(height = '45px', width = '90%',
                         size = '20'))
             tbond=widgets.VBox(children=[tmin_intro,space_box,f])
+            
 
             specific_atoms = widgets.Text(
                 value='None',
@@ -437,68 +477,62 @@ def GUI_2():
             #accordion.set_title(16, 'Symmetry')
             display(accordion)
             def generation_file():
-                if bondmin.value=="":
-                    bondmin.value='None'
-                elif building_blocks.value=="":
-                    building_blocks.value='None'
-                elif bondmax.value=="":
-                    bodmax.value='None'
-                elif atommin.value=="":
-                    atommin.value='None'
-                elif atommax.value=="":
-                    atommax.vlaue='None'
-                elif molmin.value=="":
-                    molmin.value='None'
-                elif molmax.value=="":
-                    molmax.value='None'
-                elif ringmin.value=="":
-                    ringmin.value='None'
-                elif armin.value=="":
-                    armin.value='None'
-                elif armax.value=="":
-                    armax.value='None'
-                elif narmin.value=="":
-                    narmin.value='None'
-                elif narmax.value=="":
-                    narmax.value='None'
-                elif smin.value=="":
-                    smin.value='None'
-                elif smax.value=="":
-                    smax.value='None'
-                elif dmin.value=="":
-                    dmin.value='None'
-                elif dmax.value=="":
-                    dmax.value='None'
-                elif tmin.value=="":
-                    tmin.value='None'
-                elif tmin.value=="":
-                    tmin.value='None'
-                elif tmax.value=="":
-                    tmax.value='None'
-                elif specific_atoms.value=="":
-                    specific_atoms.value='None'
-                elif fingerprint_matching.value=="":
-                    fingerprint_matching.value='None'
-                elif substructure.value=="":
-                    substructure.value='None'
-                elif substructure_exclusion.value=="":
-                    substructure_exclusion.value=='None'
+                #This function generates the config.dat file based on the user input for the generation rules
 
-                display(widgets.HTML(value="""<font size=3>Configuration file created""",layout = widgets.Layout(height = '60px', width = '90%',size = '20')))   
-
+                display(widgets.HTML(value="""<font size=3>Configuration file created""",layout = widgets.Layout(height = '60px', width = '90%',size = '20')))
+                
 
                 generation = open("config.dat", "w+")
-                generation.write(
-                    "Please input generation rules below. Do not change the order of the options" + '\n' + "1. Include building blocks == " + building_blocks.value + '\n' +
-                    "2. Min and max no. of bonds == " + bondmin.value + "," + bondmax.value + '\n' + "3. Min and max no. of atoms == " + atommin.value + "," + atommax.value + '\n' +
-                    "4. Min and max mol. weight == " + molmin.value + "," + molmax.value + '\n' + "5. Min and max no. of rings == " + ringmin.value + "," + ringmax.value + '\n' +
-                    "6. Min and max no. of aromatic rings == " + armin.value + "," + armax.value + '\n' + "7. Min and max no. of non aromatic rings == " + narmin.value + "," + narmax.value + '\n' +
-                    "8. Min and max no. of single bonds == " + smin.value + "," + smax.value + '\n' + "9. Min and max no. of double bonds == " + dmin.value + "," + dmax.value + '\n' +
-                    "10. Min and max no. of triple bonds == " + tmin.value + "," + tmax.value + '\n' + "11. Max no. of specific atoms == " + specific_atoms.value + '\n' +
-                    "12. Lipinski's rule == " + lipinski_rule.value + '\n' + "13. Fingerprint matching ('c1ccccc1'-0.1), ('C1CCCC1'-0.1) == " + fingerprint_matching.value + '\n'
-                                                                                                                                                                             "14. Substructure == " + substructure.value + '\n' + "15. Substructure exclusion == " + substructure_exclusion.value + '\n' +
+                generation.write("Please input generation rules below. Do not change the order of the options" + '\n' + "1. Include building blocks == " + building_blocks.value + '\n')
+                if bondmin.value==bondmax.value=="None":
+                    generation.write("2. Min and max no. of bonds == None"+'\n')
+                else:
+                    tbonds=(int(bondmin.value),int(bondmax.value))
+                    generation.write("2. Min and max no. of bonds =="+str(tbonds)+'\n')
+                if atommin.value==atommax.value=="None":
+                    generation.write("3. Min and max no. of atoms == None"+ '\n')
+                else:
+                    tatoms=(int(atommin.value),int(atommax.value))
+                    generation.write("3. Min and max no. of atoms == "+ str(tatoms)+ '\n')
+                if molmin.value==molmax.value=="None":
+                    generation.write("4. Min and max mol. weight == None" + '\n')
+                else:
+                    tmol=(int(molmin.value),int(molmax.value))
+                    generation.write("4. Min and max mol. weight == "+str(tmol) + '\n')
+                if ringmin.value==ringmax.value=="None":
+                    generation.write("5. Min and max no. of rings == None"+ '\n')
+                else:
+                    tring=(int(ringmin.value),int(ringmax.value))
+                    generation.write("5. Min and max no. of rings == "+str(tring)+ '\n')
+                if armin.value==armax.value=="None":
+                    generation.write("6. Min and max no. of aromatic rings == None" + '\n')
+                else:
+                    taro=(int(armin.value),int(armax.value))
+                    generation.write("6. Min and max no. of aromatic rings == " +str(taro)+ '\n')
+                if narmin.value==narmax.value=="None":
+                    generation.write("7. Min and max no. of non aromatic rings == None" + '\n')
+                else:
+                    tnar=(int(narmin.value),int(narmax.value))
+                    generation.write("7. Min and max no. of non aromatic rings == "+str(tnar) + '\n')
+                if smin.value==smax.value=="None":
+                    generation.write("8. Min and max no. of single bonds == None" + '\n')
+                else:
+                    tsbond=(int(smin.value),int(smax.value))
+                    generation.write("8. Min and max no. of single bonds == "+str(tsbond) + '\n')
+                if dmin.value==dmax.value=="None":
+                    generation.write("9. Min and max no. of double bonds == None" + '\n')
+                else:
+                    tdbond=(int(dmin.value),int(dmax.value))
+                    generation.write("9. Min and max no. of double bonds == "+str(tdbond) + '\n')
+                if tmin.value==tmax.value=="None":
+                    generation.write("10. Min and max no. of triple bonds == None"+'\n')
+                else:
+                    ttbond=(int(tmin.value),int(tmax.value))
+                    generation.write("10. Min and max no. of triple bonds == "+str(ttbond)+'\n') 
+                generation.write("11. Max no. of specific atoms == " + specific_atoms.value + '\n' +
+                    "12. Lipinski's rule == " + lipinski_rule.value + '\n' + "13. Fingerprint matching == " + fingerprint_matching.value + '\n'+"14. Substructure == " + substructure.value + '\n' + "15. Substructure exclusion == " + substructure_exclusion.value + '\n' +
                     "15. Include_BB == " + Include_BB.value + '\n'+'\n'+'\n'+'\n'+'\n'+'\n'+
-                    "Building blocks file :: "+input_file.value+'\n'+
+                    #"Building blocks file :: "+input_file.value+'\n'+
                     "Combination type for molecules :: "+combination_type.value+'\n'+
                     "Number of generations :: "+str(generation_level.value)+'\n'+
                     "Molecule format in output file ::"+output_type.value+'\n'+
@@ -511,10 +545,37 @@ def GUI_2():
             display(button1)
 
             def on_button_clicked(b):
+                #This function takes the environment name to run chemlg as the input from the user
+                clear_output()
                 generation_file()
+                global envi
+                envi_intro=widgets.HTML("""Specify the virual environment in which you want to run the library generator""",
+            layout = widgets.Layout(height = '50px', width = '90%',
+                        size = '20'))
+                envi=widgets.Text(
+                value='None',
+                placeholder='Enter Environment name',
+                description='Environment name',
+                style=style)
+                environment=widgets.VBox(children=[envi_intro,envi])
+                display(environment)
+                run=widgets.Button(description='Run Chemlg',layout= Layout(width= 'auto',border='solid 1px black'),style=style)
+                display(run)
+                run.on_click(on_run_clicked)
+            def on_run_clicked(c):
+                if envi.value=="":
+                    envi.value=='None'
+                    os.system("chemlgshell -i config.dat -b building_blocks.dat -o ./")
+                else:
+                    try:
+                        os.system("activate "+envi.value)
+                    except:
+                        os.system("source activate"+envi.value)
+                    os.system("chemlgshell -i config.dat -b building_blocks.dat -o ./") 
+
 
 
 
             button1.on_click(on_button_clicked)
     second.on_click(second_section)
-    
+config_builder()
