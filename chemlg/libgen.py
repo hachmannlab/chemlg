@@ -121,7 +121,7 @@ def lipinski(mol):
 
     return desc
 
-def if_add(molc, rules, code):
+def if_add(molc, rules, code, check_min=False):
     """
     Determines if a molecule should be included in the library based on the generation rules given.
 
@@ -167,19 +167,13 @@ def if_add(molc, rules, code):
     
     if '2' in rules:
         bonds = mol_ob.OBMol.NumBonds()
-        if not rules['2'][0] <= bonds <= rules['2'][1]:
+        if not bonds <= rules['2'][1]:
             add = False
             del mol
             return add
     
     if '3' in rules:
-        if not rules['3'][0] <= len(list(mol_ob.atoms)) <= rules['3'][1]:
-            add = False
-            del mol
-            return add
-
-    if '4' in rules:
-        if not rules['4'][0] <= int(mol_ob.OBMol.GetMolWt()) <= rules['4'][1]:
+        if not len(list(mol_ob.atoms)) <= rules['3'][1]:
             add = False
             del mol
             return add
@@ -187,7 +181,7 @@ def if_add(molc, rules, code):
     # Calculating no.of rings
     if '5' in rules:
         rings = len(mol_ob.OBMol.GetSSSR())
-        if not rules['5'][0] <= rings <= rules['5'][1]:
+        if not rings <= rules['5'][1]:
             add = False
             del mol
             return add
@@ -201,33 +195,33 @@ def if_add(molc, rules, code):
             else:
                 no_non_ar += 1
         if '6' in rules:
-            if not rules['6'][0] <= no_ar <= rules['6'][1]:
+            if not no_ar <= rules['6'][1]:
                 add = False
                 del mol
                 return add
         if '7' in rules:
-            if not rules['7'][0] <= no_non_ar <= rules['7'][1]:
+            if not no_non_ar <= rules['7'][1]:
                 add = False
                 del mol
                 return add
 
     if '8' in rules:
         no_s_bonds=unique_structs(mol_ob,"*-*")
-        if not rules['8'][0] <= no_s_bonds <= rules['8'][1]:
+        if not no_s_bonds <= rules['8'][1]:
             add = False
             del mol
             return add
 
     if '9' in rules:
         no_d_bonds=unique_structs(mol_ob,"*=*")
-        if not rules['9'][0] <= no_d_bonds <= rules['9'][1]:
+        if not no_d_bonds <= rules['9'][1]:
             add = False
             del mol
             return add
 
     if '10' in rules:
         no_t_bonds=unique_structs(mol_ob,"*#*")
-        if not rules['10'][0] <= no_t_bonds <= rules['10'][1]:
+        if not no_t_bonds <= rules['10'][1]:
             add = False
             del mol
             return add
@@ -275,6 +269,76 @@ def if_add(molc, rules, code):
                 add = False
                 del mol
                 return add    
+
+    # check minimum criteria if flag is true
+    if check_min:
+
+        if '2' in rules:
+            bonds = mol_ob.OBMol.NumBonds()
+            if not rules['2'][0] <= bonds:
+                add = False
+                del mol
+                return add
+        
+        if '3' in rules:
+            if not rules['3'][0] <= len(list(mol_ob.atoms)):
+                add = False
+                del mol
+                return add
+
+        if '4' in rules:
+            if not rules['4'][0] <= int(mol_ob.OBMol.GetMolWt()) <= rules['4'][1]:
+                add = False
+                del mol
+                return add
+
+        # Calculating no.of rings
+        if '5' in rules:
+            rings = len(mol_ob.OBMol.GetSSSR())
+            if not rules['5'][0] <= rings:
+                add = False
+                del mol
+                return add
+
+        # Calculating no.of aromatic and non-aromatic rings
+        if '6' in rules or '7' in rules:
+            no_ar, no_non_ar= 0, 0
+            for r in mol_ob.OBMol.GetSSSR():
+                if r.IsAromatic():
+                    no_ar += 1
+                else:
+                    no_non_ar += 1
+            if '6' in rules:
+                if not rules['6'][0] <= no_ar:
+                    add = False
+                    del mol
+                    return add
+            if '7' in rules:
+                if not rules['7'][0] <= no_non_ar:
+                    add = False
+                    del mol
+                    return add
+
+        if '8' in rules:
+            no_s_bonds=unique_structs(mol_ob,"*-*")
+            if not rules['8'][0] <= no_s_bonds:
+                add = False
+                del mol
+                return add
+
+        if '9' in rules:
+            no_d_bonds=unique_structs(mol_ob,"*=*")
+            if not rules['9'][0] <= no_d_bonds:
+                add = False
+                del mol
+                return add
+
+        if '10' in rules:
+            no_t_bonds=unique_structs(mol_ob,"*#*")
+            if not rules['10'][0] <= no_t_bonds:
+                add = False
+                del mol
+                return add
 
     del mol
     return add
@@ -392,16 +456,10 @@ def get_rules(config_file, output_dir):
                 continue
             
             elif i == 1:
-                in_frags = []
                 if not isinstance(eval(value), tuple):
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
                     print_le(tmp_str, output_dir, "Aborting due to wrong generation rule.")
-                for item in eval(value):
-                    if 'F' in item:
-                        in_frags.append(item.strip())
-                    else:
-                        tmp_str = "ERROR: Wrong generation rule provided for "+line
-                        print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
+                in_frags = [i.strip() for i in eval(value)]
                 rules_dict['include_bb'] = in_frags
                 continue
                 
@@ -580,7 +638,7 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
                     ## Removing Francium and Radium atoms. It is easy to convert Francium atom to hydrogen than deleting the atom
                     if atom.OBAtom.GetAtomicNum() == 87 or atom.OBAtom.GetAtomicNum() == 88:
                         atom.OBAtom.SetAtomicNum(1)
-                new_gen_mol_list[i]['reverse_smiles'] = reverse_mol(mol_ob, list(mol_ob.atoms))
+                new_gen_mol_list[i]['reverse_smiles'] = mol_ob.write("can")
         
         # Creating a dictionary of molecules. This is a faster way to prevent duplicates. SMILES dictionary might have duplicates. 
         # Since the duplicates will only be in one Mol Wt list of the dictionary, we can divide Mol Wts into available processors.
@@ -596,9 +654,10 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
             mol_wt, mols = items[items_ind][0], items[items_ind][1]                     # mols --> list of molecules in that mol_wt category
             tmp_list = []
             for i in mols:
-                mol_ob = pybel.readstring("smi", i['reverse_smiles'])
-                if mol_ob.write("can") not in tmp_list:
-                    tmp_list.append(mol_ob.write("can"))
+                if i['reverse_smiles'] not in tmp_list:
+                    if gen == gen_len - 1:
+                        if not if_add(i['reverse_smiles'], rules_dict, "min", check_min=True): continue
+                    tmp_list.append(i['reverse_smiles'])
                     lib_temp.append(i)
                 else: duplicates += 1
         lib_temp = comm.gather(lib_temp, root=0)

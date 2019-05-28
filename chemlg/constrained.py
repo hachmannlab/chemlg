@@ -6,6 +6,7 @@ import pandas as pd
 import time
 import math
 from copy import deepcopy
+import os
 from chemlg.libgen import *
 
 
@@ -309,10 +310,11 @@ class GeneticAlgorithm(object):
         mol_combi = pybel.readstring("smi", mol_combi_smiles)
 
         if not if_add(mol_combi_smiles, self.rules_dict, code='a'): 
-            fit_val = tuple([-1000.0 * i[0] for i in self.fit_val])
+            return mol_combi_smiles, None
         else:
             fit_val = self.evaluate(mol_combi)
-        return mol_combi_smiles, tuple([fit_val])
+            if isinstance(fit_val, (tuple, list)): return mol_combi_smiles, tuple(fit_val)
+            else: return mol_combi_smiles, tuple([fit_val])
         
     def crossover(self, child1, child2):
         child1, child2 = deepcopy(list(child1)), deepcopy(list(child2))
@@ -470,13 +472,16 @@ class GeneticAlgorithm(object):
         """
         def fit_eval(invalid_ind, fit_list):
             epop, fit_list = [i[0] for i in fit_list], list(fit_list)
+            new_pop = []
             if invalid_ind: 
                 invalid_ind = [i for i in invalid_ind if i not in epop]
                 obval = [self.pre_eval(i) for i in invalid_ind]
                 rev_smiles, fitnesses = [i[0] for i in obval], [i[1] for i in obval]
                 for ind, fit, r_smi in zip(invalid_ind, fitnesses, rev_smiles):
-                    fit_list.append((deepcopy(ind), fit, r_smi))
-            return tuple(fit_list)
+                    if fit is not None:
+                        fit_list.append((deepcopy(ind), fit, r_smi))
+                        new_pop.append(deepcopy(ind))
+            return tuple(fit_list), new_pop
 
         if init_ratio >=1 or crossover_ratio >=1 or (init_ratio+crossover_ratio)>=1: raise Exception("Sum of parameters init_ratio and crossover_ratio should be in the range (0,1)")
         if self.population is not None:
@@ -487,25 +492,24 @@ class GeneticAlgorithm(object):
             fit_list = ()
         
         # Evaluate the initial population
-        fit_list = fit_eval(pop, fit_list)
+        fit_list, pop = fit_eval(pop, fit_list)
 
         total_pop = []
         for xg in range(n_generations):
-            
             cross_pop, mutant_pop, co_pop, psum = [], [], [], len(fit_list)
-            print(xg, psum)
             # Generate crossover population
             co_pop = self.select(pop, fit_list, self.crossover_size)
-            c_total = co_pop + pop + total_pop
+            shflist = pop + total_pop
+            random.shuffle(shflist)
+            c_total = co_pop + shflist
             for child1, child2 in zip(c_total[::2], c_total[1::2]):
                 if (len(fit_list) - psum) >= self.crossover_size: break
                 c1, c2 = self.crossover(child1, child2)
                 epop = [i[0] for i in fit_list]
                 if c1 in epop or c2 in epop or c1==c2: continue
-                fit_list = fit_eval([c1, c2], fit_list)
-                cross_pop.extend([c1, c2])
+                fit_list, new_cpop = fit_eval([c1, c2], fit_list)
+                cross_pop.extend(new_cpop)
             
-            print("cross: ", len(fit_list))
             # Generate mutation population
             if self.algo == 4:
                 mu_pop = self.select(cross_pop, fit_list, self.mutation_size)
@@ -513,14 +517,13 @@ class GeneticAlgorithm(object):
                 mu_pop = self.select(pop, fit_list, self.mutation_size)
             
             pre_mu = len(fit_list)
-            for mutant in mu_pop + cross_pop + pop + total_pop:
+            for mutant in mu_pop + cross_pop + total_pop + pop:
                 if (len(fit_list) - pre_mu) >= self.mutation_size: break
                 mt = self.custom_mutate(mutant)
                 if mt in [i[0] for i in fit_list]: continue
-                mutant_pop.append(mt)
-                fit_list = fit_eval([mt], fit_list)
-            print("mut: ", len(fit_list))
-
+                fit_list, new_mpop = fit_eval([mt], fit_list)
+                mutant_pop.extend(new_mpop)
+            
             # Select the next generation individuals
             total_pop = pop + cross_pop + mutant_pop
             if self.algo == 2:
