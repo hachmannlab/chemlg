@@ -1,20 +1,12 @@
-from __future__ import print_function
 import sys
 import pybel
-from openbabel import OBAtomAtomIter
 import scipy
 from collections import defaultdict
-from mpi4py import MPI
 import os
-from itertools import islice,chain
+from itertools import chain
 import pandas as pd
-import inspect
+import time
 
-## initializing MPI to time, to check the MPI efficiency
-wt1 = MPI.Wtime()
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-mpisize = comm.Get_size()
 
 class OutputGrabber(object):
     """""
@@ -94,6 +86,202 @@ def molecule(smiles, code):
 
     return mol
 
+def reverse_mol(mol, atoms):
+    """
+    Function that converts a molecule's potential reactive sites into H atoms. New molecules are generated at only those sites which have H atoms.
+    If user does not provide any [Ra] handles in the molecule, all available H atom sites are considered for reaction.
+    If user provides specific handles for reaction by replacing H atoms with [Ra] atoms, only those sites will be considered for reaction. For the 
+    reaction, the H atoms are replaced with Fr atoms so that they are not considered as potential sites, and the Ra atoms are converted to H atoms. 
+
+    Parameters
+    ----------
+    mol: object
+        OpenBabel object of a molecule
+    atoms: list
+        list of atoms in the molecule
+
+    Returns
+    -------
+    smiles: str
+        canonical smiles of transformed molecule
+    """
+    
+    atom_num = [] # to append atomic number of atoms present in molecule
+    myFr = pybel.readstring('smi',"[Fr]")
+    Fratom = myFr.OBMol.GetAtom(1)
+
+    ## Make a list of atomic numbers for all atoms that are in the molecule
+    for atom in atoms:
+        atom_num.append(atom.OBAtom.GetAtomicNum())
+    
+    
+    if 88 in atom_num:
+        ## generate a new molecule for each loop so that the old one is not changed
+        #newmol=pybel.readstring("smi",smiles)
+        
+        for atom in atoms:
+            ## check the number of hydrogens attached to the atom
+            hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount() # zero for H atom
+            index = atom.OBAtom.GetIdx()
+            
+            ## This is replacing hydrogen atoms with Francium atom
+            while hcount != 0:
+                size = len(list(mol.atoms))
+                mol.OBMol.InsertAtom(Fratom)
+                mol.OBMol.AddBond(index,size+1,1,0,-1)
+                hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
+                
+        ## As the atoms are now changed in molecule, we will have to define atom list again
+        atoms = list(mol.atoms)
+        
+        ## Replace all Radium atoms with hydrogen, which makes them site points.
+        
+        for atom in atoms:
+            if atom.OBAtom.GetAtomicNum() == 88:
+                atom.OBAtom.SetAtomicNum(1)
+                   
+    smiles = mol.write("can")[:-2]
+    return smiles
+
+def check_building_blocks(smiles, line, file_name, output_dir, mpidict):
+    """Validate the building blocks input (smiles or inchi) and return the smiles of the molecule
+
+    Parameters
+    ----------
+    smiles: str
+        molecule representation in 2d format (smiles/inchi)
+    line: int
+        line number in input file
+    file_name: str
+        file handle
+
+    Returns
+    -------
+    smiles: str
+        smiles representation of molecule
+    """
+    inchi_bb, smiles_bb = True, True
+    try:
+        mol = pybel.readstring("inchi",smiles)
+        smiles = str(mol)
+        smiles = smiles.strip()
+    except:
+        inchi_bb = False
+    
+    try:
+        mol = pybel.readstring("smi",smiles)
+    except:
+        smiles_bb = False
+
+    if inchi_bb == False and smiles_bb == False:
+        tmp_str = 'Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
+        print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong molecule description.")
+    else:
+        return smiles
+
+    return smiles
+
+def get_rules(config_file, output_dir, mpidict):
+    """ 
+    Function to read generation rules provided in the config file.
+        
+    Parameters
+    ----------
+    config_file: file handle
+
+    Returns
+    -------
+    rules_dict: dict
+        dictionary of generation rules provided by the user. if the user provides default values for any rule, it is not added to the dictionary.
+    lib_args: list
+        list of other input arguments to the library generator
+    """
+    rules_dict, lib_args = {}, []
+
+    for i,line in enumerate(config_file):
+        if i == 0:
+            continue
+        print_l(line[:-1], output_dir, mpidict)
+
+        if '==' in line:
+            words = line.split('==')
+            value = words[1].strip()
+
+            if value == 'None':
+                continue
+            
+            elif i == 1:
+                if not isinstance(eval(value), tuple):
+                    tmp_str = "ERROR: Wrong generation rule provided for "+line
+                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                rules_dict['include_bb'] = [i.strip() for i in eval(value)]
+                continue
+                
+            elif i == 11:
+                if isinstance(eval(value), tuple):
+                    rules_dict['heteroatoms'] = eval(value)
+                else:
+                    tmp_str = "ERROR: Wrong generation rule provided for "+line
+                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                continue
+        
+            elif i == 12:
+                if value == "True":
+                    rules_dict['lipinski'] = True
+                elif value == "False":
+                    continue
+                else:
+                    tmp_str = "ERROR: Wrong generation rule provided for "+line
+                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                continue
+
+            elif i == 13: # This rule is for fingerprint matching
+                target_mols = value.split(',')
+                smiles_to_comp = []
+                for j in target_mols:
+                    target_smiles, tanimoto_index = j.split('-')[0].strip(), j.split('-')[1].strip()
+                    smiles = check_building_blocks(target_smiles,i+1,config_file, output_dir, mpidict)
+                    smiles_to_comp.append([smiles,tanimoto_index])
+                rules_dict['fingerprint'] = smiles_to_comp            
+                continue
+
+            elif i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
+                smiles_l = []
+                for item in value.split(','):
+                    smiles = check_building_blocks(item.strip(),i+1,config_file, output_dir, mpidict)
+                    smiles_l.append(smiles)
+                rules_dict[str(i)] = smiles_l
+                continue
+
+            elif i == 16: # This rule is for inclusion of initial building blocks in the final library
+                if value != 'True' and value != 'False':
+                    tmp_str = "ERROR: Wrong generation rule provided for "+line
+                    tmp_str = tmp_str+"Provide either True or False. \n"
+                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                
+                if value == 'False':
+                    rules_dict['bb_final_lib'] = False
+                elif value == 'True':
+                    rules_dict['bb_final_lib'] = True
+
+                continue
+            
+            elif value != 'None':
+                if not isinstance(eval(value), tuple) or len(eval(value)) != 2:
+                    tmp_str = "ERROR: Wrong generation rule provided for "+line
+                    tmp_str = tmp_str+"Provide the range in tuple format (min, max). \n"
+                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                
+                else:
+                    rules_dict[str(i)] = eval(value)
+            
+        elif '::' in line:
+            words = line.split('::')
+            value = words[1].strip()
+            lib_args.append(value)
+
+    return rules_dict, lib_args
+
 def lipinski(mol):
     """
     Function that returns the values of the Lipinski descriptors.
@@ -120,6 +308,72 @@ def lipinski(mol):
       'logP': mol.calcdesc(['logP'])['logP']}
 
     return desc
+
+def unique_structs(mol, smarts):
+    """
+    Function to calculate the number of given sub-structures (SMARTS) in molecule provided. 
+
+    Parameters
+    ----------
+    mol: object
+        openbabel object of molecule
+    smarts: str
+        smarts representation of sub-structure
+
+    Returns
+    -------
+    num_unique_matches: int
+        number of unique matches found for the given sub-structure in the molecule
+    """
+    smarts = pybel.Smarts(smarts)
+    smarts.obsmarts.Match(mol.OBMol)
+    num_unique_matches = len(smarts.findall(mol))
+    return num_unique_matches
+
+def print_l(sentence, output_dir, mpidict):
+    """Print to logfile.
+
+    Parameters
+    ----------
+    sentence: str
+        string to be printed to logfile
+
+    Returns
+    -------
+
+    """
+    rank = mpidict['rank']
+    if rank == 0:
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
+        print(sentence)
+        logfile.write(str(sentence)+"\n")
+
+def print_le(sentence, output_dir, mpidict, msg="Aborting the run"):
+    """Print to both error file and logfile and then exit code.
+
+    Parameters
+    ----------
+    sentence: str
+        string to be printed to error file and logfile
+
+    Returns
+    -------
+
+    """
+    rank = mpidict['rank']
+    if rank == 0:
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
+        error_file = open(os.path.join(output_dir+'/error_file.txt'),'a')
+        print(sentence)
+        logfile.write(sentence+"\n")
+        error_file.write(sentence+"\n")
+        sys.exit(msg)
+    else:
+        sys.exit()
 
 def if_add(molc, rules, code, check_min=False):
     """
@@ -425,169 +679,8 @@ def get_index_list(mol, atoms):
             atoms_index.append(index)
     
     return atoms_index
-
-def get_rules(config_file, output_dir):
-    """ 
-    Function to read generation rules provided in the config file.
-        
-    Parameters
-    ----------
-    config_file: file handle
-
-    Returns
-    -------
-    rules_dict: dict
-        dictionary of generation rules provided by the user. if the user provides default values for any rule, it is not added to the dictionary.
-    lib_args: list
-        list of other input arguments to the library generator
-    """
-    rules_dict, lib_args = {}, []
-
-    for i,line in enumerate(config_file):
-        if i == 0:
-            continue
-        print_l(line[:-1], output_dir)
-
-        if '==' in line:
-            words = line.split('==')
-            value = words[1].strip()
-
-            if value == 'None':
-                continue
-            
-            elif i == 1:
-                if not isinstance(eval(value), tuple):
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str, output_dir, "Aborting due to wrong generation rule.")
-                in_frags = [i.strip() for i in eval(value)]
-                rules_dict['include_bb'] = in_frags
-                continue
-                
-            elif i == 11:
-                if isinstance(eval(value), tuple):
-                    rules_dict['heteroatoms'] = eval(value)
-                else:
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
-                continue
-        
-            elif i == 12:
-                if value == "True":
-                    rules_dict['lipinski'] = True
-                elif value == "False":
-                    continue
-                else:
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
-                continue
-
-            elif i == 13: # This rule is for fingerprint matching
-                target_mols = value.split(',')
-                smiles_to_comp = []
-                for j in target_mols:
-                    target_smiles, tanimoto_index = j.split('-')[0].strip(), j.split('-')[1].strip()
-                    smiles = check_building_blocks(target_smiles,i+1,config_file, output_dir)
-                    smiles_to_comp.append([smiles,tanimoto_index])
-                rules_dict['fingerprint'] = smiles_to_comp            
-                continue
-
-            elif i == 14 or i == 15:  # This rule for substructure inclusion and exclusion
-                smiles_l = []
-                for item in value.split(','):
-                    smiles = check_building_blocks(item.strip(),i+1,config_file, output_dir)
-                    smiles_l.append(smiles)
-                rules_dict[str(i)] = smiles_l
-                continue
-
-            elif i == 16: # This rule is for inclusion of initial building blocks in the final library
-                if value != 'True' and value != 'False':
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    tmp_str = tmp_str+"Provide either True or False. \n"
-                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
-                
-                if value == 'False':
-                    rules_dict['bb_final_lib'] = False
-                elif value == 'True':
-                    rules_dict['bb_final_lib'] = True
-
-                continue
-            
-            elif value != 'None':
-                if not isinstance(eval(value), tuple) or len(eval(value)) != 2:
-                    tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    tmp_str = tmp_str+"Provide the range in tuple format (min, max). \n"
-                    print_le(tmp_str, output_dir,"Aborting due to wrong generation rule.")
-                
-                else:
-                    rules_dict[str(i)] = eval(value)
-            
-        elif '::' in line:
-            words = line.split('::')
-            value = words[1].strip()
-            lib_args.append(value)
-
-    return rules_dict, lib_args
-
-def check_building_blocks(smiles, line, file_name, output_dir):
-    """Validate the building blocks input (smiles or inchi) and return the smiles of the molecule
-
-    Parameters
-    ----------
-    smiles: str
-        molecule representation in 2d format (smiles/inchi)
-    line: int
-        line number in input file
-    file_name: str
-        file handle
-
-    Returns
-    -------
-    smiles: str
-        smiles representation of molecule
-    """
-    inchi_bb, smiles_bb = True, True
-    try:
-        mol = pybel.readstring("inchi",smiles)
-        smiles = str(mol)
-        smiles = smiles.strip()
-    except:
-        inchi_bb = False
     
-    try:
-        mol = pybel.readstring("smi",smiles)
-    except:
-        smiles_bb = False
-
-    if inchi_bb == False and smiles_bb == False:
-        tmp_str = 'Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
-        print_le(tmp_str, output_dir,"Aborting due to wrong molecule description.")
-    else:
-        return smiles
-
-    return smiles
-
-def unique_structs(mol, smarts):
-    """
-    Function to calculate the number of given sub-structures (SMARTS) in molecule provided. 
-
-    Parameters
-    ----------
-    mol: object
-        openbabel object of molecule
-    smarts: str
-        smarts representation of sub-structure
-
-    Returns
-    -------
-    num_unique_matches: int
-        number of unique matches found for the given sub-structure in the molecule
-    """
-    smarts = pybel.Smarts(smarts)
-    smarts.obsmarts.Match(mol.OBMol)
-    num_unique_matches = len(smarts.findall(mol))
-    return num_unique_matches
-    
-def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
+def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir, mpidict):
     """
     Function that creates a new generation of molecules with the initial building blocks provided and the current generation of molecules.
 
@@ -607,10 +700,12 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
     library[-1]: list
         Final molecular library of dict objects after all the generations
     """
+    comm, rank, mpisize = [mpidict[i] for i in mpidict]
+    
     library = []
     library.append(init_mol_list)
     for gen in range(gen_len):
-        print_l("\nGeneration " + str(gen+1), output_dir)
+        print_l("\nGeneration " + str(gen+1), output_dir, mpidict)
         prev_gen_mol_list = library[gen]
         lib_temp, new_gen_mol_list = [], []
         
@@ -621,10 +716,11 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
                 for mol2 in init_mol_list:
                     if combi_type.lower() == 'link':
                         new_gen_mol_list += create_link(prev_gen_mol_list[i],mol2,rules_dict)
-        new_gen_mol_list = comm.gather(new_gen_mol_list, root=0)
-        if rank == 0:
-            new_gen_mol_list = list(chain.from_iterable(new_gen_mol_list))      # flatten out the list
-        new_gen_mol_list = comm.bcast(new_gen_mol_list, root=0)
+        if comm is not None: 
+            new_gen_mol_list = comm.gather(new_gen_mol_list, root=0)
+            if rank == 0:
+                new_gen_mol_list = list(chain.from_iterable(new_gen_mol_list))      # flatten out the list
+            new_gen_mol_list = comm.bcast(new_gen_mol_list, root=0)
 
         # runs only for the last generation
         if gen == gen_len-1:
@@ -660,116 +756,20 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir):
                     tmp_list.append(i['reverse_smiles'])
                     lib_temp.append(i)
                 else: duplicates += 1
-        lib_temp = comm.gather(lib_temp, root=0)
-        duplicates = comm.gather(duplicates, root=0)
+        if comm is not None:
+            lib_temp = comm.gather(lib_temp, root=0)
+            duplicates = comm.gather(duplicates, root=0)
         if rank == 0:
-            lib_temp = list(chain.from_iterable(lib_temp))
+            if comm is not None:
+                lib_temp = list(chain.from_iterable(lib_temp))
             library.append(lib_temp)
-            print_l('Total molecules generated: '+str(len(lib_temp)), output_dir)
-            print_l('Duplicates removed: '+str(sum(duplicates))+'\n\n', output_dir)
-        library = comm.bcast(library, root=0)
+            print_l('Total molecules generated: '+str(len(lib_temp)), output_dir, mpidict)
+            if isinstance(duplicates, list): duplicates = sum(duplicates)
+            print_l('Duplicates removed: '+str(duplicates)+'\n\n', output_dir, mpidict)
+        if comm is not None:
+            library = comm.bcast(library, root=0)
     
     return library[-1]
-    
-def reverse_mol(mol, atoms):
-    """
-    Function that converts a molecule's potential reactive sites into H atoms. New molecules are generated at only those sites which have H atoms.
-    If user does not provide any [Ra] handles in the molecule, all available H atom sites are considered for reaction.
-    If user provides specific handles for reaction by replacing H atoms with [Ra] atoms, only those sites will be considered for reaction. For the 
-    reaction, the H atoms are replaced with Fr atoms so that they are not considered as potential sites, and the Ra atoms are converted to H atoms. 
-
-    Parameters
-    ----------
-    mol: object
-        OpenBabel object of a molecule
-    atoms: list
-        list of atoms in the molecule
-
-    Returns
-    -------
-    smiles: str
-        canonical smiles of transformed molecule
-    """
-    
-    atom_num = [] # to append atomic number of atoms present in molecule
-    myFr = pybel.readstring('smi',"[Fr]")
-    Fratom = myFr.OBMol.GetAtom(1)
-
-    ## Make a list of atomic numbers for all atoms that are in the molecule
-    for atom in atoms:
-        atom_num.append(atom.OBAtom.GetAtomicNum())
-    
-    
-    if 88 in atom_num:
-        ## generate a new molecule for each loop so that the old one is not changed
-        #newmol=pybel.readstring("smi",smiles)
-        
-        for atom in atoms:
-            ## check the number of hydrogens attached to the atom
-            hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount() # zero for H atom
-            index = atom.OBAtom.GetIdx()
-            
-            ## This is replacing hydrogen atoms with Francium atom
-            while hcount != 0:
-                size = len(list(mol.atoms))
-                mol.OBMol.InsertAtom(Fratom)
-                mol.OBMol.AddBond(index,size+1,1,0,-1)
-                hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
-                
-        ## As the atoms are now changed in molecule, we will have to define atom list again
-        atoms = list(mol.atoms)
-        
-        ## Replace all Radium atoms with hydrogen, which makes them site points.
-        
-        for atom in atoms:
-            if atom.OBAtom.GetAtomicNum() == 88:
-                atom.OBAtom.SetAtomicNum(1)
-                   
-    smiles = mol.write("can")[:-2]
-    return smiles
-
-def print_l(sentence, output_dir):
-    """Print to logfile.
-
-    Parameters
-    ----------
-    sentence: str
-        string to be printed to logfile
-
-    Returns
-    -------
-
-    """
-    if rank == 0:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
-        print(sentence)
-        logfile.write(str(sentence)+"\n")
-
-def print_le(sentence, output_dir, msg="Aborting the run"):
-    """Print to both error file and logfile and then exit code.
-
-    Parameters
-    ----------
-    sentence: str
-        string to be printed to error file and logfile
-
-    Returns
-    -------
-
-    """
-    if rank == 0:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
-        error_file = open(os.path.join(output_dir+'/error_file.txt'),'a')
-        print(sentence)
-        logfile.write(sentence+"\n")
-        error_file.write(sentence+"\n")
-        sys.exit(msg)
-    else:
-        sys.exit()
 
 def library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./'):
     """Main wrapper function for library generation.
@@ -789,6 +789,23 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     -------
 
     """
+    ## initializing MPI to time, to check the MPI efficiency
+    try:
+        from mpi4py import MPI
+        wt1 = MPI.Wtime()
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        mpisize = comm.Get_size()
+        mpidict = {'comm': comm, 'rank': rank, 'mpisize': mpisize}
+    except: 
+        wt1 = time.time()
+        comm = None
+        rank = 0
+        mpisize = 1
+        mpidict = {'comm': comm, 'rank': rank, 'mpisize': mpisize}
+        print_l("Warning: MPI4PY not found. ChemLG not running in parallel.\n\n", output_dir, mpidict)
+        
+    
     txt = "\n\n\n============================================================================================================"
     txt += "\n ChemLG - A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space"
     txt += "\n============================================================================================================\n\n\n"
@@ -798,18 +815,18 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     txt += "With contributions by: \nJanhavi Abhay Dudwadkar (UB): Jupyter GUI\n\n"
     txt += "ChemLG is based upon work supported by the U.S. National Science Foundation under grant #OAC-1751161. \nIt was also supported by start-up funds provided by UB's School of Engineering and Applied Science and \nUB's Department of Chemical and Biological Engineering, the New York State Center of Excellence in Materials Informatics \nthrough seed grant #1140384-8-75163, and the U.S. Department of Energy under grant #DE-SC0017193."
     txt += "\n\nChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. \nChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause). \n\n\n"
-    print_l(txt, output_dir)
-    print_l("===================================================================================================", output_dir)
+    print_l(txt, output_dir, mpidict)
+    print_l("===================================================================================================", output_dir, mpidict)
     
     try :
         rulesFile = open(config_file)
     except:
         tmp_str = "Config file does not exist. "
         tmp_str += "Please provide correct config file.\n"
-        print_le(tmp_str, output_dir,"Aborting due to wrong file.")
-    print_l("Reading generation rules", output_dir)
-    print_l("===================================================================================================", output_dir)
-    rules_dict, args = get_rules(rulesFile, output_dir)
+        print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong file.")
+    print_l("Reading generation rules", output_dir, mpidict)
+    print_l("===================================================================================================", output_dir, mpidict)
+    rules_dict, args = get_rules(rulesFile, output_dir, mpidict)
     BB_file = building_blocks_file
     combi_type, gen_len, outfile_type, max_fpf, lib_name = args
     gen_len, max_fpf = int(gen_len), int(max_fpf)
@@ -818,15 +835,15 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
 
     ## Reading the building blocks from the input file
     initial_mols = []
-    print_l("===================================================================================================", output_dir)
-    print_l("Reading building blocks from the file "+BB_file, output_dir)
-    print_l("===================================================================================================", output_dir)
+    print_l("===================================================================================================", output_dir, mpidict)
+    print_l("Reading building blocks from the file "+BB_file, output_dir, mpidict)
+    print_l("===================================================================================================", output_dir, mpidict)
     try :
         infile = open(BB_file)
     except:
         tmp_str = "Building blocks file "+BB_file+" does not exist. "
         tmp_str = tmp_str+"Please provide correct building blocks file.\n"
-        print_le(tmp_str, output_dir,"Aborting due to wrong file.")
+        print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong file.")
     i_smi_list = []
     for i,line in enumerate(infile):
         smiles = line.strip()
@@ -834,7 +851,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             continue
         if '[X]' in smiles:
             smiles = smiles.replace('[X]','[Ra]')
-        smiles = check_building_blocks(smiles,i+1,BB_file, output_dir)
+        smiles = check_building_blocks(smiles,i+1,BB_file, output_dir, mpidict)
         # removing duplicates in the input list based on canonical smiles
         temp = molecule(smiles, 'F'+str(len(initial_mols)+1))
         is_duplicate = False
@@ -846,19 +863,20 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             initial_mols.append(temp)
             i_smi_list.append(temp['can_smiles'])
 
-    print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', output_dir)
-    print_l('unique SMILES: ', output_dir)
-    print_l(i_smi_list, output_dir)
+    print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', output_dir, mpidict)
+    print_l('unique SMILES: ', output_dir, mpidict)
+    print_l(i_smi_list, output_dir, mpidict)
     
-    
-    # Generate molecules
-    print_l('\n\n\n\n\n===================================================================================================', output_dir)
-    print_l('Generating molecules', output_dir)
-    print_l('===================================================================================================\n', output_dir)
-    final_list = generator(combi_type, initial_mols, gen_len, rules_dict, output_dir)
-    print_l('Total number of molecules generated = '+str(len(final_list))+'\n\n\n\n\n', output_dir)
-    print_l("===================================================================================================\n\n\n", output_dir)
 
+    # Generate molecules
+    print_l('\n\n\n\n\n===================================================================================================', output_dir, mpidict)
+    print_l('Generating molecules', output_dir, mpidict)
+    print_l('===================================================================================================\n', output_dir, mpidict)
+    final_list = generator(combi_type, initial_mols, gen_len, rules_dict, output_dir, mpidict)
+    print_l('Total number of molecules generated = '+str(len(final_list))+'\n\n\n\n\n', output_dir, mpidict)
+    print_l("===================================================================================================\n\n\n", output_dir, mpidict)
+
+    
     # Generating output files based on output file type
     if output_dir is not './':
         output_dest = output_dir
@@ -878,14 +896,14 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
                 os.makedirs(output_dest + lib_name + outfile_type)
             outdata = output_dest + lib_name + outfile_type + "/final_smiles.csv"
             # outfile = open(outdata, "w")
-            print_l('Writing SMILES to file \''+outdata+'\'\n', output_dir)
+            print_l('Writing SMILES to file \''+outdata+'\'\n', output_dir, mpidict)
             # scipy.savetxt(outfile, df_final_list['reverse_smiles'].values, fmt='%s')
             df_new = df_final_list['reverse_smiles'].copy()
             df_new.to_csv(outdata, index=False, header=False)
         
     # Creating a seperate output file for each molecule. Files are written to folder with specified no. of files per folder.
     else:
-        print_l('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir)
+        print_l('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir, mpidict)
         smiles_to_scatter = []
         if rank == 0:
             if not os.path.exists(output_dest + lib_name + outfile_type):
@@ -924,8 +942,9 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             if (val+1)%max_fpf == 0:
                 folder_no = folder_no+1
         
-    print_l('File writing terminated successfully.'+'\n', output_dir)
-    wt2 = MPI.Wtime()
-    print_l('Total time_taken: '+str('%.3g'%(wt2-wt1))+'\n', output_dir)
+    print_l('File writing terminated successfully.'+'\n', output_dir, mpidict)
+    if comm is not None: wt2 = MPI.Wtime()
+    else: wt2 = time.time()
+    print_l('Total time_taken: '+str('%.3g'%(wt2-wt1))+'\n', output_dir, mpidict)
     sys.stderr.close()
     sys.exit()

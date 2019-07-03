@@ -87,7 +87,7 @@ class GeneticAlgorithm(object):
         self.fit_val = []
         self.pop_size = self.crossover_size + self.mutation_size
         for i in fitness:
-            if i[1] == 0: print_le("Cutoff values in the fitness cannot be zero.", self.output_dir)
+            if i[1] == 0: print_lle("Cutoff values in the fitness cannot be zero.", self.output_dir)
             if i[0].lower() == 'max': self.fit_val.append((1, i[1]))
             else: self.fit_val.append((-1, i[1]))
 
@@ -100,8 +100,8 @@ class GeneticAlgorithm(object):
         txt += "With contributions by: \nJanhavi Abhay Dudwadkar (UB): Jupyter GUI\n\n"
         txt += "ChemLG is based upon work supported by the U.S. National Science Foundation under grant #OAC-1751161. \nIt was also supported by start-up funds provided by UB's School of Engineering and Applied Science and \nUB's Department of Chemical and Biological Engineering, the New York State Center of Excellence in Materials Informatics \nthrough seed grant #1140384-8-75163, and the U.S. Department of Energy under grant #DE-SC0017193."
         txt += "\n\nChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. \nChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause). \n\n\n"
-        print_l(txt, self.output_dir)
-        print_l("===================================================================================================", self.output_dir)
+        print_ll(txt, self.output_dir)
+        print_ll("===================================================================================================", self.output_dir)
         
         # Reading rules file
         try :
@@ -109,10 +109,10 @@ class GeneticAlgorithm(object):
         except:
             tmp_str = "Config file does not exist. "
             tmp_str = tmp_str+"Please provide correct config file.\n"
-            print_le(tmp_str, self.output_dir,"Aborting due to wrong file.")
-        print_l("Reading generation rules", self.output_dir)
-        print_l("===================================================================================================", self.output_dir)
-        self.rules_dict, args = get_rules(rulesFile, self.output_dir)
+            print_lle(tmp_str, self.output_dir,"Aborting due to wrong file.")
+        print_ll("Reading generation rules", self.output_dir)
+        print_ll("===================================================================================================", self.output_dir)
+        self.rules_dict, args = get_rules(rulesFile, self.output_dir, {'rank': 0})
         combi_type, gen_len, outfile_type, max_fpf, lib_name = args
         gen_len, max_fpf = int(gen_len), int(max_fpf)
         if gen_len == 0:
@@ -121,15 +121,15 @@ class GeneticAlgorithm(object):
         
         ## Reading the building blocks from the input file
         initial_mols, i_smi_list = [], []
-        print_l("===================================================================================================", self.output_dir)
-        print_l("Reading building blocks from the file "+self.bb_file, self.output_dir)
-        print_l("===================================================================================================", self.output_dir)
+        print_ll("===================================================================================================", self.output_dir)
+        print_ll("Reading building blocks from the file "+self.bb_file, self.output_dir)
+        print_ll("===================================================================================================", self.output_dir)
         try :
             infile = open(self.bb_file)
         except:
             tmp_str = "Building blocks file "+self.bb_file+" does not exist. "
             tmp_str += "Please provide correct building blocks file.\n"
-            print_le(tmp_str, self.output_dir,"Aborting due to wrong file.")
+            print_lle(tmp_str, self.output_dir,"Aborting due to wrong file.")
         
         for i,line in enumerate(infile):
             smiles = line.strip()
@@ -137,7 +137,7 @@ class GeneticAlgorithm(object):
                 continue
             if '[X]' in smiles:
                 smiles = smiles.replace('[X]','[Ra]')
-            smiles = check_building_blocks(smiles,i+1,self.bb_file,self.output_dir)
+            smiles = check_building_blocks(smiles,i+1,self.bb_file,self.output_dir, {'rank': 0})
 
             # removing duplicates in the input list based on canonical smiles
             temp = molecule(smiles, 'F'+str(len(initial_mols)+1))
@@ -150,9 +150,9 @@ class GeneticAlgorithm(object):
                 initial_mols.append(temp)
                 i_smi_list.append(temp['can_smiles'])
                 
-        print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', self.output_dir)
-        print_l('unique SMILES: ', self.output_dir)
-        print_l(i_smi_list, self.output_dir)
+        print_ll('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', self.output_dir)
+        print_ll('unique SMILES: ', self.output_dir)
+        print_ll(i_smi_list, self.output_dir)
         # create building blocks class objects for each validated molecule and store them in a list. 
         self.bb = [building_blocks(i) for i in initial_mols]
 
@@ -622,3 +622,42 @@ def nested_lookup(n, idexs):
         return n[idexs[0]]
     return nested_lookup(n[idexs[0]], idexs[1:])
 
+def print_ll(sentence, output_dir):
+    """Print to logfile.
+
+    Parameters
+    ----------
+    sentence: str
+        string to be printed to logfile
+
+    Returns
+    -------
+
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
+    print(sentence)
+    logfile.write(str(sentence)+"\n")
+
+def print_lle(sentence, output_dir, msg="Aborting the run"):
+    """Print to both error file and logfile and then exit code.
+
+    Parameters
+    ----------
+    sentence: str
+        string to be printed to error file and logfile
+
+    Returns
+    -------
+
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
+    error_file = open(os.path.join(output_dir+'/error_file.txt'),'a')
+    print(sentence)
+    logfile.write(sentence+"\n")
+    error_file.write(sentence+"\n")
+    sys.exit(msg)
+    

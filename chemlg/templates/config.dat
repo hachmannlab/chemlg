@@ -1,5 +1,5 @@
-Please input generation rules below. Do not change the order of the options.
-1. Include building blocks                  == None
+Do not change the order of the generation rules below.
+1. Include building blocks                  == ('C', )
 2. Min and max no. of bonds                 == None
 3. Min and max no. of atoms                 == None
 4. Min and max mol.weight                   == None
