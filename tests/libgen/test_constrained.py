@@ -5,11 +5,12 @@ import os
 import pkg_resources
 import tempfile
 import shutil
+import random
 
 def objective(mol_ob):
     mol2 = pybel.readstring("smi", "c1ccccc1")
     tanimoto = mol_ob.calcfp()|mol2.calcfp() 
-    return tanimoto
+    return random.random()
 
 @pytest.fixture()
 def cf_path():
