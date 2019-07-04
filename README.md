@@ -1,34 +1,30 @@
 [![Build Status](https://travis-ci.org/hachmannlab/chemlg.svg?branch=master)](https://travis-ci.org/hachmannlab/chemlg)
 [![codecov](https://codecov.io/gh/hachmannlab/chemlg/branch/master/graph/badge.svg)](https://codecov.io/gh/hachmannlab/chemlg)
-# ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space
+# ChemLG – A Library Generator for the Exploration and Enumeration of Chemical and Materials Spaces.
 ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.
 
-Program Version: 0.2
+Program Version: 0.3
 
-Release Date: Feb 20, 2019
+Release Date: July 4, 2019
 
 With contributions by:
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 
 ## Code Design:
-ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
+ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible. ChemLG can be run on a single core or in parallel on multiple cores. For the parallel execution, MPI4Py is also required along with OpenBabel as dependencies of ChemLG.
 
 ## Documentation:
 ChemLG documentation can be found here https://hachmannlab.github.io/chemlg
 
 ## Installation and Dependencies:
-The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. We suggest the following conda installations:
+It is highly recommended that a virtual environment is used to run ChemLG. The virtual environment and ChemLG and its dependencies can be installed as:
 
 
     conda create --name my_chemlg_env python=3.6
     source activate my_chemlg_env
     conda install -c openbabel openbabel
     conda install -c anaconda mpi4py
-    
-You can download ChemLG from Python Package Index (PyPI) via pip. 
-
     pip install chemlg
-
 
 You can test the installation with:
 
@@ -40,8 +36,8 @@ You can test the installation with:
 Please cite the use of ChemLG as:
 
 
-    (1) M.A.F. Afzal, J.A. Dudwadkar, J. Hachmann, ChemLG – A Program Suite for the Generation of Compound Libraries and the Survey of Chemical Space, in preparation.
-    (2) M.A.F. Afzal, J. Hachmann, ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space. Available from: https://hachmannlab.github.io/chemlg. 
+    (1) Afzal, M. A. F.; Vishwakarma, G.; Dudwadkar, J. A.;Haghighatlari, M.; Hachmann, J. ChemLG– A Library Generator for the Exploration and Enumeration of Chemical and Materials Spaces. 2019; https://github.com/hachmannlab/chemlg
+    (2) M.A.F. Afzal, G. Vishwakarma, J. Hachmann, ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space. Available from: https://hachmannlab.github.io/chemlg. 
     (3) J. Hachmann, M.A.F. Afzal, M. Haghighatlari, Y. Pal, Building and Deploying a Cyberinfrastructure for the Data-Driven Design of Chemical Systems and the Exploration of Chemical Space, Mol. Simul. 44 (2018), 921-929. DOI: 10.1080/08927022.2018.1471692
 
 ## Acknowledgement
