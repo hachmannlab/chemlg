@@ -1,9 +1,9 @@
 Getting Started
 ===============
-ChemLG generates molecules based on the following combinatorial 'linking' scheme:
+ChemLG generates molecules based on the following combinatorial 'linking' and 'fusion' schemes:
 
 
-.. image:: images/combinatorial.jpg
+.. image:: images/link+fusion.jpg
    :width: 70%
    :align: center
    :alt: Combinatorial linking of two molecules
