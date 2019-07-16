@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Building Blocks File &mdash; ChemLG 0.2 documentation</title>
+  <title>Building Blocks File &mdash; ChemLG 0.3 documentation</title>
   
 
   
@@ -17,33 +17,35 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="prev" title="Getting Started" href="chemlg.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -86,6 +88,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html#chemlg-graphical-input-file-builder">ChemLG Graphical Input File Builder</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html#constrained-library-generation-via-genetic-algorithm">Constrained library generation via Genetic Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chemlg.html#feasibility-analysis">Feasibility Analysis</a></li>
 </ul>
 
             
@@ -163,11 +166,11 @@
 <h1>Config File<a class="headerlink" href="#config-file" title="Permalink to this headline">¶</a></h1>
 <p>The config file should closely follow the template provided in the library. The rules for library generation are to be specified as:</p>
 <ul>
-<li><p class="first">Building Blocks: Specify the building blocks which must be present in all the molecules in the final library.</p>
+<li><p>Building Blocks: Specify the building blocks which must be present in all the molecules in the final library.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple of smiles of corresponding building blocks</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple of smiles of corresponding building blocks</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -176,11 +179,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Bonds: Enter the minimum and maximum values of the total number of bonds for all the molecules in the final library (integers).</p>
+<li><p>Number of Bonds: Enter the minimum and maximum values of the total number of bonds for all the molecules in the final library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -189,11 +192,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Atoms: Specify the minimum and maximum number of atoms that must be present in each molecule in the generation library (integers).</p>
+<li><p>Number of Atoms: Specify the minimum and maximum number of atoms that must be present in each molecule in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -202,11 +205,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Molecular Weight Range: Specify the range of the molecular weight of the molecules in the generation library (integers).</p>
+<li><p>Molecular Weight Range: Specify the range of the molecular weight of the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -215,11 +218,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Rings: Specify the range of the number of rings present in the molecules in the generation library (integers).</p>
+<li><p>Number of Rings: Specify the range of the number of rings present in the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -228,11 +231,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Aromatic Rings: Specify the range of the number of aromatic rings present in the molecules in the generation library (integers).</p>
+<li><p>Number of Aromatic Rings: Specify the range of the number of aromatic rings present in the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -241,11 +244,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Non-Aromatic Rings: Specify the range of the number of non aromatic rings present in the molecules in the generation library (integers).</p>
+<li><p>Number of Non-Aromatic Rings: Specify the range of the number of non aromatic rings present in the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -254,11 +257,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Single Bonds: Specify the range of the number of single bonds present in the molecules in the generation library (integers).</p>
+<li><p>Number of Single Bonds: Specify the range of the number of single bonds present in the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -267,11 +270,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Double Bonds: Specify the range of the number of double bonds present in the molecules in the generation library (integers).</p>
+<li><p>Number of Double Bonds: Specify the range of the number of double bonds present in the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -280,11 +283,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Number of Triple Bonds: Specify the range of the number of triple bonds present in the molecules in the generation library (integers).</p>
+<li><p>Number of Triple Bonds: Specify the range of the number of triple bonds present in the molecules in the generation library (integers).</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple (min, max)</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple (min, max)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -293,11 +296,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Heteroatoms: Specify the maximum number of (C, S, O, N) atoms that must be present in the molecules in the final library.</p>
+<li><p>Heteroatoms: Specify the maximum number of (C, S, O, N) atoms that must be present in the molecules in the final library.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: tuple of tuple(s) ((‘Cl’, 10), )</li>
-<li>Default value: None</li>
+<li><p>Expected type: tuple of tuple(s) ((‘Cl’, 10), )</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -306,11 +309,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Lipinski Rule: Lipinski’s rule of five is a rule of thumb to evaluate druglikeness or determine if a chemical compound with a certain pharmacological or biological activity has chemical properties and physical properties that would make it a likely orally active drug in humans. Select the choice to incorporate Lipinski rule for generating molecules in the final library.</p>
+<li><p>Lipinski Rule: Lipinski’s rule of five is a rule of thumb to evaluate druglikeness or determine if a chemical compound with a certain pharmacological or biological activity has chemical properties and physical properties that would make it a likely orally active drug in humans. Select the choice to incorporate Lipinski rule for generating molecules in the final library.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: string (True or False)</li>
-<li>Default value: False</li>
+<li><p>Expected type: string (True or False)</p></li>
+<li><p>Default value: False</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -319,11 +322,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Fingerprint Matching: Molecular fingerprints encode molecular structure in a series of binary digits that represent the presence or absence of particular substructures in the molecule. Comparing fingerprints will allow you to determine the similarity between two molecules. Type the target molecule and the Tanimoto index.</p>
+<li><p>Fingerprint Matching: Molecular fingerprints encode molecular structure in a series of binary digits that represent the presence or absence of particular substructures in the molecule. Comparing fingerprints will allow you to determine the similarity between two molecules. Type the target molecule and the Tanimoto index.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: comma-separated target molecules c1ccccc1-0.1, C1CCCC1-0.1</li>
-<li>Default value: None</li>
+<li><p>Expected type: comma-separated target molecules c1ccccc1-0.1, C1CCCC1-0.1</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -332,11 +335,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Substructure Inclusion: Enter substructures in SMARTS format which must be included in all molecules in the final library.</p>
+<li><p>Substructure Inclusion: Enter substructures in SMARTS format which must be included in all molecules in the final library.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: comma separated Smiles/SMARTS</li>
-<li>Default value: None</li>
+<li><p>Expected type: comma separated Smiles/SMARTS</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -345,11 +348,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Substructure Exclusion: Enter substructures in SMARTS format which must be excluded in all molecules in the final library.</p>
+<li><p>Substructure Exclusion: Enter substructures in SMARTS format which must be excluded in all molecules in the final library.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: comma separated Smiles/SMARTS</li>
-<li>Default value: None</li>
+<li><p>Expected type: comma separated Smiles/SMARTS</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -358,11 +361,11 @@
 <div class="line"><br /></div>
 </div>
 <ul>
-<li><p class="first">Include initial Building Blocks: Should the initial building blocks be included in the final library.</p>
+<li><p>Include initial Building Blocks: Should the initial building blocks be included in the final library.</p>
 <blockquote>
 <div><ul class="simple">
-<li>Expected type: string (True or False)</li>
-<li>Default value: None</li>
+<li><p>Expected type: string (True or False)</p></li>
+<li><p>Default value: None</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -378,7 +381,7 @@
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="chemlg.html" class="btn btn-neutral" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="chemlg.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -404,25 +407,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space &mdash; ChemLG 0.2 documentation</title>
+  <title>ChemLG – A Library Generator for the Exploration and Enumeration of Chemical and Materials Space &mdash; ChemLG 0.3 documentation</title>
   
 
   
@@ -17,33 +17,35 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Getting Started" href="chemlg.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -82,6 +84,7 @@
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html#chemlg-graphical-input-file-builder">ChemLG Graphical Input File Builder</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html#constrained-library-generation-via-genetic-algorithm">Constrained library generation via Genetic Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chemlg.html#feasibility-analysis">Feasibility Analysis</a></li>
 </ul>
 
             
@@ -127,7 +130,7 @@
     
       <li><a href="#">Docs</a> &raquo;</li>
         
-      <li>ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space</li>
+      <li>ChemLG – A Library Generator for the Exploration and Enumeration of Chemical and Materials Space</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -146,35 +149,32 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="chemlg-a-molecular-and-materials-library-generator-for-the-enumeration-and-exploration-of-chemical-space">
-<h1>ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space<a class="headerlink" href="#chemlg-a-molecular-and-materials-library-generator-for-the-enumeration-and-exploration-of-chemical-space" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="chemlg-a-library-generator-for-the-exploration-and-enumeration-of-chemical-and-materials-space">
+<h1>ChemLG – A Library Generator for the Exploration and Enumeration of Chemical and Materials Space<a class="headerlink" href="#chemlg-a-library-generator-for-the-exploration-and-enumeration-of-chemical-and-materials-space" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
 <p>ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.</p>
 <p>Github Repository: <a class="reference external" href="https://github.com/hachmannlab/chemlg">https://github.com/hachmannlab/chemlg</a></p>
-<p>Program Version: 0.2</p>
-<p>Release Date: Feb 20, 2019</p>
+<p>Program Version: 0.3</p>
+<p>Release Date: July 4, 2019</p>
 <p>With contributions by:
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI</p>
 <div class="section" id="code-design">
 <h2>Code Design<a class="headerlink" href="#code-design" title="Permalink to this headline">¶</a></h2>
-<p>ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.</p>
+<p>ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible. ChemLG can be run on a single core or in parallel on multiple cores. For the parallel execution, MPI4Py is also required along with OpenBabel as dependencies of ChemLG.</p>
 </div>
 <div class="section" id="installation-and-dependencies">
 <h2>Installation and Dependencies<a class="headerlink" href="#installation-and-dependencies" title="Permalink to this headline">¶</a></h2>
-<p>The dependencies for ChemLG are OpenBabel and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. They can be installed via the conda installer:</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">--</span><span class="n">name</span> <span class="n">my_chemlg_env</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.6</span>
-<span class="n">source</span> <span class="n">activate</span> <span class="n">my_chemlg_env</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">openbabel</span> <span class="n">openbabel</span>
-<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">anaconda</span> <span class="n">mpi4py</span>
-</pre></div>
-</div>
-<p>You can download ChemLG from Python Package Index (PyPI) via pip.</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">chemlg</span>
+<p>It is highly recommended that a virtual environment is used to run ChemLG. The virtual environment and ChemLG and its dependencies can be installed as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create --name my_chemlg_env <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.6
+<span class="nb">source</span> activate my_chemlg_env
+conda install -c openbabel openbabel
+conda install -c anaconda mpi4py
+pip install chemlg
 </pre></div>
 </div>
 <p>You can test the installation with:</p>
-<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pytest</span> <span class="o">-</span><span class="n">v</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest -v
 </pre></div>
 </div>
 <div class="toctree-wrapper compound">
@@ -187,6 +187,7 @@ Janhavi Abhay Dudwadkar (UB): Jupyter GUI</p>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html#chemlg-graphical-input-file-builder">ChemLG Graphical Input File Builder</a></li>
 <li class="toctree-l1"><a class="reference internal" href="chemlg.html#constrained-library-generation-via-genetic-algorithm">Constrained library generation via Genetic Algorithm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="chemlg.html#feasibility-analysis">Feasibility Analysis</a></li>
 </ul>
 </div>
 </div>
@@ -194,10 +195,10 @@ Janhavi Abhay Dudwadkar (UB): Jupyter GUI</p>
 <h2>Citation<a class="headerlink" href="#citation" title="Permalink to this headline">¶</a></h2>
 <p>Please cite ChemLG as follows:</p>
 <ul class="simple">
-<li>M.A.F. Afzal, J.A. Dudwadkar, J. Hachmann, ChemLG – A Program Suite for the Generation of Compound Libraries and the Survey of Chemical Space, in preparation.</li>
-<li>M.A.F. Afzal, J. Hachmann, ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space. Available from: <a class="reference external" href="https://hachmannlab.github.io/chemlg">https://hachmannlab.github.io/chemlg</a></li>
-<li><ol class="first upperalpha" start="10">
-<li>Hachmann, M.A.F. Afzal, M. Haghighatlari, Y. Pal, Building and Deploying a Cyberinfrastructure for the Data-Driven Design of Chemical Systems and the Exploration of Chemical Space, Mol. Simul. 44 (2018), 921-929. DOI: 10.1080/08927022.2018.1471692</li>
+<li><p>Afzal, M. A. F.; Vishwakarma, G.; Dudwadkar, J. A.;Haghighatlari, M.; Hachmann, J. ChemLG– A Library Generator for the Exploration and Enumeration of Chemical and Materials Spaces. 2019; <a class="reference external" href="https://github.com/hachmannlab/chemlg">https://github.com/hachmannlab/chemlg</a></p></li>
+<li><p>M.A.F. Afzal, G. Vishwakarma, J. Hachmann, ChemLG – ChemLG– A Library Generator for the Exploration and Enumeration of Chemical and Materials Spaces. Available from: <a class="reference external" href="https://hachmannlab.github.io/chemlg">https://hachmannlab.github.io/chemlg</a></p></li>
+<li><ol class="upperalpha simple" start="10">
+<li><p>Hachmann, M.A.F. Afzal, M. Haghighatlari, Y. Pal, Building and Deploying a Cyberinfrastructure for the Data-Driven Design of Chemical Systems and the Exploration of Chemical Space, Mol. Simul. 44 (2018), 921-929. DOI: 10.1080/08927022.2018.1471692</p></li>
 </ol>
 </li>
 </ul>
@@ -210,7 +211,7 @@ Janhavi Abhay Dudwadkar (UB): Jupyter GUI</p>
 <h2>License and Copyright<a class="headerlink" href="#license-and-copyright" title="Permalink to this headline">¶</a></h2>
 <p>ChemLG is distributed under 3-Clause BSD License (<a class="reference external" href="https://opensource.org/licenses/BSD-3-Clause">https://opensource.org/licenses/BSD-3-Clause</a>).</p>
 <p>ChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved.
-(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
+(C) 2015-2019 Johannes Hachmann, Mohammad Atif Faiz Afzal
 University at Buffalo - The State University of New York (UB)</p>
 <p>Contact: <a class="reference external" href="mailto:hachmann&#37;&#52;&#48;buffalo&#46;edu">hachmann<span>&#64;</span>buffalo<span>&#46;</span>edu</a>, <a class="reference external" href="mailto:m27&#37;&#52;&#48;buffalo&#46;edu">m27<span>&#64;</span>buffalo<span>&#46;</span>edu</a>
 <a class="reference external" href="http://hachmannlab.cbe.buffalo.edu">http://hachmannlab.cbe.buffalo.edu</a></p>
@@ -252,25 +253,16 @@ University at Buffalo - The State University of New York (UB)</p>
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
