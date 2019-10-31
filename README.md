@@ -14,7 +14,8 @@ Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible. ChemLG can be run on a single core or in parallel on multiple cores. For the parallel execution, MPI4Py is also required along with OpenBabel as dependencies of ChemLG.
 
 ## Documentation:
-ChemLG documentation can be found here https://hachmannlab.github.io/chemlg
+ChemLG documentation can be found here: <>https://hachmannlab.github.io/chemlg
+https://chemlg.readthedocs.io/en/latest/
 
 ## Installation and Dependencies:
 It is highly recommended that a virtual environment is used to run ChemLG. The virtual environment and ChemLG and its dependencies can be installed as:
