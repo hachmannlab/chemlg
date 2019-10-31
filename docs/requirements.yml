@@ -1,0 +1,24 @@
+name: chemlg
+channels:
+    - conda-forge
+
+dependencies:
+    - python=3.7
+    - pip
+    - sphinx
+    - sphinx_rtd_theme
+    - sphinx-automodapi
+    - nbsphinx
+
+channels:
+    - openbabel
+
+dependencies:
+    - openbabel
+
+    - pip:
+      - numpy
+      - pandas
+      - numpydoc
+      - six
+      - scipy
