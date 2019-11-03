@@ -1,5 +1,9 @@
 import sys
-import pybel
+try:
+    import pybel
+except:
+    from openbabel import pybel
+from openbabel import OBAtomAtomIter
 import scipy
 from collections import defaultdict
 import os
@@ -679,7 +683,7 @@ def get_index_list(mol, atoms):
             atoms_index.append(index)
     
     return atoms_index
-    
+
 def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir, mpidict):
     """
     Function that creates a new generation of molecules with the initial building blocks provided and the current generation of molecules.
@@ -734,7 +738,7 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir, mpidic
                     ## Removing Francium and Radium atoms. It is easy to convert Francium atom to hydrogen than deleting the atom
                     if atom.OBAtom.GetAtomicNum() == 87 or atom.OBAtom.GetAtomicNum() == 88:
                         atom.OBAtom.SetAtomicNum(1)
-                new_gen_mol_list[i]['reverse_smiles'] = mol_ob.write("can")
+                new_gen_mol_list[i]['reverse_smiles'] = mol_ob.write("can").strip()
         
         # Creating a dictionary of molecules. This is a faster way to prevent duplicates. SMILES dictionary might have duplicates. 
         # Since the duplicates will only be in one Mol Wt list of the dictionary, we can divide Mol Wts into available processors.
@@ -747,7 +751,7 @@ def generator(combi_type, init_mol_list, gen_len, rules_dict, output_dir, mpidic
         items = list(smiles_dict.items())
         chunks_list = scipy.array_split(range(len(items)), mpisize)
         for items_ind in chunks_list[rank]:
-            mol_wt, mols = items[items_ind][0], items[items_ind][1]                     # mols --> list of molecules in that mol_wt category
+            mol_wt, mols = items[items_ind][0], items[items_ind][1]              # mols --> list of molecules in that mol_wt category
             tmp_list = []
             for i in mols:
                 if i['reverse_smiles'] not in tmp_list:
@@ -877,24 +881,19 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     print_l("===================================================================================================\n\n\n", output_dir, mpidict)
 
     
-    # Generating output files based on output file type
-    if output_dir is not './':
-        output_dest = output_dir
-    else:
-        output_dest = os.getcwd() + '/'
-    
     # Generating csv file of final library
     df_final_list = pd.DataFrame(final_list)
     if rank == 0:
-        if not os.path.exists(output_dest):
-            os.makedirs(output_dest)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
         df_final_list.drop(['smiles', 'can_smiles'], axis=1).to_csv(os.path.join(output_dir+'final_library.csv'), index=None)
 
+    # Generating output files based on output file type
     if outfile_type == 'smi':
         if rank == 0:
-            if not os.path.exists(output_dest + lib_name + outfile_type):
-                os.makedirs(output_dest + lib_name + outfile_type)
-            outdata = output_dest + lib_name + outfile_type + "/final_smiles.csv"
+            if not os.path.exists(output_dir + lib_name + '_' + outfile_type):
+                os.makedirs(output_dir + lib_name + '_' + outfile_type)
+            outdata = output_dir + lib_name + outfile_type + "/final_smiles.csv"
             # outfile = open(outdata, "w")
             print_l('Writing SMILES to file \''+outdata+'\'\n', output_dir, mpidict)
             # scipy.savetxt(outfile, df_final_list['reverse_smiles'].values, fmt='%s')
@@ -906,8 +905,8 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         print_l('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir, mpidict)
         smiles_to_scatter = []
         if rank == 0:
-            if not os.path.exists(output_dest + lib_name + outfile_type):
-                os.makedirs(output_dest + lib_name + outfile_type)
+            if not os.path.exists(output_dir + lib_name + outfile_type):
+                os.makedirs(output_dir + lib_name + outfile_type)
             smiles_to_scatter=[]
             for i in range(mpisize):
                 start = int(i*(len(final_list))/mpisize)
@@ -929,15 +928,15 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         if end+1 == final_list_len:
             ratio_e = ratio_e+1
         for i in range(ratio_s,ratio_e):
-            if not os.path.exists(output_dest + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf)):
-                os.makedirs(output_dest + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf))
+            if not os.path.exists(output_dir + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf)):
+                os.makedirs(output_dir + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf))
 
         folder_no = ratio_s+1
         for i, val in enumerate(range(start,end+1)):
             mol_ob = pybel.readstring("smi", smiles_list[i]['reverse_smiles'])
             mymol = pybel.readstring("smi", mol_ob.write("can"))
             mymol.make3D(forcefield='mmff94', steps=50)
-            mymol.write(outfile_type, output_dest + lib_name +outfile_type+"/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+outfile_type,overwrite=True)
+            mymol.write(outfile_type, output_dir + lib_name +outfile_type+"/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+outfile_type,overwrite=True)
 
             if (val+1)%max_fpf == 0:
                 folder_no = folder_no+1
@@ -945,6 +944,6 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     print_l('File writing terminated successfully.'+'\n', output_dir, mpidict)
     if comm is not None: wt2 = MPI.Wtime()
     else: wt2 = time.time()
-    print_l('Total time_taken: '+str('%.3g'%(wt2-wt1))+'\n', output_dir, mpidict)
+    print_l('Total time_taken: ' + str('%.3g'%(wt2-wt1))+ '\n', output_dir, mpidict)
     sys.stderr.close()
     sys.exit()

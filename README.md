@@ -1,23 +1,26 @@
 [![Build Status](https://travis-ci.org/hachmannlab/chemlg.svg?branch=master)](https://travis-ci.org/hachmannlab/chemlg)
 [![codecov](https://codecov.io/gh/hachmannlab/chemlg/branch/master/graph/badge.svg)](https://codecov.io/gh/hachmannlab/chemlg)
-# ChemLG – A Library Generator for the Exploration and Enumeration of Chemical and Materials Spaces.
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/hachmannlab/chemlg.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hachmannlab/chemlg/context:python)
+[![version status](http://img.shields.io/pypi/v/chemlg.svg?style=flat)](https://pypi.python.org/pypi/chemlg)
+[![license](http://img.shields.io/badge/license-BSD-blue.svg?style=flat)](https://github.com/hachmannlab/chemlg/blob/master/LICENSE)
+# ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space
 ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.
 
-Program Version: 0.3
+Program Version: 0.7
 
-Release Date: July 4, 2019
+Release Date: Nov 10, 2019
 
 With contributions by:
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 
 ## Code Design:
-ChemLG is developed in the Python 3 programming language and uses OpenBabel and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible. ChemLG can be run on a single core or in parallel on multiple cores. For the parallel execution, MPI4Py is also required along with OpenBabel as dependencies of ChemLG.
+ChemLG is developed in the Python 3 programming language and uses OpenBabel (2.x) and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
 
 ## Documentation:
-ChemLG documentation can be found here: https://chemlg.readthedocs.io/en/latest/
+ChemLG documentation can be found here https://chemlg.readthedocs.io/en/latest/
 
 ## Installation and Dependencies:
-It is highly recommended that a virtual environment is used to run ChemLG. The virtual environment and ChemLG and its dependencies can be installed as:
+The dependencies for ChemLG are OpenBabel(2.x) and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. We suggest the following conda installations:
 
 
     conda create --name my_chemlg_env python=3.6
@@ -25,10 +28,6 @@ It is highly recommended that a virtual environment is used to run ChemLG. The v
     conda install -c openbabel openbabel
     conda install -c anaconda mpi4py
     pip install chemlg
-
-You can test the installation with:
-
-    pytest -v
 
 
 

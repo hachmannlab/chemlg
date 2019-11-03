@@ -47,7 +47,6 @@ install:
   - source activate test-environment
   - conda install -c openbabel openbabel
   - conda install -c conda-forge mpi4py
-  - pip install deap
 
   # Install the library with test requirements
   - pip install -e .[tests]
