@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.org/hachmannlab/chemlg.svg?branch=master)](https://travis-ci.org/hachmannlab/chemlg)
 [![codecov](https://codecov.io/gh/hachmannlab/chemlg/branch/master/graph/badge.svg)](https://codecov.io/gh/hachmannlab/chemlg)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/hachmannlab/chemlg.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/hachmannlab/chemlg/context:python)
 [![version status](http://img.shields.io/pypi/v/chemlg.svg?style=flat)](https://pypi.python.org/pypi/chemlg)
 [![license](http://img.shields.io/badge/license-BSD-blue.svg?style=flat)](https://github.com/hachmannlab/chemlg/blob/master/LICENSE)
 # ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space
