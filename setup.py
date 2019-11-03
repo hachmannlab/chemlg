@@ -5,15 +5,15 @@ import chemlg
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md')) as f:
-    long_description = f.read()
+# with open(path.join(here, 'README.md')) as f:
+    # long_description = f.read()
 
 if __name__ == "__main__":
     setuptools.setup(
         name='chemlg',
         version=chemlg.__version__,
-        author='Mohammad Atif Faiz Afzal, Johannes Hachmann',
-        author_email='m27@buffalo.edu, hachmann@buffalo.edu',
+        author='Mohammad Atif Faiz Afzal, Gaurav Vishwakarma, Johannes Hachmann',
+        author_email='m27@buffalo.edu, gvishwak@buffalo.edu hachmann@buffalo.edu',
         # url='https://github.com/hachmannlab/chemml',
         project_urls={
             'Source': 'https://github.com/hachmannlab/chemlg',
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         },
         description=
         'ChemLG is a smart and massive parallel molecular library generator for  chemical and materials sciences.',
-        long_description=long_description,
+        # long_description=long_description,
         scripts=['lib/chemlgshell'],
         keywords=[
             'Library Generator', 'Molecular Library',
@@ -29,6 +29,7 @@ if __name__ == "__main__":
         ],
         license='BSD-3C',
         packages=setuptools.find_packages(),
+        include_package_data=True,
 
         install_requires=[
             'future', 'six',
@@ -41,6 +42,7 @@ if __name__ == "__main__":
                 'sphinxcontrib-napoleon',
                 'sphinx_rtd_theme',
                 'numpydoc',
+                'nbsphinx'
             ],
             'tests': [
                 'pytest',
@@ -59,7 +61,6 @@ if __name__ == "__main__":
             'Development Status :: 4 - Beta',
             'Natural Language :: English',
             'Intended Audience :: Science/Research',
-            'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
         ],

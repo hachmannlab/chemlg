@@ -20,7 +20,7 @@ smiles=[]
 # run this function to start the GUI builder.
 def config_builder():
     
-        display(widgets.HTML(value="<font color=crimson><font size=5><b><u>CHEMLG</font>"))
+        display(widgets.HTML(value="<font color=blue><font size=5><b><u>CHEMLG</font>"))
         """This function allows the user to provide the GA function required for library generation if the user wants to provide constraints in building the library"""
         global input_direc
         input_direc=widgets.Text(description="Input file directory",placeholder="",style=style)
@@ -30,7 +30,7 @@ def config_builder():
         display(inp)
 
         def on_input_clicked(o):
-            display(widgets.HTML(value="<font color=crimson><font size=5><b><u>BUILDING BLOCKS</font>"))
+            display(widgets.HTML(value="<font color=blue><font size=5><b><u>BUILDING BLOCKS</font>"))
             building_blocks()
         input_direc_button.on_click(on_input_clicked)
 
@@ -124,7 +124,7 @@ def building_blocks():
 
         BB.value=""
 
-        display(widgets.HTML(value="<font color=crimson><font size=5><b><u>BUILDING BLOCKS</font>"))
+        display(widgets.HTML(value="<font color=blue><font size=5><b><u>BUILDING BLOCKS</font>"))
         display(tab1)
     final_BB=widgets.Button( description='Create building blocks file',layout= Layout(width= '45%',border='solid 1px black'),style=style)
     
@@ -184,7 +184,7 @@ def generation_rules():
             
             
         else:
-            display(widgets.HTML(value="<font color=crimson><font size=5><b><u>USER DEFINED CONSTRAINTS</font>"))
+            display(widgets.HTML(value="<font color=blue><font size=5><b><u>USER DEFINED CONSTRAINTS</font>"))
 
             style = {'description_width': 'initial','font_weight':'bold'}
             building_blocks = widgets.Text(value='None',
@@ -341,7 +341,7 @@ def generation_rules():
         def command_line_arguments(b):
       #This function is for taking the command line arguments to run ChemLG from user  
     
-            display(widgets.HTML(value="<font color=crimson><font size=5><b><u>COMMAND LINE ARGUMENTS</font>"))
+            display(widgets.HTML(value="<font color=blue><font size=5><b><u>COMMAND LINE ARGUMENTS</font>"))
 
 
             """input_file = widgets.Text(value='building_blocks.dat',
@@ -620,7 +620,7 @@ def generation_rules():
                     else:
                         os.system("chemlgshell -i config.dat -b building_blocks.dat -o "+directory.value)
                 
-                statistics_heading=widgets.HTML(value="""<font color=crimson><font size=5><b><u>Statistics</font>""")
+                statistics_heading=widgets.HTML(value="""<font color=blue><font size=5><b><u>Statistics</font>""")
                 display(statistics_heading)
                 statistics_intro=widgets.HTML(""" Generate Statistics of the generated library
                                     """,layout = widgets.Layout(height = '45px', width = '90%',size = '20'))
@@ -634,7 +634,7 @@ def generation_rules():
                 """This function gives a count of each building block in a molecule"""
                 from chemlg.feasibility import generate_statistics
                 generate_statistics()
-                feasibility_heading=widgets.HTML(value="""<font color=crimson><font size=5><b><u>Synthetic Feasibility</font>""")
+                feasibility_heading=widgets.HTML(value="""<font color=blue><font size=5><b><u>Synthetic Feasibility</font>""")
                 display(feasibility_heading)
                 feasibility_intro=widgets.HTML(""" Test the synthetic feasibility of the generated library molecules
                                     """,layout = widgets.Layout(height = '45px', width = '90%',size = '20'))

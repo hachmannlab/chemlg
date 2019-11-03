@@ -14,7 +14,9 @@ The ChemLG module is executed from the following command line:
 .. code:: bash
 
     chemlgshell -i ./config.dat -b ./building_blocks.dat -o ./output/
-    
+    # for parallel runs:
+    srun -n $SLURM_NPROCS --mpi=pmi2 chemlgshell -i config.dat -b building_blocks.dat -o ./    
+
 The file names used above are the default values that the program looks for. The -o handle is used to specify the output directory where all the output files will be dumped. As seen from the command line above, the user should provide two input files:
 
 - a file with the configuration/rules for generating the library with the -i handle
