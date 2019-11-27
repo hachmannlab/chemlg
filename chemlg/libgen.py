@@ -716,10 +716,10 @@ def get_fusion_index(molc, mol_type):
     atoms = list(mol.atoms)
     atom_pair_list, can_list, substitutions = [], [], defaultdict(list)
     for atom in atoms:
-        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
-        if hcount == 0:
-            continue
         index = atom.OBAtom.GetIdx()
+        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
+        if hcount == 0 or not mol.OBMol.GetAtom(index).IsInRing():
+            continue
         # look for 1st alpha atom
         for neighbor in OBAtomAtomIter(mol.OBMol.GetAtom(index)):
             neigbor_hcount = neighbor.ExplicitHydrogenCount() + neighbor.ImplicitHydrogenCount()
@@ -1045,8 +1045,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         if rank == 0:
             if not os.path.exists(output_dir + lib_name + '_' + outfile_type):
                 os.makedirs(output_dir + lib_name + '_' + outfile_type)
-            outdata = output_dir + lib_name + outfile_type + "/final_smiles.csv"
-            # outfile = open(outdata, "w")
+            outdata = output_dir + lib_name + '_' + outfile_type + "/final_smiles.csv"
             print_l('Writing SMILES to file \''+outdata+'\'\n', output_dir, mpidict)
             # scipy.savetxt(outfile, df_final_list['reverse_smiles'].values, fmt='%s')
             df_new = df_final_list['reverse_smiles'].copy()
@@ -1057,8 +1056,8 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         print_l('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir, mpidict)
         smiles_to_scatter = []
         if rank == 0:
-            if not os.path.exists(output_dir + lib_name + outfile_type):
-                os.makedirs(output_dir + lib_name + outfile_type)
+            if not os.path.exists(output_dir + lib_name + '_' + outfile_type):
+                os.makedirs(output_dir + lib_name + '_' + outfile_type)
             smiles_to_scatter=[]
             for i in range(mpisize):
                 start = int(i*(len(final_list))/mpisize)
@@ -1080,15 +1079,15 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         if end+1 == final_list_len:
             ratio_e = ratio_e+1
         for i in range(ratio_s,ratio_e):
-            if not os.path.exists(output_dir + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf)):
-                os.makedirs(output_dir + lib_name + outfile_type+"/"+str(i+1)+"_"+str(max_fpf))
+            if not os.path.exists(output_dir + lib_name + '_' + outfile_type+"/"+str(i+1)+"_"+str(max_fpf)):
+                os.makedirs(output_dir + lib_name + '_' + outfile_type+"/"+str(i+1)+"_"+str(max_fpf))
 
         folder_no = ratio_s+1
         for i, val in enumerate(range(start,end+1)):
             mol_ob = pybel.readstring("smi", smiles_list[i]['reverse_smiles'])
             mymol = pybel.readstring("smi", mol_ob.write("can"))
             mymol.make3D(forcefield='mmff94', steps=50)
-            mymol.write(outfile_type, output_dir + lib_name +outfile_type+"/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+outfile_type,overwrite=True)
+            mymol.write(outfile_type, output_dir + lib_name + '_' + outfile_type+"/"+str(folder_no)+"_"+str(max_fpf)+"/"+str(val+1)+"."+outfile_type,overwrite=True)
 
             if (val+1)%max_fpf == 0:
                 folder_no = folder_no+1
