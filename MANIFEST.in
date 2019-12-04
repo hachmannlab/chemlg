@@ -1,6 +1,9 @@
 recursive-include chemlg/templates/ *
+recursive-include tests/libgen/input_files/ *
 
 include setup.py
 include README.md
 include LICENSE
 include MANIFEST.in
+include chemlg/templates/
+include tests/libgen/input_files/

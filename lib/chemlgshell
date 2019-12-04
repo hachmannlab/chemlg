@@ -34,4 +34,4 @@ input_file = args.input_file
 bb_file = args.building_blocks_file
 output_dir = args.output_dir
 
-library_generator(config_file=input_file, building_blocks_file=bb_file, output_dir=output_dir)
+a = library_generator(config_file=input_file, building_blocks_file=bb_file, output_dir=output_dir)

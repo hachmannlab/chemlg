@@ -1,0 +1,8 @@
+Batch run = True
+1. fitness = (('max', 0.01),)
+2. crossover_size = 6
+3. mutation_size = 4
+4. algorithm = 2
+5. generations = 1
+6. Initial population ratio (for algorithm 3 only) = 0.4
+7. Crossover population ratio (for algorithm 3 only) = 0.3

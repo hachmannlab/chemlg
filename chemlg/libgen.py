@@ -10,6 +10,10 @@ import os
 from itertools import chain
 import pandas as pd
 import time
+import itertools
+import random
+import math
+from copy import deepcopy
 
 
 class OutputGrabber(object):
@@ -172,7 +176,7 @@ def check_building_blocks(smiles, line, file_name, output_dir, mpidict):
 
     if inchi_bb == False and smiles_bb == False:
         tmp_str = 'Error: The SMILES/InChI string(\'{}\') provided in line {} of data file \'{}\' is not valid. Please provide correct SMILES/InChI.'.format(smiles,line,file_name)
-        print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong molecule description.")
+        log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong molecule description.", error=True)
     else:
         return smiles
 
@@ -198,7 +202,7 @@ def get_rules(config_file, output_dir, mpidict):
     for i,line in enumerate(config_file):
         if i == 0:
             continue
-        print_l(line[:-1], output_dir, mpidict)
+        log_error(line[:-1], output_dir, mpidict)
 
         if '==' in line:
             words = line.split('==')
@@ -210,7 +214,7 @@ def get_rules(config_file, output_dir, mpidict):
             elif i == 1:
                 if not isinstance(eval(value), tuple):
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                    log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.", error=True)
                 rules_dict['include_bb'] = [i.strip() for i in eval(value)]
                 continue
                 
@@ -219,7 +223,7 @@ def get_rules(config_file, output_dir, mpidict):
                     rules_dict['heteroatoms'] = eval(value)
                 else:
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                    log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.", error=True)
                 continue
         
             elif i == 12:
@@ -229,7 +233,7 @@ def get_rules(config_file, output_dir, mpidict):
                     continue
                 else:
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
-                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                    log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.", error=True)
                 continue
 
             elif i == 13: # This rule is for fingerprint matching
@@ -254,7 +258,7 @@ def get_rules(config_file, output_dir, mpidict):
                 if value != 'True' and value != 'False':
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
                     tmp_str = tmp_str+"Provide either True or False. \n"
-                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                    log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.", error=True)
                 
                 if value == 'False':
                     rules_dict['bb_final_lib'] = False
@@ -267,7 +271,7 @@ def get_rules(config_file, output_dir, mpidict):
                 if not isinstance(eval(value), tuple) or len(eval(value)) != 2:
                     tmp_str = "ERROR: Wrong generation rule provided for "+line
                     tmp_str = tmp_str+"Provide the range in tuple format (min, max). \n"
-                    print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.")
+                    log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong generation rule.", error=True)
                 
                 else:
                     rules_dict[str(i)] = eval(value)
@@ -278,6 +282,52 @@ def get_rules(config_file, output_dir, mpidict):
             lib_args.append(value)
 
     return rules_dict, lib_args
+
+def parse_ga(config_file, output_dir, mpidict):
+    """ 
+    Function to read parameters for genetic algorithm.
+        
+    Parameters
+    ----------
+    config_file: file handle
+
+    Returns
+    -------
+    params: list
+        ['fitness', 'crossover_size', 'mutation_size', 'algorithm', 'generations', 'Initial population ratio', 'Crossover population ratio']
+    """
+    params = []
+    param_list = ['Batch run', 'fitness', 'crossover_size', 'mutation_size', 'algorithm', 'generations', 'Initial population ratio', 'Crossover population ratio']
+    lines = config_file.readlines()
+
+    for ind, i in enumerate(lines):
+        if param_list[ind] not in i or len(lines) > len(param_list):
+            log_error('Error: Incorrect config file provided for genetic algorithm', output_dir, mpidict, error=True)
+        
+        value = i.split('=')[1].strip()
+        
+        if ind == 0:
+            if value.lower() == 'false': params.append(False)
+            elif value.lower() == 'true': params.append(True)
+            else: log_error('Error: Incorrect option for ' + param_list[ind] + ' provided for genetic algorithm', output_dir, mpidict, error=True)
+
+        elif ind == 1:
+            if not isinstance(eval(value), tuple):
+                log_error('Error: Incorrect format for fitness value provided for genetic algorithm', output_dir, mpidict, error=True)
+            else: 
+                params.append(eval(value))
+        else:
+            if not (isinstance(eval(value), int), isinstance(eval(value), float)):
+                log_error('Error: Incorrect format for ' + param_list[ind] + ' provided for genetic algorithm', output_dir, mpidict, error=True)
+            else: 
+                params.append(eval(value))
+    
+    if None in params:
+        log_error('Error: Values cannot be None in config file for genetic algorithm', output_dir, mpidict, error=True)
+    
+    for i, j in zip(params, param_list):
+        log_error(str(j) + ': ' + str(i), output_dir, mpidict)
+    return params
 
 def lipinski(mol):
     """
@@ -327,50 +377,22 @@ def unique_structs(mol, smarts):
     num_unique_matches = len(smarts.findall(mol))
     return num_unique_matches
 
-def print_l(sentence, output_dir, mpidict):
-    """Print to logfile.
-
-    Parameters
-    ----------
-    sentence: str
-        string to be printed to logfile
-
-    Returns
-    -------
-
-    """
+def log_error(sentence, output_dir, mpidict, msg="Aborting the run", error=False):
+    """ Print to both error file and logfile and then exit code. """
     rank = mpidict['rank']
     if rank == 0:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
         print(sentence)
-        logfile.write(str(sentence)+"\n")
-
-def print_le(sentence, output_dir, mpidict, msg="Aborting the run"):
-    """Print to both error file and logfile and then exit code.
-
-    Parameters
-    ----------
-    sentence: str
-        string to be printed to error file and logfile
-
-    Returns
-    -------
-
-    """
-    rank = mpidict['rank']
-    if rank == 0:
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        logfile = open(os.path.join(output_dir+'/logfile.txt'),'a')
-        error_file = open(os.path.join(output_dir+'/error_file.txt'),'a')
-        print(sentence)
-        logfile.write(sentence+"\n")
-        error_file.write(sentence+"\n")
-        sys.exit(msg)
-    else:
-        sys.exit()
+        logfile.write(str(sentence) + "\n")
+    if error:
+        if rank == 0:
+            error_file = open(os.path.join(output_dir+'/error_file.txt'),'a')
+            error_file.write(str(sentence) + "\n")
+            sys.exit(msg)
+        else:
+            sys.exit()
 
 def if_add(molc, rules, code, check_min=False):
     """
@@ -861,7 +883,7 @@ def generator(init_mol_list, gen_len, rules_dict, output_dir, mpidict):
     library = []
     library.append(init_mol_list)
     for gen in range(gen_len):
-        print_l("\nGeneration " + str(gen+1), output_dir, mpidict)
+        log_error("\nGeneration " + str(gen+1), output_dir, mpidict)
         prev_gen_mol_list = library[gen]
         lib_temp, new_gen_mol_list = [], []
         
@@ -919,15 +941,15 @@ def generator(init_mol_list, gen_len, rules_dict, output_dir, mpidict):
             if comm is not None:
                 lib_temp = list(chain.from_iterable(lib_temp))
             library.append(lib_temp)
-            print_l('Total molecules generated: '+str(len(lib_temp)), output_dir, mpidict)
+            log_error('Total molecules generated: '+str(len(lib_temp)), output_dir, mpidict)
             if isinstance(duplicates, list): duplicates = sum(duplicates)
-            print_l('Duplicates removed: '+str(duplicates)+'\n\n', output_dir, mpidict)
+            log_error('Duplicates removed: '+str(duplicates)+'\n\n', output_dir, mpidict)
         if comm is not None:
             library = comm.bcast(library, root=0)
     
     return library[-1]
 
-def library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./'):
+def library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./', genetic_algorithm_config=None, cost_function=None, fitnesses_list=None):
     """Main wrapper function for library generation.
     Generates the library based on the two input files: building_blocks.dat and config.dat
     Output: 
@@ -959,7 +981,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         rank = 0
         mpisize = 1
         mpidict = {'comm': comm, 'rank': rank, 'mpisize': mpisize}
-        print_l("Warning: MPI4PY not found. ChemLG not running in parallel.\n\n", output_dir, mpidict)
+        log_error("Warning: MPI4PY not found. ChemLG not running in parallel.\n\n", output_dir, mpidict)
         
     
     txt = "\n\n\n============================================================================================================"
@@ -971,17 +993,17 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     txt += "With contributions by: \nJanhavi Abhay Dudwadkar (UB): Jupyter GUI\n\n"
     txt += "ChemLG is based upon work supported by the U.S. National Science Foundation under grant #OAC-1751161. \nIt was also supported by start-up funds provided by UB's School of Engineering and Applied Science and \nUB's Department of Chemical and Biological Engineering, the New York State Center of Excellence in Materials Informatics \nthrough seed grant #1140384-8-75163, and the U.S. Department of Energy under grant #DE-SC0017193."
     txt += "\n\nChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. \nChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause). \n\n\n"
-    print_l(txt, output_dir, mpidict)
-    print_l("===================================================================================================", output_dir, mpidict)
+    log_error(txt, output_dir, mpidict)
+    log_error("===================================================================================================", output_dir, mpidict)
     
     try :
         rulesFile = open(config_file)
     except:
         tmp_str = "Config file does not exist. "
         tmp_str += "Please provide correct config file.\n"
-        print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong file.")
-    print_l("Reading generation rules", output_dir, mpidict)
-    print_l("===================================================================================================", output_dir, mpidict)
+        log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong file.", error=True)
+    log_error("Reading generation rules", output_dir, mpidict)
+    log_error("===================================================================================================", output_dir, mpidict)
     rules_dict, args = get_rules(rulesFile, output_dir, mpidict)
     BB_file = building_blocks_file
     gen_len, outfile_type, max_fpf, lib_name = args
@@ -991,15 +1013,15 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
 
     ## Reading the building blocks from the input file
     initial_mols = []
-    print_l("===================================================================================================", output_dir, mpidict)
-    print_l("Reading building blocks from the file "+BB_file, output_dir, mpidict)
-    print_l("===================================================================================================", output_dir, mpidict)
+    log_error("===================================================================================================", output_dir, mpidict)
+    log_error("Reading building blocks from the file "+BB_file, output_dir, mpidict)
+    log_error("===================================================================================================", output_dir, mpidict)
     try :
         infile = open(BB_file)
     except:
         tmp_str = "Building blocks file "+BB_file+" does not exist. "
         tmp_str = tmp_str+"Please provide correct building blocks file.\n"
-        print_le(tmp_str, output_dir, mpidict, "Aborting due to wrong file.")
+        log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong file.", error=True)
     i_smi_list = []
     for i,line in enumerate(infile):
         smiles = line.strip()
@@ -1019,18 +1041,59 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             initial_mols.append(temp)
             i_smi_list.append(temp['can_smiles'])
 
-    print_l('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', output_dir, mpidict)
-    print_l('unique SMILES: ', output_dir, mpidict)
-    print_l(i_smi_list, output_dir, mpidict)
-    
+    log_error('Number of buidling blocks provided = '+str(len(initial_mols))+'\n', output_dir, mpidict)
+    log_error('unique SMILES: ', output_dir, mpidict)
+    log_error(i_smi_list, output_dir, mpidict)
+
+    # run genetic algorithm
+    if genetic_algorithm_config is not None:
+        if cost_function is None and fitnesses_list is None:
+            log_error("Missing input for genetic algorithm. Provide either cost function or fitnesses_list. Aborting", output_dir, mpidict, error=True)
+        if cost_function is not None and fitnesses_list is not None:
+            log_error("Cannot provide both cost function and fitnesses. Decide whether you wish to run genetic algorithm in batch mode (provide fitnesses_list) or continuous (provvide cost function). Aborting", output_dir, mpidict, error=True)
+        if mpidict['mpisize'] > 1:
+            log_error("Running genetic algorithm parallel on multiple cores. THIS IS NOT REQUIRED, instead parallelize the cost function only.", output_dir, mpidict)
+        try :
+            ga_config = open(genetic_algorithm_config)
+        except:
+            tmp_str = "Config file for genetic algorithm does not exist. "
+            tmp_str += "Please provide correct config file.\n"
+            log_error(tmp_str, output_dir, mpidict, "Aborting due to wrong file.", error=True)
+        log_error("Reading parameters for genetic algorithm", output_dir, mpidict)
+        log_error("===================================================================================================", output_dir, mpidict)
+        batch, fitness, crossover_size, mutation_size, algorithm, generations, init_ratio, crossover_ratio = parse_ga(ga_config, output_dir, mpidict)
+        
+        ga_libgen = GeneticAlgorithm(evaluate=cost_function,
+                            fitness=fitness,
+                            crossover_size=crossover_size,
+                            mutation_size=mutation_size,
+                            algorithm=algorithm,
+                            initial_mols=initial_mols,
+                            rules_dict=rules_dict,
+                            output_dir=output_dir,
+                            mpidict=mpidict
+                            )
+
+        if not batch:
+            if cost_function is None:
+                log_error("Missing input for genetic algorithm. Provide cost function. Aborting", output_dir, mpidict, error=True)
+            ga_libgen.search(n_generations=generations, init_ratio=init_ratio, crossover_ratio=crossover_ratio)
+
+        else:
+            if fitnesses_list is None:
+                log_error("Missing input for genetic algorithm. Provide fitnesses_list. Aborting", output_dir, mpidict, error=True)
+            ga_libgen.batch(fitnesses_list)
+        
+        return ga_libgen
+
 
     # Generate molecules
-    print_l('\n\n\n\n\n===================================================================================================', output_dir, mpidict)
-    print_l('Generating molecules', output_dir, mpidict)
-    print_l('===================================================================================================\n', output_dir, mpidict)
+    log_error('\n\n\n\n\n===================================================================================================', output_dir, mpidict)
+    log_error('Generating molecules', output_dir, mpidict)
+    log_error('===================================================================================================\n', output_dir, mpidict)
     final_list = generator(initial_mols, gen_len, rules_dict, output_dir, mpidict)
-    print_l('Total number of molecules generated = '+str(len(final_list))+'\n\n\n\n\n', output_dir, mpidict)
-    print_l("===================================================================================================\n\n\n", output_dir, mpidict)
+    log_error('Total number of molecules generated = '+str(len(final_list))+'\n\n\n\n\n', output_dir, mpidict)
+    log_error("===================================================================================================\n\n\n", output_dir, mpidict)
 
     
     # Generating csv file of final library
@@ -1046,14 +1109,14 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             if not os.path.exists(output_dir + lib_name + '_' + outfile_type):
                 os.makedirs(output_dir + lib_name + '_' + outfile_type)
             outdata = output_dir + lib_name + '_' + outfile_type + "/final_smiles.csv"
-            print_l('Writing SMILES to file \''+outdata+'\'\n', output_dir, mpidict)
+            log_error('Writing SMILES to file \''+outdata+'\'\n', output_dir, mpidict)
             # scipy.savetxt(outfile, df_final_list['reverse_smiles'].values, fmt='%s')
             df_new = df_final_list['reverse_smiles'].copy()
             df_new.to_csv(outdata, index=False, header=False)
         
     # Creating a seperate output file for each molecule. Files are written to folder with specified no. of files per folder.
     else:
-        print_l('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir, mpidict)
+        log_error('Writing molecules with molecule type '+str(outfile_type)+'\n', output_dir, mpidict)
         smiles_to_scatter = []
         if rank == 0:
             if not os.path.exists(output_dir + lib_name + '_' + outfile_type):
@@ -1092,9 +1155,608 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
             if (val+1)%max_fpf == 0:
                 folder_no = folder_no+1
         
-    print_l('File writing terminated successfully.'+'\n', output_dir, mpidict)
+    log_error('File writing terminated successfully.'+'\n', output_dir, mpidict)
     if comm is not None: wt2 = MPI.Wtime()
     else: wt2 = time.time()
-    print_l('Total time_taken: ' + str('%.3g'%(wt2-wt1))+ '\n', output_dir, mpidict)
-    sys.stderr.close()
-    sys.exit()
+    log_error('Total time_taken: ' + str('%.3g'%(wt2-wt1))+ '\n', output_dir, mpidict)
+    # sys.stderr.close()
+    return None
+
+
+class building_blocks(object):
+    """A class for each of the building blocks that are read from the building blocks file.
+    Class Variables are created for smiles, molecule code, number of atoms, list of indices of potential sites for reaction and the number of such sites.
+
+    Parameters
+    ----------
+    mol: dict
+        dict object created from the molecule function
+
+    Returns
+    -------
+
+    """
+    def __init__(self, mol):
+        self.smiles = mol['reverse_smiles']
+        self.smiles_struct = mol['code']
+        mol_ob = pybel.readstring("smi", mol['reverse_smiles'])
+        self.atom_len = len(list(mol_ob.atoms))
+        self.index_list = get_index_list(mol, list(mol_ob.atoms)) 
+        self.spaces = len(self.index_list)
+
+class GeneticAlgorithm(object):
+    """
+            A genetic algorithm class for search or optimization problems, built on top of the
+            Distributed Evolutionary Algorithms in Python (DEAP) library. There are three algorithms with different genetic
+            algorithm selection methods. The documentation for each method is mentioned in the documentation for the search module.
+
+            Parameters
+            ----------
+            evaluate: function
+                The objective function that has to be optimized. The first argument of the function is an pybel object of a molecule. Objective function should return a tuple of desired target properties.
+
+            fitness: tuple of tuple(s),
+                A tuple of tuples for describing desired target properties. For each target property, tuple contains 2 values, the required optima and the cutoff value. For 'max' optima, the cutoff is the lower acceptable limit. For 'min' optima, the cutoff is the maximum allowed value for that property. Ex: (('max', 5.6), ('min', 20))
+
+            bb_file: str,
+                Path to the building blocks file
+
+            config_file: str,
+                Path to the config file for generating the library
+
+            output_dir: str, default = './'
+                Path to the output directory.
+
+            crossover_size: int, optional (default = 50)
+                size of crossover population
+
+            mutation_size: integer, optional (default = 50)
+                size of mutation population. Sum of crossover and mutation population is the total size of population generated in each generation.
+
+            algorithm: int, optional (default=1)
+                The algorithm to use for the search. Algorithm descriptions are in the documentation for the search method.
+
+            """
+
+    def __init__(self, 
+                evaluate,
+                fitness,
+                crossover_size,
+                mutation_size,
+                algorithm,
+                initial_mols,
+                rules_dict,
+                output_dir,
+                mpidict):
+
+        self.evaluate = evaluate
+        self.algo = algorithm
+        self.population, self.fit_list = None, ()
+        self.crossover_size = int(crossover_size)
+        self.mutation_size = int(mutation_size)
+        self.fit_val = []
+        self.pop_size = self.crossover_size + self.mutation_size
+        self.output_dir = output_dir
+        for i in fitness:
+            if i[1] == 0:
+                log_error("Cutoff values in the fitness cannot be zero.", output_dir, mpidict, error=True)
+            if i[0].lower() == 'max': self.fit_val.append((1, i[1]))
+            else: self.fit_val.append((-1, i[1]))
+
+        
+        # create building blocks class objects for each validated molecule and store them in a list. 
+        self.bb = [building_blocks(i) for i in initial_mols]
+        self.rules_dict = rules_dict
+
+    def pop_generator(self, n):
+        pop = []
+        for _ in range(n):
+            pop.append(tuple(self.chromosome_generator()))
+        return pop
+
+    def chromosome_generator(self):
+        """Generates the chromosome for the algorithm, after reading and validating the molecules from the building blocks file. 
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """   
+        i = 0
+        chromosome = []
+        ind_len = random.randint(2, 5)
+        while i < ind_len:
+            if i == 0:
+                r = random.randint(0, len(self.bb) - 1)             # randomly select building block
+                chromosome.append(self.bb[r].smiles_struct)
+                for j in range(self.bb[r].spaces):
+                    chromosome.append([])
+            else:
+                avl_pos = count_list(chromosome)[0]
+                if len(avl_pos) <= 0:
+                    return chromosome
+                r = random.randint(0, len(avl_pos) - 1)                 # random number for selecting handle of 1st bb
+                s = random.randint(0, len(self.bb) - 1)                 # random number for selecting bb
+                t = random.randint(1, self.bb[s].spaces)                # random number for selecting handle of 2nd bb
+                nested_lookup(chromosome, avl_pos[r]).append(self.bb[s].smiles_struct)
+                for j in range(self.bb[s].spaces):
+                    if (j+1) != t:
+                        nested_lookup(chromosome, avl_pos[r]).append([])
+                    else:
+                        nested_lookup(chromosome, avl_pos[r]).append(['C'])
+                
+            i += 1
+
+        return deepcopy(chromosome)
+
+    def list_to_smiles(self, indi_list):
+        """The function converts the lists of lists generated by the algorithm to actual molecules.
+
+        Parameters
+        ----------
+        indi_list: list,
+            individual received from the algorithm.
+
+        Returns
+        -------
+        mol_combi: str,
+            canonical smiles of the molecule
+        """
+        mol_code_list, parent_list, handle_list, mol_combi, mol_len = [], [], [], '', 0
+        f_lists = count_list(indi_list)[1]
+
+        # parent list: [list, sublist, index of sublist in list]
+        parent_list.append([indi_list, indi_list, -100])
+        while len(parent_list)!= 0:
+            # iterate over new sublist
+            iterate_over = parent_list[-1][1]
+            new_item = False
+            for k_ind, k in enumerate(iterate_over):
+                # continue for loop if item already traversed
+                if k_ind <= parent_list[-1][2]: continue
+
+                if not isinstance(k, list):
+                    for mol_objs in self.bb:
+                        if mol_objs.smiles_struct == k:
+                            new_mol_smi = mol_objs.smiles
+                            mol_len += mol_objs.atom_len
+                            break
+                    mol_combi = mol_combi + new_mol_smi + '.'
+                    if iterate_over == indi_list: nested_ind = -50
+                    else:
+                        iterate_over.insert(0, 'AB')
+                        for fl in f_lists:
+                            if nested_lookup(indi_list, fl) == iterate_over:
+                                nested_ind = fl
+                                break
+                        del iterate_over[0]
+                    # mol_code_list: [current sublist's molecule code, cumulative sum of atoms of all building blocks encountered so far, nested indices of current sublist]
+                    mol_code_list.append((k, mol_len, nested_ind))
+                    
+                else:
+                    if k:
+                        if k[0] == 'C':
+                            handle_2 = k_ind
+                            handle_1 = parent_list[-2][2]
+                            for mol_objs in self.bb:
+                                if mol_objs.smiles_struct == parent_list[-1][0][0]:
+                                    handle_1 = mol_objs.index_list[handle_1 - 1]
+                                if mol_objs.smiles_struct == parent_list[-1][1][0]:
+                                    handle_2 = mol_objs.index_list[handle_2 - 1]
+                            
+                            # get the index numbers for both handles by checking the molecule codes and their list indices.
+                            for ind, mcl in enumerate(mol_code_list):
+                                if mcl[2] == -50:
+                                    continue
+                                if mcl[0] == parent_list[-1][0][0]:
+                                    parent_list[-1][0][0] += 'WW'
+                                    if 'WW' in nested_lookup(indi_list, mcl[2])[0]: 
+                                        handle_1 += mol_code_list[ind-1][1]
+                                    parent_list[-1][0][0] = parent_list[-1][0][0][:-2]
+                                
+                                if mcl[0] == parent_list[-1][1][0]:
+                                    parent_list[-1][1][0] += 'XX'
+                                    if 'XX' in nested_lookup(indi_list, mcl[2])[0]:
+                                        handle_2 += mol_code_list[ind-1][1]
+                                    parent_list[-1][1][0] = parent_list[-1][1][0][:-2]
+                                    
+                            # append the handle indices to a list
+                            handle_list.append([handle_1, handle_2])
+                        else:
+                            parent_list[-1][2] = k_ind
+                            parent_list.append([iterate_over, k, -100])
+                            new_item = True
+                            break
+            if not new_item:
+                del parent_list[-1]
+                
+        # read the collected smiles into pybel
+        mol_combi = pybel.readstring('smi', mol_combi)
+        # create bonds for each of the handles in handle_list
+        for handles in handle_list:
+            mol_combi.OBMol.AddBond(handles[0], handles[1], 1)
+        for atom in list(mol_combi.atoms):
+            ## Removing Francium and Radium atoms
+            if atom.OBAtom.GetAtomicNum() == 87 or atom.OBAtom.GetAtomicNum() == 88:
+                atom.OBAtom.SetAtomicNum(1)
+        mol_combi = mol_combi.write("can")
+        return mol_combi
+
+    def pre_eval(self, indi_list):
+        """Pre-processes the individuals/chromosomes before sending them to the evaluate function. 
+
+        Parameters
+        ----------
+        indi_list: list,
+            individual received from the algorithm.
+
+        Returns
+        -------
+        fit_val: float,
+            fitness value of the individual
+
+        """
+        mol_combi_smiles = self.list_to_smiles(deepcopy(list(indi_list)))
+        mol_combi = pybel.readstring("smi", mol_combi_smiles)
+
+        if not if_add(mol_combi_smiles, self.rules_dict, code='a'): 
+            return mol_combi_smiles, None
+        else:
+            fit_val = self.evaluate(mol_combi)
+            if isinstance(fit_val, (tuple, list)): return mol_combi_smiles, tuple(fit_val)
+            else: return mol_combi_smiles, tuple([fit_val])
+        
+    def crossover(self, child1, child2):
+        child1, child2 = deepcopy(list(child1)), deepcopy(list(child2))
+        c1 = count_list(child1)[1]
+        c2 = count_list(child2)[1]
+        if not (len(c1)==0 or len(c2)==0):
+            r1 = random.randint(0, len(c1) - 1)
+            r2 = random.randint(0, len(c2) - 1)
+            t1 = nested_lookup(child1, c1[r1])                          # pick and store a list randomly from child 1
+            t2 = nested_lookup(child2, c2[r2])                          # pick and store a list randomly from child 2
+            if len(c1[r1]) > 1:
+                del nested_lookup(child1, c1[r1][:-1])[c1[r1][-1]]
+                nested_lookup(child1, c1[r1][:-1]).insert(c1[r1][-1], deepcopy(t2))
+            else:
+                del child1[c1[r1][0]]
+                child1.insert(c1[r1][0], deepcopy(t2))
+
+            if len(c2[r2]) > 1:
+                del nested_lookup(child2, c2[r2][:-1])[c2[r2][-1]]
+                nested_lookup(child2, c2[r2][:-1]).insert(c2[r2][-1], deepcopy(t1))
+            else:
+                del child2[c2[r2][0]]
+                child2.insert(c2[r2][0], deepcopy(t1))
+        return tuple(deepcopy(child1)), tuple(deepcopy(child2))
+
+    def custom_mutate(self, indi):
+        indi = deepcopy(list(indi))
+        t = ['add', 'del', 'replace']
+        random.shuffle(t)
+        for i in t:
+            if i == 'add':                                                          # add a block randomly
+                c = count_list(indi)[0]
+                if not c:
+                    continue
+                else:
+                    r = random.randint(0, len(c) - 1)                               # random number for selecting empty handle
+                    s = random.randint(0, len(self.bb)-1)                           # random number for selecting which bb to insert
+                    t = random.randint(1, self.bb[s].spaces)                        # random number for selecting which handle to connect to in the new bb
+                    nested_lookup(indi, c[r]).append(self.bb[s].smiles_struct)
+                    for j in range(self.bb[s].spaces):
+                        if (j+1) != t:
+                            nested_lookup(indi, c[r]).append([])
+                        else:
+                            nested_lookup(indi, c[r]).append(['C'])
+                    break
+            elif i == 'del':                                                        # delete a block randomly
+                c = count_list(indi)[1]
+                r = random.randint(0, len(c) - 1)
+                if not c or len(c[r]) < 2: continue
+                del nested_lookup(indi, c[r])[:]
+                break
+            else:                                                                   # replace a block randomly
+                c = count_list(indi)[1]
+                r = random.randint(0, len(c) - 1)
+                while isinstance(nested_lookup(indi, c[r])[0], list):
+                    c[r].append(0)
+                old_block_code = nested_lookup(indi, c[r])[0]
+                for x in self.bb:
+                    if x.smiles_struct == old_block_code: old_block = x
+                s = random.randint(0, len(self.bb)-1)
+                new_block = self.bb[s]
+                nested_lookup(indi, c[r])[0] = new_block.smiles_struct
+                diff = old_block.spaces - new_block.spaces
+                if diff < 0:
+                    for _ in range(-diff):
+                        nested_lookup(indi, c[r]).append([])
+                elif diff > 0:
+                    tmp = deepcopy(nested_lookup(indi, c[r])[1:])
+                    del nested_lookup(indi, c[r])[1:]
+                    nested_lookup(indi, c[r]).append(['C'])
+                    for i in range(new_block.spaces-1): nested_lookup(indi, c[r]).append(random.choice(tmp))
+                                                    
+                break
+        return tuple(deepcopy(indi))
+
+    def select(self, population, fit_list, num, choice="Roulette"):
+        epop, efits = [i[0] for i in fit_list], [i[1] for i in fit_list]
+        o_fits = [efits[epop.index(i)] for i in population]
+
+        df_fits = pd.DataFrame(o_fits)
+        # calculate distance from cut-offs
+        weights = pd.DataFrame([df_fits[i] / self.fit_val[i][1] for i in range(df_fits.shape[1])]).T
+        # get weighted objective function values based on max/min
+        df_fits = df_fits * (weights.values ** [i[0] for i in self.fit_val])
+        # scale all values in range 1-2
+        df2 = [((df_fits[i] - df_fits[i].min()) / (df_fits[i].max() - df_fits[i].min())) + 1 for i in range(df_fits.shape[1])]
+        # inverse min columns
+        df2 = pd.DataFrame([df2[i]**self.fit_val[i][0] for i in range(len(df2))]).T
+        # rescale all values in range 1-2
+        df2 = pd.DataFrame([((df2[i] - df2[i].min()) / (df2[i].max() - df2[i].min())) + 1 for i in range(df2.shape[1])])
+        
+        fitnesses = list(df2.sum())
+
+        if choice == "Roulette":
+            total_fitness = float(sum(fitnesses))
+            rel_fitness = [f/total_fitness for f in fitnesses]
+            # Generate probability intervals for each individual
+            probs = [sum(rel_fitness[:i+1]) for i in range(len(rel_fitness))]
+            # Draw new population
+            new_population = []
+            for _ in range(num):
+                r = random.random()
+                for i, individual in enumerate(population):
+                    if r <= probs[i]:
+                        new_population.append(deepcopy(individual))
+                        break
+            return new_population
+        else:
+            fits_sort = sorted(fitnesses, reverse=True)
+            best = [deepcopy(population[fitnesses.index(fits_sort[i])]) for i in range(min(num, len(population)))]
+            return best
+    
+    def batch(self, fit_list):
+        """Function to run genetic algorithm in batch mode. It writes to file a list of new individuals that are to be evaluated. If running for the first time, fit_list should be an empty tuple.
+
+        Parameters
+        ----------
+        fit_list: tuple,
+            tuple of lists: (GA individual, fitness, rev_smiles)
+            formatted with the proper data types for each value in list. Do not send strings.
+
+        """   
+        if len(fit_list) == 0:
+            pop = self.pop_generator(n=self.pop_size)       # list of tuples
+            pop_to_write = pop
+            
+        else:
+            total_pop = [i[0] for i in fit_list]
+            # Select the next generation individuals
+            pop = self.select(total_pop, fit_list, self.pop_size, choice="best")
+            
+            cross_pop, mutant_pop, co_pop = [], [], []
+            # Generate crossover population
+            co_pop = self.select(pop, fit_list, self.crossover_size)
+            shflist = pop + total_pop
+            random.shuffle(shflist)
+            c_total = co_pop + shflist
+            for child1, child2 in zip(c_total[::2], c_total[1::2]):
+                if len(cross_pop) >= self.crossover_size: break
+                c1, c2 = self.crossover(child1, child2)
+                epop = [i[0] for i in fit_list]
+                if c1 in epop or c2 in epop or c1==c2 or c1 in cross_pop or c2 in cross_pop: continue
+                cross_pop.extend([deepcopy(c1), deepcopy(c2)])
+            
+            # Generate mutation population
+            mu_pop = self.select(pop, fit_list, self.mutation_size)
+            for mutant in mu_pop + cross_pop + total_pop + pop:
+                if len(mutant_pop) >= self.mutation_size: break
+                mt = self.custom_mutate(mutant)
+                if mt in [i[0] for i in fit_list] or mt in mutant_pop: continue
+                mutant_pop.append(mt)
+            pop_to_write = cross_pop + mutant_pop
+            
+        with open('new_molecules.csv', 'w') as fl:
+            for mols in pop_to_write:
+                fl.write(str(mols) + ' , ' + str(self.list_to_smiles(list(mols))))
+                fl.write('\n')
+
+    def search(self, n_generations, init_ratio = 0.35, crossover_ratio = 0.35):
+        """
+        Algorithm 1:
+            Initial population is instantiated. 
+            Roulette wheel selection is used for selecting individuals for crossover and mutation.
+            The initial population, crossovered and mutated individuals form the pool of individuals from which the best
+            n members are selected as the initial population for the next generation, where n is the size of population.
+
+        Algorithm 2:
+            Same as algorithm 1 but when selecting individuals for next generation, n members are selected using Roulette wheel selection.
+
+        Algorithm 3:
+            Same as algorithm 1 but when selecting individuals for next generation, best members from each of the three pools (initital population, crossover and mutation) are selected according to the input parameters in the search method.
+
+        Algorithm 4:
+            Same as algorithm 1 but mutation population is selected from the crossover population and not from the parents directly.
+
+
+        Parameters
+        ----------
+        n_generations: integer, optional (default = 20)
+                An integer for the number of generations for evolving the population
+
+        early_stopping: int, optional (default=10)
+                Integer specifying the maximum number of generations for which the algorithm can select the same best individual, after which 
+                the search terminates.
+
+        init_ratio: float, optional (default = 0.4)
+            Fraction of initial population to select for next generation. Required only for algorithm 3.
+
+        crossover_ratio: float, optional (default = 0.3)
+            Fraction of crossover population to select for next generation. Required only for algorithm 3.
+
+        
+        Returns
+        -------
+        best_ind_df:  pandas dataframe
+            A pandas dataframe of best individuals of each generation
+
+        best_ind:  dict,
+            The best individual after the last generation.
+
+        """
+        def fit_eval(invalid_ind, fit_list):
+            epop, fit_list = [i[0] for i in fit_list], list(fit_list)
+            new_pop = []
+            if invalid_ind: 
+                invalid_ind = [i for i in invalid_ind if i not in epop]
+                obval = [self.pre_eval(i) for i in invalid_ind]
+                rev_smiles, fitnesses = [i[0] for i in obval], [i[1] for i in obval]
+                for ind, fit, r_smi in zip(invalid_ind, fitnesses, rev_smiles):
+                    if fit is not None:
+                        fit_list.append((deepcopy(ind), fit, r_smi))
+                        new_pop.append(deepcopy(ind))
+            return tuple(fit_list), new_pop
+
+        if init_ratio >=1 or crossover_ratio >=1 or (init_ratio+crossover_ratio)>=1: raise Exception("Sum of parameters init_ratio and crossover_ratio should be in the range (0,1)")
+        if self.population is not None:
+            pop = self.population
+            fit_list = self.fit_list
+        else:
+            pop = self.pop_generator(n=self.pop_size)       # list of tuples
+            fit_list = ()
+        
+        # Evaluate the initial population
+        fit_list, pop = fit_eval(pop, fit_list)
+
+        total_pop = []
+        for xg in range(n_generations):
+            cross_pop, mutant_pop, co_pop, psum = [], [], [], len(fit_list)
+            # Generate crossover population
+            co_pop = self.select(pop, fit_list, self.crossover_size)
+            shflist = pop + total_pop
+            random.shuffle(shflist)
+            c_total = co_pop + shflist
+            for child1, child2 in zip(c_total[::2], c_total[1::2]):
+                if (len(fit_list) - psum) >= self.crossover_size: break
+                c1, c2 = self.crossover(child1, child2)
+                epop = [i[0] for i in fit_list]
+                if c1 in epop or c2 in epop or c1==c2: continue
+                fit_list, new_cpop = fit_eval([c1, c2], fit_list)
+                cross_pop.extend(new_cpop)
+            
+            # Generate mutation population
+            if self.algo == 4:
+                mu_pop = self.select(cross_pop, fit_list, self.mutation_size)
+            else:
+                mu_pop = self.select(pop, fit_list, self.mutation_size)
+            
+            pre_mu = len(fit_list)
+            for mutant in mu_pop + cross_pop + total_pop + pop:
+                if (len(fit_list) - pre_mu) >= self.mutation_size: break
+                mt = self.custom_mutate(mutant)
+                if mt in [i[0] for i in fit_list]: continue
+                fit_list, new_mpop = fit_eval([mt], fit_list)
+                mutant_pop.extend(new_mpop)
+            
+            # Select the next generation individuals
+            total_pop = pop + cross_pop + mutant_pop
+            if self.algo == 2:
+                pop = self.select(total_pop, fit_list, self.pop_size)
+            elif self.algo == 3:
+                p1 = self.select(pop, fit_list, int(init_ratio*self.pop_size), choice="best")
+                p2 = self.select(cross_pop, fit_list, int(crossover_ratio*self.pop_size), choice="best")
+                p3 = self.select(mutant_pop, fit_list, self.pop_size-len(p1)-len(p2), choice="best")
+                pop = p1 + p2 + p3
+            else: pop = self.select(total_pop, fit_list, self.pop_size, choice="best")
+            
+            # Saving each generation
+            if xg==0:
+                df_gen = pd.DataFrame([i for i in fit_list])
+            else:
+                df_gen = pd.DataFrame([ i for i in fit_list[-(self.crossover_size+self.mutation_size):]])
+            df_gen = df_gen[[2, 1]]
+            df_gen.columns = ['Canonical SMILES', 'Fitness Values']
+            fname = '/generation_' + str(xg+1) + '.csv'
+            df_gen.to_csv(os.path.join(self.output_dir + fname), index=None)
+
+        self.population = pop    # stores best individuals of last generation
+        self.fit_list = fit_list
+
+def count_list(l):
+    """ Function to get the nested indices of empty and filled lists generated by genetic algorithm class.
+
+    Parameters
+    ----------
+    l: list,
+        nested list of list
+
+    Returns
+    -------
+    e_list_index: list,
+        the nested indices of empty lists
+    f_list_index: list,
+        the nested indices of filled/non-empty lists
+
+    """
+    
+    e_list_index, f_list_index, iterate_over = [], [], []
+    for e, g in zip(l, range(len(l))):
+        if isinstance(e, list):
+            if not e:
+                temp = [g]
+                e_list_index.append(temp)
+            else:
+                if e != ['C']:
+                    temp = [g]
+                    f_list_index.append(temp)
+                    iterate_over.append(e)
+
+    while len(iterate_over) != 0:
+        f_list = []
+        for x, prefactor in zip(iterate_over, f_list_index[-len(iterate_over):]):
+            if not f_list_index:
+                prefactor = []
+            for e, g in zip(x, range(len(x))):
+                if isinstance(e, list):
+                    if e == x:                                  # this is to check for self-referential lists
+                        e_list_index.append(prefactor + temp)
+                    else:
+                        if not e:
+                            temp = [g]
+                            e_list_index.append(prefactor + temp)
+                        else:
+                            if e != ['C']:
+                                temp = [g]
+                                f_list_index.append(prefactor + temp)
+                                f_list.append(e)
+
+        del iterate_over[:]
+        for items in f_list:
+            iterate_over.append(items)
+    return e_list_index, f_list_index
+
+def nested_lookup(n, idexs):
+    """Function to fetch a nested sublist given its nested indices.
+
+    Parameters
+    ----------
+    n: list,
+        the main list in which to look for the sublist
+
+    idexs: list,
+        the indices of the sublist 
+
+    Returns
+    -------
+    list: sublist with given indices
+
+    """
+
+    if len(idexs) == 1:
+        return n[idexs[0]]
+    return nested_lookup(n[idexs[0]], idexs[1:])
+

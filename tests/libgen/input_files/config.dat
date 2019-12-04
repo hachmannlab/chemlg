@@ -1,0 +1,24 @@
+Do not change the order of the generation rules below.
+1. Include building blocks                  == None
+2. Min and max no. of bonds                 == None
+3. Min and max no. of atoms                 == None
+4. Min and max mol.weight                   == None
+5. Min and max no. of rings                 == None
+6. Min and max no. of aromatic rings        == None
+7. Min and max no. of non-aromatic rings    == None
+8. Min and max no. of single bonds          == None
+9. Min and max no. of double bonds          == None
+10. Min and max no. of triple bonds         == None
+11. Max no. of specific atoms               == None
+12. Lipinski rule                           == False
+13. Fingerprint matching                    == None
+14. Substructure                            == None
+15. Substructure exclusion                  == None
+16. Include_BB                              == False
+
+
+Number of generations           :: 1
+Molecule format in output file  :: smi
+Maximum files per folder        :: 10000
+Library name                    :: new_library
+
