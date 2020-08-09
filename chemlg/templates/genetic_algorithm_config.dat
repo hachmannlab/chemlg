@@ -1,8 +1,8 @@
 Batch run = False
 1. fitness = None
-2. crossover_size = None
-3. mutation_size = None
-4. algorithm = None
+2. crossover_size = 50
+3. mutation_size = 50
+4. algorithm = 1
 5. generations = None
-6. Initial population ratio (for algorithm 3 only) = 0.4
-7. Crossover population ratio (for algorithm 3 only) = 0.3
+6. Initial population ratio (for algorithm 3 only) = 0.35
+7. Crossover population ratio (for algorithm 3 only) = 0.35

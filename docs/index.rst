@@ -15,14 +15,15 @@ ChemLG is a smart and massive parallel molecular library generator for chemical 
 
 Github Repository: https://github.com/hachmannlab/chemlg
 
-Program Version: 0.3
+Program Version: 0.9
 
-Release Date: July 4, 2019
+Release Date: Aug 20, 2020
 
 
 
 
 With contributions by:
+Gaurav Vishwakarma (UB): Genetic Algorithm, Code Redesign and Maintenance
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 
 
@@ -40,16 +41,11 @@ It is highly recommended that a virtual environment is used to run ChemLG. The v
 
     conda create --name my_chemlg_env python=3.6
     source activate my_chemlg_env
-    conda install -c openbabel openbabel
+    conda install -c conda-forge openbabel
     conda install -c anaconda mpi4py
     pip install chemlg
 
 
-You can test the installation with:
-
-.. code:: bash
-
-    pytest -v
 
 
 
@@ -88,8 +84,7 @@ License and Copyright
 
 ChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause).
 
-ChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
-(C) 2015-2019 Johannes Hachmann, Mohammad Atif Faiz Afzal
+ChemLG is copyright (C) 2015-2020 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
 University at Buffalo - The State University of New York (UB)
 
 Contact: hachmann@buffalo.edu, m27@buffalo.edu

@@ -11,7 +11,7 @@ dependencies:
     - nbsphinx
 
 channels:
-    - openbabel
+    - conda-forge
 
 dependencies:
     - openbabel

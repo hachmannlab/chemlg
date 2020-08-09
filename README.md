@@ -5,26 +5,27 @@
 # ChemLG – A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space
 ChemLG is a smart and massive parallel molecular library generator for chemical and materials sciences.
 
-Program Version: 0.7
+Program Version: 0.9
 
-Release Date: Nov 10, 2019
+Release Date: Aug 20, 2020
 
 With contributions by:
+Gaurav Vishwakarma (UB): Genetic Algorithm, Code Redesign and Maintenance
 Janhavi Abhay Dudwadkar (UB): Jupyter GUI
 
 ## Code Design:
-ChemLG is developed in the Python 3 programming language and uses OpenBabel (2.x) and its Python extension, Pybel for handling molecules. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
+ChemLG is developed in the Python 3 programming language. The development follows a strictly modular and object-oriented design to make the overall code as flexible and versatile as possible.
 
 ## Documentation:
 ChemLG documentation can be found here https://chemlg.readthedocs.io/en/latest/
 
 ## Installation and Dependencies:
-The dependencies for ChemLG are OpenBabel(2.x) and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. We suggest the following conda installations:
+The dependencies for ChemLG are OpenBabel 3.0 and MPI4Py. It is recommended that these two dependencies are installed in a virtual environment prior to installing ChemLG. We suggest the following conda installations:
 
 
     conda create --name my_chemlg_env python=3.6
     source activate my_chemlg_env
-    conda install -c openbabel openbabel
+    conda install -c conda-forge openbabel
     conda install -c anaconda mpi4py
     pip install chemlg
 
@@ -42,10 +43,9 @@ Please cite the use of ChemLG as:
 ChemLG is based upon work supported by the U.S. National Science Foundation under grant #OAC-1751161. It was also supported by start-up funds provided by UB's School of Engineering and Applied Science and UB's Department of Chemical and Biological Engineering, the New York State Center of Excellence in Materials Informatics through seed grant #1140384-8-75163, and the U.S. Department of Energy under grant #DE-SC0017193.
 
 ## License and Copyright:
-ChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
+ChemLG is copyright (C) 2015-2020 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. 
 ChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause).
 
-(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal
 University at Buffalo - The State University of New York (UB)
 Contact: hachmann@buffalo.edu, m27@buffalo.edu
 http://hachmannlab.cbe.buffalo.edu

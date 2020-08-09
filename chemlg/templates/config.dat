@@ -17,6 +17,7 @@ Do not change the order of the generation rules below.
 16. Include_BB                              == False
 
 
+Combination type for molecules  :: Both
 Number of generations           :: 2
 Molecule format in output file  :: smi
 Maximum files per folder        :: 10000

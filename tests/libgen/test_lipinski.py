@@ -1,6 +1,6 @@
 import pytest
 from chemlg.libgen import lipinski
-import pybel
+from openbabel import pybel
 
 def test_lipinski():
     mol = pybel.readstring("smi", 'CCC')

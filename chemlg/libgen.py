@@ -1,9 +1,6 @@
 import sys
-try:
-    import pybel
-except:
-    from openbabel import pybel
-from openbabel import OBAtomAtomIter
+from openbabel import pybel, openbabel
+from openbabel.openbabel import OBAtomAtomIter
 import scipy
 from collections import defaultdict
 import os
@@ -125,7 +122,7 @@ def reverse_mol(mol, atoms):
     if 88 in atom_num:
         for atom in atoms:
             ## check the number of hydrogens attached to the atom
-            hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount() # zero for H atom
+            hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.GetImplicitHCount() # zero for H atom
             index = atom.OBAtom.GetIdx()
             
             ## This is replacing hydrogen atoms with Francium atom
@@ -133,7 +130,9 @@ def reverse_mol(mol, atoms):
                 size = len(list(mol.atoms))
                 mol.OBMol.InsertAtom(Fratom)
                 mol.OBMol.AddBond(index,size+1,1,0,-1)
-                hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
+                x = mol.OBMol.GetAtom(index).GetImplicitHCount() - 1
+                if x >= 0: mol.OBMol.GetAtom(index).SetImplicitHCount(x)
+                hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.GetImplicitHCount()
                 
         atoms = list(mol.atoms)
         ## Replace all Radium atoms with hydrogen, which makes them site points.
@@ -647,6 +646,10 @@ def create_link(mol1, mol2, rules):
         for index2 in mol2_index_list:
             mol_combi= pybel.readstring("smi",smiles_combi)
             mol_combi.OBMol.AddBond(index1, index2 + len(mol1_ob.atoms), 1, 0, -1)
+            x = mol_combi.OBMol.GetAtom(index1).GetImplicitHCount() - 1
+            y = mol_combi.OBMol.GetAtom(index2 + len(mol1_ob.atoms)).GetImplicitHCount() - 1
+            if x >= 0: mol_combi.OBMol.GetAtom(index1).SetImplicitHCount(x)
+            if y >= 0: mol_combi.OBMol.GetAtom(index2 + len(mol1_ob.atoms)).SetImplicitHCount(y)
             can_mol_combi = mol_combi.write("can")
             if if_add(can_mol_combi, rules, code):
                 temp = molecule(can_mol_combi, code)
@@ -675,7 +678,7 @@ def get_index_list(mol, atoms):
 
     for atom in atoms:
         # Counting the number of hydrogens attached to the atom. Do not do anything if there are no hydrogens attached
-        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
+        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.GetImplicitHCount()
         if hcount==0:
             continue 
         
@@ -686,7 +689,9 @@ def get_index_list(mol, atoms):
         newmol.OBMol.InsertAtom(Fratom) 
         index = atom.OBAtom.GetIdx() 
         # Create a bond between Fr atom and the current atom
-        newmol.OBMol.AddBond(index, len(atoms)+1, 1, 0, -1) 
+        newmol.OBMol.AddBond(index, len(atoms)+1, 1, 0, -1)
+        x = newmol.OBMol.GetAtom(index).GetImplicitHCount() - 1
+        if x >= 0: newmol.OBMol.GetAtom(index).SetImplicitHCount(x)
         out.start() # Capturing stderr from openbabel (C program) 
         # Making use of canonical smiles to remove duplicates
         can_smiles = newmol.write("can")
@@ -727,8 +732,12 @@ def get_fusion_index(molc, mol_type):
         Fratom = myFr.OBMol.GetAtom(1)
         newmol.OBMol.InsertAtom(Fratom)
         newmol.OBMol.InsertAtom(Fratom)
-        newmol.OBMol.AddBond(a1, len(atoms)+1, 1, 0, -1) 
-        newmol.OBMol.AddBond(a2, len(atoms)+2, 1, 0, -1) 
+        newmol.OBMol.AddBond(a1, len(atoms)+1, 1, 0, -1)
+        x = newmol.OBMol.GetAtom(a1).GetImplicitHCount() - 1
+        if x >= 0: newmol.OBMol.GetAtom(a1).SetImplicitHCount(x)
+        newmol.OBMol.AddBond(a2, len(atoms)+2, 1, 0, -1)
+        x = newmol.OBMol.GetAtom(a2).GetImplicitHCount() - 1
+        if x >= 0: newmol.OBMol.GetAtom(a2).SetImplicitHCount(x)
         out.start() # Capturing stderr from openbabel (C program) 
         can_smiles = newmol.write("can")
         out.stop() # Closing capture of stderr
@@ -739,12 +748,12 @@ def get_fusion_index(molc, mol_type):
     atom_pair_list, can_list, substitutions = [], [], defaultdict(list)
     for atom in atoms:
         index = atom.OBAtom.GetIdx()
-        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.ImplicitHydrogenCount()
+        hcount = atom.OBAtom.ExplicitHydrogenCount() + atom.OBAtom.GetImplicitHCount()
         if hcount == 0 or not mol.OBMol.GetAtom(index).IsInRing():
             continue
         # look for 1st alpha atom
         for neighbor in OBAtomAtomIter(mol.OBMol.GetAtom(index)):
-            neigbor_hcount = neighbor.ExplicitHydrogenCount() + neighbor.ImplicitHydrogenCount()
+            neigbor_hcount = neighbor.ExplicitHydrogenCount() + neighbor.GetImplicitHCount()
             alpha_1 = neighbor.GetIdx()
             if neigbor_hcount == 0 or not neighbor.IsInRing():
                 if not neighbor.IsInRing(): 
@@ -832,11 +841,32 @@ def create_fused(mol1, mol2, rules):
             
             # add bonds between first and second molecule, and attach side-chains of 2nd molecule to the 1st molecule
             mol_combi.OBMol.AddBond(item1[0], item2[2] + size1, 1, 0, -1)
+            x = mol_combi.OBMol.GetAtom(item1[0]).GetImplicitHCount() - 1
+            y = mol_combi.OBMol.GetAtom(item2[2] + size1).GetImplicitHCount() - 1
+            if x >= 0: mol_combi.OBMol.GetAtom(item1[0]).SetImplicitHCount(x)
+            if y >= 0: mol_combi.OBMol.GetAtom(item2[2] + size1).SetImplicitHCount(y)
+
+
             mol_combi.OBMol.AddBond(item1[1], item2[3] + size1, 1, 0, -1)
+            x = mol_combi.OBMol.GetAtom(item1[1]).GetImplicitHCount() - 1
+            y = mol_combi.OBMol.GetAtom(item2[3] + size1).GetImplicitHCount() - 1
+            if x >= 0: mol_combi.OBMol.GetAtom(item1[1]).SetImplicitHCount(x)
+            if y >= 0: mol_combi.OBMol.GetAtom(item2[3] + size1).SetImplicitHCount(y)
+
+
             for subs_ind in subs_2[item2[0]]:
                 mol_combi.OBMol.AddBond(item1[0], subs_ind + size1, 1, 0, -1)
+                x = mol_combi.OBMol.GetAtom(item1[0]).GetImplicitHCount() - 1
+                y = mol_combi.OBMol.GetAtom(subs_ind + size1).GetImplicitHCount() - 1
+                if x >= 0: mol_combi.OBMol.GetAtom(item1[0]).SetImplicitHCount(x)
+                if y >= 0: mol_combi.OBMol.GetAtom(subs_ind + size1).SetImplicitHCount(y)
+
             for subs_ind in subs_2[item2[1]]:
                 mol_combi.OBMol.AddBond(item1[1], subs_ind + size1, 1, 0, -1)
+                x = mol_combi.OBMol.GetAtom(item1[1]).GetImplicitHCount() - 1
+                y = mol_combi.OBMol.GetAtom(subs_ind + size1).GetImplicitHCount() - 1
+                if x >= 0: mol_combi.OBMol.GetAtom(item1[1]).SetImplicitHCount(x)
+                if y >= 0: mol_combi.OBMol.GetAtom(subs_ind + size1).SetImplicitHCount(y)
             
             # delete the fusing atoms from the second molecule
             atoms_to_delete = [size1 + item2[0], size1 + item2[1]]
@@ -860,7 +890,7 @@ def create_fused(mol1, mol2, rules):
     
     return library_two
 
-def generator(init_mol_list, gen_len, rules_dict, output_dir, mpidict):
+def generator(init_mol_list, combi_type, gen_len, rules_dict, output_dir, mpidict):
     """
     Function that creates a new generation of molecules with the initial building blocks provided and the current generation of molecules.
 
@@ -892,8 +922,15 @@ def generator(init_mol_list, gen_len, rules_dict, output_dir, mpidict):
         if chunks_list[rank].any():
             for i in chunks_list[rank]:                       
                 for mol2 in init_mol_list:
-                    new_gen_mol_list += create_link(prev_gen_mol_list[i],mol2,rules_dict)
-                    new_gen_mol_list += create_fused(prev_gen_mol_list[i],mol2,rules_dict)
+                    if combi_type.lower() == 'both':
+                        new_gen_mol_list += create_link(prev_gen_mol_list[i],mol2,rules_dict)
+                        new_gen_mol_list += create_fused(prev_gen_mol_list[i],mol2,rules_dict)
+                    
+                    if combi_type.lower() == 'link':
+                        new_gen_mol_list += create_link(prev_gen_mol_list[i],mol2,rules_dict)
+                    
+                    if combi_type.lower() == 'fusion':
+                        new_gen_mol_list += create_fused(prev_gen_mol_list[i],mol2,rules_dict)
         if comm is not None: 
             new_gen_mol_list = comm.gather(new_gen_mol_list, root=0)
             if rank == 0:
@@ -959,9 +996,18 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     Parameters
     ----------
     config_file: str, default = 'config.dat'
-        Name of the config file for generating the library
+        Path to the config file for generating the library
+    building_blocks_file: str, default = './'
+        Path to the building blocks file for generating the library.
     output_dir: str, default = './'
         Path to the output directory.
+    genetic_algorithm_config: str, default = None
+        Required to run genetic algorithm. Path to the config file for genetic algorithm
+    cost_function: function, default = None
+        Required to run genetic algorithm. Cost function that will be optimized by genetic algorithm. Cost function may return more than one value for optimization. 
+    fitnesses_list: list of tuples, default = None
+        Required to run genetic algorithm (GA) in batch mode. Provide empty list if running batch mode for the first time. Else, provide fitness values of individuals STRICTLY FOLLOWING THE FORMAT: [(individual generated by GA code, fitness value, smiles string of individual), ....]
+    
 
     Returns
     -------
@@ -987,10 +1033,10 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     txt = "\n\n\n============================================================================================================"
     txt += "\n ChemLG - A Molecular and Materials Library Generator for the Enumeration and Exploration of Chemical Space"
     txt += "\n============================================================================================================\n\n\n"
-    txt += "Program Version: 0.2 \t\t Release Date: Feb 20, 2019\n\n"
-    txt += "(C) 2015-2018 Johannes Hachmann, Mohammad Atif Faiz Afzal \nUniversity at Buffalo - The State University of New York (UB)\n"
+    txt += "Program Version: 0.9 \t\t Release Date: Aug 10, 2020\n\n"
+    txt += "(C) 2015-2020 Johannes Hachmann, Mohammad Atif Faiz Afzal \nUniversity at Buffalo - The State University of New York (UB)\n"
     txt += "Contact: hachmann@buffalo.edu, m27@buffalo.edu \nhttp://hachmannlab.cbe.buffalo.edu\n\n"
-    txt += "With contributions by: \nJanhavi Abhay Dudwadkar (UB): Jupyter GUI\n\n"
+    txt += "With contributions by: \nGaurav Vishwakarma (UB): Genetic Algorithm, Code Redesign and Maintenance\nJanhavi Abhay Dudwadkar (UB): Jupyter GUI\n\n"
     txt += "ChemLG is based upon work supported by the U.S. National Science Foundation under grant #OAC-1751161. \nIt was also supported by start-up funds provided by UB's School of Engineering and Applied Science and \nUB's Department of Chemical and Biological Engineering, the New York State Center of Excellence in Materials Informatics \nthrough seed grant #1140384-8-75163, and the U.S. Department of Energy under grant #DE-SC0017193."
     txt += "\n\nChemLG is copyright (C) 2015-2018 Johannes Hachmann and Mohammad Atif Faiz Afzal, all rights reserved. \nChemLG is distributed under 3-Clause BSD License (https://opensource.org/licenses/BSD-3-Clause). \n\n\n"
     log_error(txt, output_dir, mpidict)
@@ -1006,7 +1052,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     log_error("===================================================================================================", output_dir, mpidict)
     rules_dict, args = get_rules(rulesFile, output_dir, mpidict)
     BB_file = building_blocks_file
-    gen_len, outfile_type, max_fpf, lib_name = args
+    combi_type, gen_len, outfile_type, max_fpf, lib_name = args
     gen_len, max_fpf = int(gen_len), int(max_fpf)
     if gen_len == 0:
         rules_dict['bb_final_lib'] = True
@@ -1052,7 +1098,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
         if cost_function is not None and fitnesses_list is not None:
             log_error("Cannot provide both cost function and fitnesses. Decide whether you wish to run genetic algorithm in batch mode (provide fitnesses_list) or continuous (provvide cost function). Aborting", output_dir, mpidict, error=True)
         if mpidict['mpisize'] > 1:
-            log_error("Running genetic algorithm parallel on multiple cores. THIS IS NOT REQUIRED, instead parallelize the cost function only.", output_dir, mpidict)
+            log_error("Running genetic algorithm parallel on multiple cores. THIS IS NOT REQUIRED! Instead, parallelize the cost function only.", output_dir, mpidict)
         try :
             ga_config = open(genetic_algorithm_config)
         except:
@@ -1091,7 +1137,7 @@ def library_generator(config_file='config.dat', building_blocks_file='building_b
     log_error('\n\n\n\n\n===================================================================================================', output_dir, mpidict)
     log_error('Generating molecules', output_dir, mpidict)
     log_error('===================================================================================================\n', output_dir, mpidict)
-    final_list = generator(initial_mols, gen_len, rules_dict, output_dir, mpidict)
+    final_list = generator(init_mol_list=initial_mols, combi_type=combi_type, gen_len=gen_len, rules_dict=rules_dict, output_dir=output_dir, mpidict=mpidict)
     log_error('Total number of molecules generated = '+str(len(final_list))+'\n\n\n\n\n', output_dir, mpidict)
     log_error("===================================================================================================\n\n\n", output_dir, mpidict)
 
@@ -1196,7 +1242,7 @@ class GeneticAlgorithm(object):
                 The objective function that has to be optimized. The first argument of the function is an pybel object of a molecule. Objective function should return a tuple of desired target properties.
 
             fitness: tuple of tuple(s),
-                A tuple of tuples for describing desired target properties. For each target property, tuple contains 2 values, the required optima and the cutoff value. For 'max' optima, the cutoff is the lower acceptable limit. For 'min' optima, the cutoff is the maximum allowed value for that property. Ex: (('max', 5.6), ('min', 20))
+                A tuple of tuples for describing desired target properties that are returned by the objective function. For each target property, tuple contains 2 values, the required optima and the cutoff value. For 'max' optima, the cutoff is the lower acceptable limit. For 'min' optima, the cutoff is the maximum allowed value for that property. Ex: (('max', 5.6), ('min', 20))
 
             bb_file: str,
                 Path to the building blocks file
@@ -1377,6 +1423,11 @@ class GeneticAlgorithm(object):
         # create bonds for each of the handles in handle_list
         for handles in handle_list:
             mol_combi.OBMol.AddBond(handles[0], handles[1], 1)
+            x = mol_combi.OBMol.GetAtom(handles[0]).GetImplicitHCount() - 1
+            y = mol_combi.OBMol.GetAtom(handles[1]).GetImplicitHCount() - 1
+            if x >= 0: mol_combi.OBMol.GetAtom(handles[0]).SetImplicitHCount(x)
+            if y >= 0: mol_combi.OBMol.GetAtom(handles[1]).SetImplicitHCount(y)
+
         for atom in list(mol_combi.atoms):
             ## Removing Francium and Radium atoms
             if atom.OBAtom.GetAtomicNum() == 87 or atom.OBAtom.GetAtomicNum() == 88:
@@ -1561,11 +1612,11 @@ class GeneticAlgorithm(object):
             pop_to_write = cross_pop + mutant_pop
             
         with open('new_molecules.csv', 'w') as fl:
+            fl.write('individual,smiles\n')
             for mols in pop_to_write:
-                fl.write(str(mols) + ' , ' + str(self.list_to_smiles(list(mols))))
-                fl.write('\n')
+                fl.write(str(mols) + ',' + str(self.list_to_smiles(list(mols))) + '\n')
 
-    def search(self, n_generations, init_ratio = 0.35, crossover_ratio = 0.35):
+    def search(self, n_generations=20, init_ratio = 0.35, crossover_ratio = 0.35):
         """
         Algorithm 1:
             Initial population is instantiated. 
@@ -1588,14 +1639,14 @@ class GeneticAlgorithm(object):
         n_generations: integer, optional (default = 20)
                 An integer for the number of generations for evolving the population
 
-        early_stopping: int, optional (default=10)
+        early_stopping: int, optional (default=20)
                 Integer specifying the maximum number of generations for which the algorithm can select the same best individual, after which 
                 the search terminates.
 
-        init_ratio: float, optional (default = 0.4)
+        init_ratio: float, optional (default = 0.35)
             Fraction of initial population to select for next generation. Required only for algorithm 3.
 
-        crossover_ratio: float, optional (default = 0.3)
+        crossover_ratio: float, optional (default = 0.35)
             Fraction of crossover population to select for next generation. Required only for algorithm 3.
 
         

@@ -2,6 +2,7 @@
 
 from chemlg.libgen import library_generator
 import argparse
+import pandas as pd
 
 ## Argument parser desription
 
@@ -26,7 +27,22 @@ parser.add_argument(
     "--output_dir",
     type=str,
     required=True,
-    help="Path to the output directory.")
+    help="path to the output directory.")
+parser.add_argument(
+    "--ga_config",
+    type=str,
+    required=False,
+    help="path to the config file for genetic algorithm.")
+parser.add_argument(
+    "--cost_function",
+    type=str,
+    required=False,
+    help="path to the python file that contains the cost function. Name of the cost function should NECESSARILY be cost_function. Required to run genetic algorithm. Cost function that will be optimized by genetic algorithm. Cost function may return more than one value for optimization.")
+parser.add_argument(
+    "--fitnesses_csv",
+    type=str,
+    required=False,
+    help="Required to run genetic algorithm (GA) in batch mode. Provide the path to the csv file containing the following column headers: individual, fitness, smiles. If running batch mode for the first time, provide the value: 'empty'")
 
 ## defining arguments
 args = parser.parse_args()
@@ -34,4 +50,23 @@ input_file = args.input_file
 bb_file = args.building_blocks_file
 output_dir = args.output_dir
 
-a = library_generator(config_file=input_file, building_blocks_file=bb_file, output_dir=output_dir)
+if args.ga_config and args.cost_function: 
+    ga_config = args.ga_config
+    cost_function_path = args.cost_function
+    exec('from ' + cost_function_path + ' import cost_function')
+    if args.fitnesses_csv: 
+        fitnesses_csv = args.fitnesses_csv
+        if fitnesses_csv == 'empty':
+            a = library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./', genetic_algorithm_config=ga_config, cost_function=cost_function, fitnesses_list=[])
+        else:
+            df = pd.read_csv(fitnesses_csv)
+            fitnesses_list = []
+            for p, q, r in zip(df['individual'], df['fitness'], df['smiles']):
+                fitnesses_list.append((eval(p), eval(q), r))
+
+            a = library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./', genetic_algorithm_config=ga_config, cost_function=cost_function, fitnesses_list=fitnesses_list)
+    else:
+        a = library_generator(config_file='config.dat', building_blocks_file='building_blocks.dat', output_dir='./', genetic_algorithm_config=ga_config, cost_function=cost_function, fitnesses_list=None)
+
+else: 
+    a = library_generator(config_file=input_file, building_blocks_file=bb_file, output_dir=output_dir, genetic_algorithm_config=None, cost_function=None, fitnesses_list=None)

@@ -24,46 +24,46 @@ The file names used above are the default values that the program looks for. The
 
 Templates for both the input files are located at https://github.com/hachmannlab/chemlg/tree/master/chemlg/templates
 
-It is recommended that the user substitutes the required values directly into the respective templates for the input files in order to avoid any conflicts later while executing the program. For more specifics into how to make the input files, look at:
+It is highly recommended that the user substitutes the required values directly into the respective templates for the input files in order to avoid any conflicts later while executing the program. For more specifics on how to make the input files, look at:
 
 .. toctree::
 
     chemlg.inputs
 
+.. |
+.. ChemLG Graphical Input File Builder
+.. ====================================
+.. We also offer a way to build the input files via a graphical user interface through a jupyter notebook.
+
+.. The following additional packages should be installed in the virtual environment before running the GUI builder. The last command below adds a "chemlg" kernel to the jupyter notebook. 
+
+.. .. code:: bash
+
+..     conda install –c rdkit rdkit
+..     conda install ipykernel
+..     conda install -c conda-forge ipywidgets
+..     python -m ipykernel install --name my_chemlg_env --display-name "chemlg"
+
+.. To use the GUI, launch jupyter notebook and enter:
+
+.. .. code:: python
+
+..     from chemlg.notebooks.main import config_builder
+..     config_builder()
+
+.. When the user is done building the input files, the user also has an option to run the code directly from the jupyter notebook. 
+
 |
-ChemLG Graphical Input File Builder
-====================================
-We also offer a way to build the input files via a graphical user interface through a jupyter notebook.
 
-The following additional packages should be installed in the virtual environment before running the GUI builder. The last command below adds a "chemlg" kernel to the jupyter notebook. 
-
-.. code:: bash
-
-    conda install –c rdkit rdkit
-    conda install ipykernel
-    conda install -c conda-forge ipywidgets
-    python -m ipykernel install --name my_chemlg_env --display-name "chemlg"
-
-To use the GUI, launch jupyter notebook and enter:
-
-.. code:: python
-
-    from chemlg.notebooks.main import config_builder
-    config_builder()
-
-When the user is done building the input files, the user also has an option to run the code directly from the jupyter notebook. 
-
-|
-
-Constrained library generation via Genetic Algorithm
+Smarter library generation via Genetic Algorithm
 ====================================================
-ChemLG also offers the possibility for constrained growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3. The constrained library can also be made to optimize multiple properties at once using the multi-objective Genetic Algorithm module.
+ChemLG's genetic algorithm module allows for an optimized growth of a library. That is, a library can be generated such that new members are added to the library only if they conform to a given range of target properties. For example, a library with each of the members having a density greater than 1000 kg/m3. The smarter library can also be made to optimize multiple properties at once using the multi-objective Genetic Algorithm module.
 
-To generate this constrained library using Genetic Algorithm, the user has to specify the following: 
+In this case, the user should provide: 
 
-- desired range of target property/properties
-- an objective function
-- Genetic Algorithm parameters
+- genetic algorithm config file (template available at https://github.com/hachmannlab/chemlg/tree/master/chemlg/templates
+- path to the python file that contains the cost function defined by -->  def cost_function(): <code> . The cost function always receives an openbabel object of a molecule. Cost function may return more than one value for optimization.
+- Optional input. Only required when running genetic algorithm in batch mode. Provide the path to the csv file containing the following column headers: individual, fitness, smiles. If running batch mode for the first time, provide the value: 'empty'
 
 For example:
 
@@ -71,36 +71,32 @@ Define the objective function:
 
 .. code:: python
 
-    # File name: example_obj.py
+    # File name: example_cost_function.py
 
-    import pybel
+    from openbabel import pybel
 
-    # This 'objective' function always receives an openbabel object of a molecule ('mol_ob' in the example).
-    def objective(mol_ob):
+    # This 'objective' function always receives an openbabel object of a molecule ('mol_ob' in the example). Also, the name of the objective function should ALWAYS BE cost_function.
+
+    def cost_function(mol_ob):
         mol2 = pybel.readstring("smi", "c1ccccc1")
         tanimoto = mol_ob.calcfp()|mol2.calcfp() 
 
         # tanimoto is the desired property which is returned by the function
         return tanimoto
 
-Execute ChemLG via Genetic Algorithm:
+Execute ChemLG with Genetic Algorithm:
 
-.. code:: python
+.. code:: bash
 
-    # File name: constrained_lib.py
-
-    from chemlg.constrained import GeneticAlgorithm                     # import genetic algorithm
-    from example_obj import objective                                   # import objective function
-
-    ga_library = GeneticAlgorithm(evaluate=objective,
-                                fitness     =  (("max", 0.7), )
-                                bb_file     =  <specify building block file handle here>,
-                                config_file =  <specify config file handle here>,
-                                output_dir  =  <specify output directory here>)
+    chemlgshell -i ./config.dat -b ./building_blocks.dat -o ./output/ --ga_config ./genetic_algorithm_config.dat --cost_function ./example_cost_function.py
     
-    best_ind_df, best_individual = ga_library.search(n_generations=20)
+    ## if running genetic algorithm in batch mode, also provide the fitnesses of the individuals with the --fitnesses_csv flag.
 
-For more information on Genetic Algorithm parameters, refer to https://github.com/hachmannlab/chemlg/blob/master/chemlg/constrained.py
+For more information on Genetic Algorithm parameters, refer to:
+
+.. toctree::
+
+    chemlg.inputs
 
 
 Feasibility Analysis
